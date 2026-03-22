@@ -22,7 +22,7 @@ import plotly.io as pio
 # ---------------------------------------------------------------------------
 BASE = Path(__file__).resolve().parent
 DATA = BASE / "data" / "processed"
-OUT = BASE / "site"
+OUT = BASE / "docs"
 OUT.mkdir(exist_ok=True)
 
 # ---------------------------------------------------------------------------
