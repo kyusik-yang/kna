@@ -1,0 +1,117 @@
+{
+  "phase": 1,
+  "age": 22,
+  "collected_at": "2026-03-21 08:51:50",
+  "endpoints": {
+    "nzmimeepazxkubdpn": {
+      "name": "의원발의법률안",
+      "rows": 16142,
+      "columns": [
+        "BILL_ID",
+        "BILL_NO",
+        "BILL_NAME",
+        "COMMITTEE",
+        "PROPOSE_DT",
+        "PROC_RESULT",
+        "AGE",
+        "DETAIL_LINK",
+        "PROPOSER",
+        "MEMBER_LIST",
+        "LAW_PROC_DT",
+        "LAW_PROC_RESULT_CD",
+        "RST_MONA_CD",
+        "LAW_PRESENT_DT",
+        "LAW_SUBMIT_DT",
+        "CMT_PROC_RESULT_CD",
+        "CMT_PROC_DT",
+        "CMT_PRESENT_DT",
+        "COMMITTEE_DT",
+        "PROC_DT",
+        "COMMITTEE_ID",
+        "PUBL_MONA_CD",
+        "RST_PROPOSER",
+        "PUBL_PROPOSER"
+      ]
+    },
+    "BILLRCP": {
+      "name": "접수목록",
+      "rows": 118466,
+      "columns": [
+        "ERACO",
+        "BILL_ID",
+        "BILL_NO",
+        "BILL_KIND",
+        "BILL_NM",
+        "PPSR_KIND",
+        "PPSL_DT",
+        "PROC_RSLT",
+        "LINK_URL"
+      ]
+    },
+    "BILLJUDGE": {
+      "name": "심사정보",
+      "rows": 35165,
+      "columns": [
+        "ERACO",
+        "BILL_ID",
+        "BILL_NO",
+        "BILL_NM",
+        "PPSR_KIND",
+        "PPSL_DT",
+        "JRCMIT_NM",
+        "BDG_CMMT_DT",
+        "JRCMIT_PRSNT_DT",
+        "JRCMIT_PROC_DT",
+        "JRCMIT_PROC_RSLT",
+        "LINK_URL"
+      ]
+    },
+    "ncocpgfiaoituanbr": {
+      "name": "의안별표결현황",
+      "rows": 1286,
+      "columns": [
+        "BILL_ID",
+        "PROC_DT",
+        "BILL_NO",
+        "BILL_NAME",
+        "CURR_COMMITTEE",
+        "CURR_COMMITTEE_ID",
+        "PROC_RESULT_CD",
+        "BILL_KIND_CD",
+        "AGE",
+        "MEMBER_TCNT",
+        "VOTE_TCNT",
+        "YES_TCNT",
+        "NO_TCNT",
+        "BLANK_TCNT",
+        "LINK_URL"
+      ]
+    },
+    "nzpltgfqabtcpsmai": {
+      "name": "처리의안",
+      "rows": 4421,
+      "columns": [
+        "BILL_ID",
+        "BILL_NO",
+        "AGE",
+        "BILL_NAME",
+        "PROPOSER",
+        "PROPOSER_KIND",
+        "PROPOSE_DT",
+        "PROC_RESULT_CD",
+        "CURR_COMMITTEE_ID",
+        "CURR_COMMITTEE",
+        "COMMITTEE_DT",
+        "PROC_DT",
+        "LINK_URL",
+        "LAW_SUBMIT_DT",
+        "LAW_PRESENT_DT",
+        "LAW_PROC_DT",
+        "CMT_PROC_RESULT_CD",
+        "LAW_PROC_RESULT_CD",
+        "CMT_PRESENT_DT",
+        "CMT_PROC_DT"
+      ]
+    }
+  }
+}

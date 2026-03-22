@@ -1,0 +1,18 @@
+# Raw API responses (regenerable, large)
+data/raw/*_partial.parquet
+data/raw/phase2_checkpoint_*.json
+
+# Logs
+logs/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# OS
+.DS_Store
+
+# API key (never commit)
+*.rtf
+.env
