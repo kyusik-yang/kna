@@ -96,7 +96,13 @@ python3 build_multi_assembly.py phase2 --age 20
 python3 build_site.py
 ```
 
-**API Key**: Obtain from [열린국회정보](https://open.assembly.go.kr/) and set in `collect.py`.
+**API Key**: Register at [열린국회정보](https://open.assembly.go.kr/) (free) and set the environment variable before running any collection script:
+
+```bash
+export ASSEMBLY_API_KEY=your_api_key_here
+```
+
+To make this persistent, add the line to your `~/.bashrc`, `~/.zshrc`, or `.env` file.
 
 ## Documentation
 
