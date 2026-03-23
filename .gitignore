@@ -18,3 +18,5 @@ __pycache__/
 .env
 data/pdfs/
 data/raw/rollcall_checkpoint_*.json
+PAPER_PLAN.md
+BIBLIOGRAPHY_VERIFIED.md
