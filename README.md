@@ -94,6 +94,21 @@ python3 build_multi_assembly.py phase2 --age 20
 
 # 7. Rebuild interactive site
 python3 build_site.py
+
+# ── Roll call votes (optional, ~2 hours total) ──
+
+# 8. Parse inline votes from plenary transcripts (16-19대, < 1 min)
+python3 parse_plenary_votes.py
+
+# 9. Extract appendix votes from plenary PDFs (17-19대, ~30-60 min)
+pip install PyMuPDF
+python3 extract_appendix_votes.py
+
+# 10. Collect member-level roll calls via API (20-22대, ~20-30 min per assembly)
+python3 collect_roll_calls.py
+
+# 11. Consolidate all vote sources into unified dataset (< 1 min)
+python3 consolidate_votes.py
 ```
 
 **API Key**: Register at [열린국회정보](https://open.assembly.go.kr/) (free) and set the environment variable before running any collection script:
