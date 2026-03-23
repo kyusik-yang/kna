@@ -16,3 +16,5 @@ __pycache__/
 # API key (never commit)
 *.rtf
 .env
+data/pdfs/
+data/raw/rollcall_checkpoint_*.json
