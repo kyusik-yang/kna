@@ -25,7 +25,7 @@ from urllib3.util.retry import Retry
 # ── Configuration ──────────────────────────────────────────────────────────
 
 BASE_URL = "https://open.assembly.go.kr/portal/openapi"
-API_KEY = os.environ.get("ASSEMBLY_API_KEY", "REDACTED")
+API_KEY = os.environ["ASSEMBLY_API_KEY"]  # Set via: export ASSEMBLY_API_KEY=your_key
 DATA_DIR = Path(__file__).parent / "data"
 RAW_DIR = DATA_DIR / "raw"
 PROCESSED_DIR = DATA_DIR / "processed"

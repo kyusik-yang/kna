@@ -42,7 +42,7 @@ except ImportError:
 KR_HEARINGS = Path("/Users/kyusik/Desktop/kyusik-github/kr-hearings-data/data")
 SPEECHES_FILE = KR_HEARINGS / "all_speeches_16_22_v9.parquet"
 
-API_KEY = os.environ.get("ASSEMBLY_API_KEY", "REDACTED")
+API_KEY = os.environ["ASSEMBLY_API_KEY"]  # Set via: export ASSEMBLY_API_KEY=your_key
 BASE_URL = "https://open.assembly.go.kr/portal/openapi"
 HEADERS = {"User-Agent": "Mozilla/5.0"}
 
