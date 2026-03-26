@@ -6,15 +6,28 @@
 
 **[Interactive Explorer](https://kyusik-yang.github.io/korean-bill-lifecycle/)** | [Codebook](CODEBOOK.md) | [Data Availability](DATA_AVAILABILITY.md)
 
+**[Uijeong Jido 의정지도](https://kyusik-yang.github.io/korean-bill-lifecycle/voteview.html)** - DW-NOMINATE ideal point explorer
+
 ## Key Statistics
 
 | | |
 |---|---|
-| **Total Bills** | 111,778 (17-22대) |
-| **Full Master (22대)** | 17,205 bills, 54 variables |
-| **Lite Masters (17-21대)** | 93,573 bills, 36 variables |
-| **Committee Meetings** | 108,749 records (22대) |
+| **Total Bills** | 110,779 (17-22대, full lifecycle) |
+| **Committee Meetings** | 572,127 records |
+| **Roll Call Votes** | 2,425,113 member-level votes |
+| **DW-NOMINATE** | 936 legislator-terms (20-22대) |
 | **Date Range** | 2004 - 2026 |
+
+### Per-Assembly Breakdown
+
+| Assembly | Bills | Enacted | Rate | Committee Mtgs |
+|----------|------:|--------:|-----:|---------------:|
+| 17th (2004-08) | 8,369 | 2,547 | 30.4% | 20,044 |
+| 18th (2008-12) | 14,762 | 2,930 | 19.8% | 57,003 |
+| 19th (2012-16) | 18,735 | 3,414 | 18.2% | 78,115 |
+| 20th (2016-20) | 24,996 | 3,795 | 15.2% | 107,933 |
+| 21st (2020-24) | 26,711 | 3,554 | 13.3% | 200,283 |
+| 22nd (2024-) | 17,205 | 1,399 | 8.1% | 108,749 |
 
 ## Data Structure
 
