@@ -18,6 +18,12 @@ __pycache__/
 .env
 data/pdfs/
 data/raw/rollcall_checkpoint_*.json
+
+# Internal planning & paper-related docs
+MASTER_DATA_PLAN.md
+DATA_COLLECTION_STRATEGY.md
+DATA_OVERVIEW.md
+NOMINATE_METHODOLOGY.md
 PAPER_PLAN.md
 BIBLIOGRAPHY_VERIFIED.md
 paper/
