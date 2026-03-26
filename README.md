@@ -7,8 +7,10 @@ Integrates 8 Open Assembly API endpoints into a single queryable interface
 covering six assembly terms (17th-22nd, 2004-2026).
 
 ```bash
-pipx install kna
+pip install kna
 ```
+
+> If you see a PATH warning after install, either run `pipx install kna` instead, or add the displayed directory to your shell PATH.
 
 **[Interactive Explorer](https://kyusik-yang.github.io/korean-bill-lifecycle/)** | **[Uijeong Jido 의정지도](https://kyusik-yang.github.io/korean-bill-lifecycle/voteview.html)** | **[Tutorial](https://kyusik-yang.github.io/assembly-tutorial/)** | **[PyPI](https://pypi.org/project/kna/)**
 
