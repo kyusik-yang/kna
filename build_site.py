@@ -64,12 +64,14 @@ print("Loading data...")
 df22 = pd.read_parquet(DATA / "master_bills_22.parquet")
 cm22 = pd.read_parquet(DATA / "committee_meetings_22.parquet")
 
-lite_frames = {}
+other_frames = {}
 for age in [17, 18, 19, 20, 21]:
-    lite_frames[age] = pd.read_parquet(DATA / f"master_bills_{age}_lite.parquet")
+    full_path = DATA / f"master_bills_{age}.parquet"
+    lite_path = DATA / f"master_bills_{age}_lite.parquet"
+    other_frames[age] = pd.read_parquet(full_path if full_path.exists() else lite_path)
 
-# Build cross-assembly summary from lite + 22
-all_frames = {**lite_frames, 22: df22}
+# Build cross-assembly summary
+all_frames = {**other_frames, 22: df22}
 
 # ===================================================================
 # 2. Cross-assembly statistics
@@ -576,7 +578,7 @@ for age in sorted(all_frames.keys()):
         promulgated=f"{has_prom:,}" if has_prom > 0 else "-",
         member_list="O" if has_member > 0 else "-",
         proc_days="O" if has_days > 0 else "-",
-        detail_level="Full Master" if age == 22 else "Lite Master",
+        detail_level="Full Master" if "prom_dt" in df.columns else "Lite Master",
     ))
 
 
@@ -1533,7 +1535,7 @@ footer a {{
         <h2>22대 국회 심층 분석</h2>
         <p>
             22대 국회의 {len(df22):,}건 법안을 위원회별, 처리 상태별, 발의자 유형별로 살펴봅니다.
-            전체 데이터(Full Master)가 구축된 유일한 대수입니다.
+            현재 진행 중인 회기이므로 주기적으로 갱신됩니다.
         </p>
     </div>
 
@@ -1669,18 +1671,18 @@ footer a {{
         <h2>데이터 구축 현황</h2>
         <p>
             대수별 마스터 데이터 구축 수준을 정리합니다.
-            22대는 열린국회정보 API 8종을 결합한 Full Master이며,
-            17-21대는 기본 법안정보 + 처리 결과를 포함하는 Lite Master입니다.
+            17-22대 모두 열린국회정보 API를 결합한 Full Master이며,
+            공포 건수·소관위 처리·처리 소요일 등 법안 생애주기 전체를 포함합니다.
+            표결 데이터(건별 찬반)는 20-22대에서 API로 제공됩니다.
         </p>
     </div>
 
     {avail_table_html}
 
     <div class="narrative" style="margin-top:24px;">
-        <strong>Phase 2 계획:</strong>
-        17-21대에 대해서도 개별 법안 상세정보(소관위 처리, 표결, 공동발의자 등)를 수집하여
-        Full Master로 업그레이드할 예정입니다.
+        <strong>갱신 안내:</strong>
         22대 데이터는 현재 진행 중인 회기이므로 주기적으로 갱신됩니다.
+        16대 이전 데이터는 API 제공 범위 밖이므로 PDF 본회의 회의록에서 별도 추출합니다.
     </div>
 </div>
 
@@ -1829,10 +1831,10 @@ print(f"22대: {{len(master):,}} bills, {{len(master.columns)}} variables")
 # 위원회 회의 기록 (1:N)
 meetings = pd.read_parquet("data/processed/committee_meetings_22.parquet")
 
-# 17-21대 Lite Master
+# 17-21대 Full Master
 for age in range(17, 22):
-    df = pd.read_parquet(f"data/processed/master_bills_{{age}}_lite.parquet")
-    print(f"{{age}}대: {{len(df):,}} bills")</code></pre>
+    df = pd.read_parquet(f"data/processed/master_bills_{{age}}.parquet")
+    print(f"{{age}}대: {{len(df):,}} bills, {{len(df.columns)}} variables")</code></pre>
     </div>
 
     <div class="code-block">
@@ -1935,8 +1937,7 @@ meetings <- read_parquet("data/processed/committee_meetings_22.parquet")
 
 # 17-22대 통합
 all_bills <- bind_rows(
-  lapply(17:21, function(age) read_parquet(sprintf("data/processed/master_bills_%d_lite.parquet", age))),
-  master
+  lapply(17:22, function(age) read_parquet(sprintf("data/processed/master_bills_%d.parquet", age)))
 )
 cat(sprintf("Total: %s bills\\n", format(nrow(all_bills), big.mark=",")))</code></pre>
     </div>
