@@ -1,70 +1,77 @@
-# Korean Bill Lifecycle Database
+# kna - Korean National Assembly CLI
 
-대한민국 국회 법안의 전 생애주기를 추적하는 마스터 데이터베이스.
+[![PyPI](https://img.shields.io/pypi/v/kna)](https://pypi.org/project/kna/)
 
-열린국회정보 Open API 8종을 BILL_ID 기준으로 결합하여, 17대(2004)부터 22대(2024-)까지 약 111,000건의 법안에 대한 발의-심사-표결-공포 과정을 단일 테이블로 제공합니다.
+Comprehensive CLI and master database for the Korean National Assembly.
+Integrates 8 Open Assembly API endpoints into a single queryable interface
+covering six assembly terms (17th-22nd, 2004-2026).
 
-**[Interactive Explorer](https://kyusik-yang.github.io/korean-bill-lifecycle/)** | [Codebook](CODEBOOK.md) | [Data Availability](DATA_AVAILABILITY.md)
+```bash
+pip install kna
+```
 
-**[Uijeong Jido 의정지도](https://kyusik-yang.github.io/korean-bill-lifecycle/voteview.html)** - DW-NOMINATE ideal point explorer
+**[Interactive Explorer](https://kyusik-yang.github.io/korean-bill-lifecycle/)** | **[Uijeong Jido 의정지도](https://kyusik-yang.github.io/korean-bill-lifecycle/voteview.html)** | **[Tutorial](https://kyusik-yang.github.io/assembly-tutorial/)** | **[PyPI](https://pypi.org/project/kna/)**
 
 ## Key Statistics
 
 | | |
 |---|---|
-| **Total Bills** | 110,779 (17-22대, full lifecycle) |
+| **Total Bills** | 110,778 (17-22nd, full lifecycle) |
+| **Roll Call Votes** | 2,425,113 member-level records |
+| **DW-NOMINATE** | 936 legislator-terms (20-22nd, cross-assembly aligned) |
 | **Committee Meetings** | 572,127 records |
-| **Roll Call Votes** | 2,425,113 member-level votes |
-| **DW-NOMINATE** | 936 legislator-terms (20-22대) |
+| **Bill Texts** | 60,925 propose-reason texts (20-22nd) |
 | **Date Range** | 2004 - 2026 |
 
-### Per-Assembly Breakdown
+## CLI Usage
 
-| Assembly | Bills | Enacted | Rate | Committee Mtgs |
-|----------|------:|--------:|-----:|---------------:|
-| 17th (2004-08) | 8,369 | 2,547 | 30.4% | 20,044 |
-| 18th (2008-12) | 14,762 | 2,930 | 19.8% | 57,003 |
-| 19th (2012-16) | 18,735 | 3,414 | 18.2% | 78,115 |
-| 20th (2016-20) | 24,996 | 3,795 | 15.2% | 107,933 |
-| 21st (2020-24) | 26,711 | 3,554 | 13.3% | 200,283 |
-| 22nd (2024-) | 17,205 | 1,399 | 8.1% | 108,749 |
+```bash
+# Database overview
+kna info
 
-## Data Structure
+# Search bills by title
+kna search "인공지능" --age 22 --status enacted
 
+# Full-text search in propose-reason texts
+kna text "기후변화" --age 22
+
+# Bill lifecycle timeline (proposal → promulgation)
+kna show 2217673
+
+# Legislator profile with DW-NOMINATE ideal point
+kna legislator 이재명 --age 22
+
+# Legislative funnel
+kna stats funnel --age 22
+
+# Passage rate trend across assemblies
+kna stats passage-rate
+
+# Export to CSV or Parquet
+kna export health.csv --age 22 --committee 보건복지 --status enacted
 ```
-master_bills (1 row = 1 bill)
-├── Identifiers: bill_id, bill_no, age, bill_kind, bill_nm
-├── Proposer: ppsr_kind, rst_proposer, rst_mona_cd, publ_mona_cd
-├── Lifecycle: ppsl_dt → committee_dt → cmt_proc_dt → law_proc_dt → rgs_rsln_dt → prom_dt
-├── Results: status, passed, enacted, proc_rslt
-├── Votes: vote_yes, vote_no, vote_abstain
-└── Derived: days_to_proc, days_to_committee
 
-committee_meetings (1:N per bill)
-└── bill_id, conf_name, conf_dt, conf_result
-
-judiciary_meetings (1:N per bill)
-└── bill_id, conf_name, conf_dt, conf_result
-```
-
-## Quick Start
-
-### Python
+## Python API
 
 ```python
-import pandas as pd
+from kna.data import BillDB
 
-master = pd.read_parquet("data/processed/master_bills_22.parquet")
-laws = master[master["bill_kind"] == "법률안"]
+db = BillDB()
 
-# Passage rate by proposer type
-laws.groupby("ppsr_kind").agg(
-    total=("bill_id", "count"),
-    enacted=("enacted", "sum"),
-).assign(rate=lambda x: x["enacted"] / x["total"] * 100)
+# Load bills (with column pruning)
+bills = db.bills(age=22, columns=["bill_id", "bill_nm", "status", "ppsl_dt"])
+
+# Ideal points (sign-flipped: negative = liberal, positive = conservative)
+ip = db.ideal_points()
+
+# Roll call votes
+votes = db.roll_calls(age=22)
+
+# Bill texts
+texts = db.bill_texts()
 ```
 
-### R
+## R
 
 ```r
 library(arrow)
@@ -79,88 +86,75 @@ laws %>%
   mutate(rate = enacted / total * 100)
 ```
 
-## Reproducing the Data
+## Per-Assembly Breakdown
 
-Data files are not included in the repo (too large). To regenerate:
+| Assembly | Bills | Enacted | Rate | Committee Mtgs |
+|----------|------:|--------:|-----:|---------------:|
+| 17th (2004-08) | 8,369 | 2,547 | 30.4% | 20,044 |
+| 18th (2008-12) | 14,762 | 2,930 | 19.8% | 57,003 |
+| 19th (2012-16) | 18,735 | 3,414 | 18.2% | 78,115 |
+| 20th (2016-20) | 24,996 | 3,795 | 15.2% | 107,933 |
+| 21st (2020-24) | 26,711 | 3,554 | 13.3% | 200,283 |
+| 22nd (2024-) | 17,205 | 1,399 | 8.1% | 108,749 |
 
-```bash
-# 1. Set up
-pip install pandas requests pyarrow plotly
+## Data Structure
 
-# 2. Collect 22nd Assembly (Phase 1: ~10 min, Phase 2: ~15 hours)
-python3 collect.py phase1
-python3 collect.py phase2
-
-# 3. Build master DB
-python3 integrate.py
-
-# 4. Build 17-21대 lite masters (uses existing BILLRCP/BILLJUDGE + external data)
-python3 build_multi_assembly.py lite
-
-# 5. Collect remaining batch data for 17-21대
-python3 build_multi_assembly.py batch
-
-# 6. Phase 2 for older assemblies (sequential, ~39 hours total)
-python3 build_multi_assembly.py phase2 --age 21
-python3 build_multi_assembly.py phase2 --age 20
-# ... etc
-
-# 7. Rebuild interactive site
-python3 build_site.py
-
-# ── Roll call votes (optional, ~2 hours total) ──
-
-# 8. Parse inline votes from plenary transcripts (16-19대, < 1 min)
-python3 parse_plenary_votes.py
-
-# 9. Extract appendix votes from plenary PDFs (17-19대, ~30-60 min)
-pip install PyMuPDF
-python3 extract_appendix_votes.py
-
-# 10. Collect member-level roll calls via API (20-22대, ~20-30 min per assembly)
-python3 collect_roll_calls.py
-
-# 11. Consolidate all vote sources into unified dataset (< 1 min)
-python3 consolidate_votes.py
 ```
+master_bills (1 row = 1 bill, up to 55 columns)
+├── Identifiers: bill_id, bill_no, age, bill_kind, bill_nm
+├── Proposer: ppsr_kind, rst_proposer, rst_mona_cd, publ_mona_cd
+├── Lifecycle: ppsl_dt → committee_dt → cmt_proc_dt → law_proc_dt → rgs_rsln_dt → prom_dt
+├── Results: status, passed, enacted, proc_rslt
+├── Votes: vote_yes, vote_no, vote_abstain
+└── Derived: days_to_proc, days_to_committee
 
-**API Key**: Register at [열린국회정보](https://open.assembly.go.kr/) (free) and set the environment variable before running any collection script:
+roll_calls_all (2.4M rows, member-level)
+└── term, member_name, member_id, party, vote, bill_id, date
 
-```bash
-export ASSEMBLY_API_KEY=your_api_key_here
+dw_ideal_points_20_22 (936 rows)
+└── member_id, member_name, term, party, aligned, party_bloc
+
+bill_texts_linked (60K rows)
+└── BILL_ID, propose_reason, scrape_status
 ```
-
-To make this persistent, add the line to your `~/.bashrc`, `~/.zshrc`, or `.env` file.
 
 ## Documentation
 
-| File | Description |
-|------|-------------|
-| [CODEBOOK.md](CODEBOOK.md) | Variable-level documentation (54 variables) |
-| [DATA_OVERVIEW.md](DATA_OVERVIEW.md) | Summary statistics and visualizations |
-| [DATA_AVAILABILITY.md](DATA_AVAILABILITY.md) | Per-assembly data coverage and limitations |
-| [DATA_COLLECTION_STRATEGY.md](DATA_COLLECTION_STRATEGY.md) | Original API exploration notes |
-| [MASTER_DATA_PLAN.md](MASTER_DATA_PLAN.md) | Expansion roadmap and cross-project integration |
+| Resource | Link |
+|----------|------|
+| Tutorial | [kyusik-yang.github.io/assembly-tutorial](https://kyusik-yang.github.io/assembly-tutorial/) |
+| Codebook | [CODEBOOK.md](CODEBOOK.md) |
+| Data Availability | [DATA_AVAILABILITY.md](DATA_AVAILABILITY.md) |
+| Interactive Explorer | [kyusik-yang.github.io/korean-bill-lifecycle](https://kyusik-yang.github.io/korean-bill-lifecycle/) |
+| Ideology Map | [Uijeong Jido 의정지도](https://kyusik-yang.github.io/korean-bill-lifecycle/voteview.html) |
 
-## Project Structure
+## Companion Data
 
+| Dataset | Description |
+|---------|-------------|
+| [kr-hearings-data](https://github.com/kyusik-yang/kr-hearings-data) | 9.9M speech-level records from 16,830 hearings (2000-2025) |
+| [open-assembly-mcp](https://github.com/kyusik-yang/open-assembly-mcp) | MCP server for real-time API queries via Claude |
+| [assembly-explorer](https://github.com/kyusik-yang/assembly-explorer) | Interactive Streamlit web app |
+
+## Reproducing the Data
+
+Data files are large and not included in the repo. To regenerate:
+
+```bash
+# Set API key (free from https://open.assembly.go.kr)
+export ASSEMBLY_API_KEY=your_key
+
+# Collect and build
+python3 collect.py phase1 && python3 collect.py phase2
+python3 integrate.py
+python3 build_multi_assembly.py lite && python3 build_multi_assembly.py batch
+
+# Roll call votes
+python3 collect_roll_calls.py && python3 consolidate_votes.py
+
+# Rebuild interactive site
+python3 build_site.py && python3 build_voteview.py
 ```
-korean-bill-lifecycle/
-├── collect.py                  # Phase 1+2 API collection
-├── integrate.py                # Phase 3 data integration
-├── build_multi_assembly.py     # Multi-assembly expansion
-├── build_site.py               # Interactive site generator
-├── tutorial.ipynb              # Jupyter tutorial notebook
-├── site/index.html             # Interactive explorer (GitHub Pages)
-├── data/
-│   ├── raw/                    # API responses (parquet)
-│   └── processed/              # Master tables (parquet + sqlite)
-└── docs/                       # Documentation (*.md)
-```
-
-## Data Source
-
-[열린국회정보 Open API](https://open.assembly.go.kr/) (open.assembly.go.kr)
 
 ## License
 
