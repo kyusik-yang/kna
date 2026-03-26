@@ -1,4 +1,4 @@
-"""Rich terminal formatters for kbl CLI."""
+"""Rich terminal formatters for kna CLI."""
 
 from __future__ import annotations
 
@@ -64,13 +64,13 @@ def truncate(s, maxlen: int = 60) -> str:
 # ── Info ────────────────────────────────────────────────────────────
 
 def print_info(file_info: list[dict], rc_count: int, ip_count: int,
-               cm_count: int, freshness: str) -> None:
+               cm_count: int, txt_count: int, freshness: str) -> None:
     """Print database overview."""
     total_bills = sum(r["total"] for r in file_info)
     total_enacted = sum(r["enacted"] for r in file_info)
 
     t = Table(
-        title=accent("Korean Bill Lifecycle Database"),
+        title=accent("Korean National Assembly Database"),
         border_style="dim", show_lines=False, padding=(0, 1),
     )
     t.add_column("Assembly", style="bold", width=18)
@@ -95,6 +95,7 @@ def print_info(file_info: list[dict], rc_count: int, ip_count: int,
     console.print(f"  Roll call votes   {rc_count:>10,}  {dim('(16-22nd, bulk: 20-22nd)')}")
     console.print(f"  Ideal points      {ip_count:>10,}  {dim('(20-22nd, DW-NOMINATE)')}")
     console.print(f"  Committee mtgs    {cm_count:>10,}  {dim('(17-22nd)')}")
+    console.print(f"  Bill texts        {txt_count:>10,}  {dim('(20-22nd, propose-reason)')}")
     console.print(f"  Data freshness    {freshness:>10}")
     console.print()
 
@@ -193,6 +194,18 @@ def print_bill_detail(row: pd.Series) -> None:
         vt = int(row.get("vote_member_total", 0))
         lines.append("")
         lines.append(f"  VOTE   찬성 {int(vy)} / 반대 {vn} / 기권 {va} (재석 {vt})")
+
+    # Propose reason text
+    text = row.get("propose_reason")
+    if pd.notna(text) and str(text).strip():
+        lines.append("")
+        lines.append(f"  {dim('PROPOSE REASON')}")
+        # Wrap text at ~70 chars
+        text_str = str(text).strip()
+        for i in range(0, min(len(text_str), 350), 70):
+            lines.append(f"  {text_str[i:i+70]}")
+        if len(text_str) > 350:
+            lines.append(f"  {dim(f'... ({len(text_str):,} chars total)')}")
 
     # Link
     link = row.get("link_url")

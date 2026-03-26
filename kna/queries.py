@@ -1,4 +1,4 @@
-"""Core query functions for kbl.
+"""Core query functions for kna.
 
 All functions accept a BillDB instance and return DataFrames or dicts.
 Shared by both CLI (cli.py) and MCP server (future).
@@ -10,7 +10,7 @@ from typing import Optional
 
 import pandas as pd
 
-from kbl.data import BillDB, COLS_SEARCH, COLS_SHOW, COLS_LEGISLATOR, COLS_STATS
+from kna.data import BillDB, COLS_SEARCH, COLS_SHOW, COLS_LEGISLATOR, COLS_STATS
 
 
 # ── Status filter mapping ───────────────────────────────────────────
@@ -61,11 +61,16 @@ def db_info(db: BillDB) -> dict:
             latest = mx
     freshness = pd.Timestamp(latest).strftime("%Y-%m-%d") if pd.notna(latest) else "unknown"
 
+    # Bill text count
+    txt_path = db.data_dir / "bill_texts_linked.parquet"
+    txt_count = len(pd.read_parquet(txt_path, columns=["BILL_ID"])) if txt_path.exists() else 0
+
     return {
         "file_info": file_info,
         "rc_count": rc_count,
         "ip_count": ip_count,
         "cm_count": cm_count,
+        "txt_count": txt_count,
         "freshness": freshness,
     }
 
@@ -113,7 +118,7 @@ def search_bills(
 # ── show ────────────────────────────────────────────────────────────
 
 def get_bill_detail(db: BillDB, bill_ref: str) -> Optional[pd.Series]:
-    """Look up a single bill by bill_no or bill_id."""
+    """Look up a single bill by bill_no or bill_id, with propose-reason text."""
     df = db.bills(columns=COLS_SHOW)
 
     if bill_ref.startswith("PRC_") or bill_ref.startswith("ARC_"):
@@ -123,7 +128,46 @@ def get_bill_detail(db: BillDB, bill_ref: str) -> Optional[pd.Series]:
 
     if len(match) == 0:
         return None
-    return match.iloc[0]
+
+    row = match.iloc[0]
+
+    # Join propose-reason text if available
+    try:
+        texts = db.bill_texts()
+        bill_id = row.get("bill_id")
+        if bill_id:
+            text_match = texts[texts["bill_id"] == bill_id]
+            if len(text_match) > 0:
+                row = row.copy()
+                row["propose_reason"] = text_match.iloc[0]["propose_reason"]
+    except FileNotFoundError:
+        pass
+
+    return row
+
+
+# ── text search ─────────────────────────────────────────────────────
+
+def search_bill_texts(
+    db: BillDB,
+    keyword: str,
+    age: Optional[int] = None,
+    limit: int = 20,
+) -> tuple[pd.DataFrame, int]:
+    """Search within propose-reason texts (full-text search)."""
+    texts = db.bill_texts()
+    bills = db.bills(age=age, columns=COLS_SEARCH)
+
+    # Join texts to bills on bill_id
+    merged = bills.merge(texts[["bill_id", "propose_reason"]], on="bill_id", how="inner")
+
+    # Search in propose_reason
+    mask = merged["propose_reason"].str.contains(keyword, case=False, na=False)
+    results = merged[mask]
+
+    total = len(results)
+    results = results.sort_values("ppsl_dt", ascending=False).head(limit)
+    return results, total
 
 
 # ── legislator ──────────────────────────────────────────────────────

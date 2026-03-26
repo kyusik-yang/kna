@@ -1,11 +1,11 @@
 [project]
-name = "korean-bill-lifecycle"
-version = "0.1.0"
-description = "CLI for the Korean National Assembly bill lifecycle database"
+name = "korean-national-assembly"
+version = "0.2.0"
+description = "Comprehensive CLI for the Korean National Assembly: bills, lifecycle, votes, ideal points, and bill texts"
 requires-python = ">=3.10"
 license = "MIT"
 authors = [{ name = "Kyusik Yang", email = "kyusik.yang@nyu.edu" }]
-keywords = ["korean", "national-assembly", "legislative", "bills", "nominate"]
+keywords = ["korean", "national-assembly", "legislative", "bills", "nominate", "dw-nominate"]
 
 dependencies = [
     "click>=8.0",
@@ -18,10 +18,10 @@ dependencies = [
 mcp = ["mcp[cli]>=1.13.0"]
 
 [project.scripts]
-kbl = "kbl.cli:cli"
+kna = "kna.cli:cli"
 
 [tool.hatch.build.targets.wheel]
-packages = ["kbl"]
+packages = ["kna"]
 
 [build-system]
 requires = ["hatchling"]

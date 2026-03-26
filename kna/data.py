@@ -25,7 +25,7 @@ def _resolve_data_dir() -> Path:
         return local
 
     # 3. ~/.cache/kbl/
-    cache = Path.home() / ".cache" / "kbl"
+    cache = Path.home() / ".cache" / "kna"
     if cache.is_dir():
         return cache
 
@@ -140,6 +140,17 @@ class BillDB:
         if not p.exists():
             raise FileNotFoundError(f"committee_meetings_{age}.parquet not found")
         return pd.read_parquet(p, columns=columns)
+
+    def bill_texts(self) -> pd.DataFrame:
+        """Load bill propose-reason texts (60K bills, 20-22nd Assembly)."""
+        if "texts" not in self._cache:
+            p = self.data_dir / "bill_texts_linked.parquet"
+            if not p.exists():
+                raise FileNotFoundError("bill_texts_linked.parquet not found")
+            df = pd.read_parquet(p)
+            df.columns = df.columns.str.lower()
+            self._cache["texts"] = df
+        return self._cache["texts"]
 
     def legislator_map(self) -> pd.DataFrame:
         """Load legislator ID mapping table."""

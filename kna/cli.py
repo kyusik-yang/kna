@@ -1,4 +1,4 @@
-"""kbl - Korean Bill Lifecycle CLI."""
+"""kna - Korean National Assembly CLI."""
 
 from __future__ import annotations
 
@@ -6,8 +6,8 @@ from typing import Optional
 
 import click
 
-from kbl.data import BillDB
-from kbl.formatters import console
+from kna.data import BillDB
+from kna.formatters import console
 
 
 def _get_db() -> BillDB:
@@ -21,11 +21,11 @@ def _get_db() -> BillDB:
 @click.group()
 @click.version_option(package_name="korean-bill-lifecycle")
 def cli():
-    """kbl - Korean Bill Lifecycle CLI.
+    """kna - Korean National Assembly CLI.
 
-    Query 110K+ bills across the 17th-22nd Korean National Assembly,
-    with full lifecycle timestamps, roll call votes, and DW-NOMINATE
-    ideal point estimates.
+    Comprehensive query tool for 110K+ bills across the 17th-22nd
+    Korean National Assembly: full lifecycle timestamps, 2.4M roll call
+    votes, DW-NOMINATE ideal points, and bill propose-reason texts.
     """
 
 
@@ -37,16 +37,16 @@ def info():
 
     \b
     Example:
-        kbl info
+        kna info
     """
-    from kbl.queries import db_info
-    from kbl.formatters import print_info
+    from kna.queries import db_info
+    from kna.formatters import print_info
 
     db = _get_db()
     data = db_info(db)
     print_info(
         data["file_info"], data["rc_count"], data["ip_count"],
-        data["cm_count"], data["freshness"],
+        data["cm_count"], data["txt_count"], data["freshness"],
     )
 
 
@@ -68,12 +68,12 @@ def search(keyword, age, committee, proposer, status, kind, date_from, date_to, 
 
     \b
     Examples:
-        kbl search "인공지능"
-        kbl search "부동산" --age 22 --status enacted
-        kbl search "형법" --proposer 박범계 --age 21
+        kna search "인공지능"
+        kna search "부동산" --age 22 --status enacted
+        kna search "형법" --proposer 박범계 --age 21
     """
-    from kbl.queries import search_bills
-    from kbl.formatters import print_search_results
+    from kna.queries import search_bills
+    from kna.formatters import print_search_results
 
     db = _get_db()
     results, total = search_bills(
@@ -99,11 +99,11 @@ def show(bill_ref):
 
     \b
     Examples:
-        kbl show 2217673
-        kbl show PRC_Y2Z6X0Y2F1G3E1D1D1B1C2Y6Y0W6X6
+        kna show 2217673
+        kna show PRC_Y2Z6X0Y2F1G3E1D1D1B1C2Y6Y0W6X6
     """
-    from kbl.queries import get_bill_detail
-    from kbl.formatters import print_bill_detail
+    from kna.queries import get_bill_detail
+    from kna.formatters import print_bill_detail
 
     db = _get_db()
     row = get_bill_detail(db, bill_ref)
@@ -127,11 +127,11 @@ def legislator(name, age, mona):
 
     \b
     Examples:
-        kbl legislator 추미애 --age 21
-        kbl legislator 김영식 --age 22
+        kna legislator 추미애 --age 21
+        kna legislator 김영식 --age 22
     """
-    from kbl.queries import get_legislator_profile
-    from kbl.formatters import print_legislator
+    from kna.queries import get_legislator_profile
+    from kna.formatters import print_legislator
 
     db = _get_db()
     profile = get_legislator_profile(db, name, age=age, mona=mona)
@@ -139,6 +139,35 @@ def legislator(name, age, mona):
         console.print(f"  No bills found for \"{name}\"")
         return
     print_legislator(**profile)
+
+
+# ── text ────────────────────────────────────────────────────────────
+
+@cli.command()
+@click.argument("keyword")
+@click.option("--age", type=int, default=None, help="Assembly number (20-22)")
+@click.option("-n", "--limit", type=int, default=20, help="Max results (default 20)")
+def text(keyword, age, limit):
+    """Search within bill propose-reason texts.
+
+    \b
+    Full-text search across 60K+ propose-reason texts (20-22nd Assembly).
+
+    \b
+    Examples:
+        kna text "기후변화"
+        kna text "인공지능" --age 22 -n 10
+    """
+    from kna.queries import search_bill_texts
+    from kna.formatters import print_search_results, dim
+
+    db = _get_db()
+    results, total = search_bill_texts(db, keyword, age=age, limit=limit)
+    if total == 0:
+        console.print(f"  No results for \"{keyword}\" in propose-reason texts")
+        return
+    console.print(f"  {dim('(searching propose-reason texts)')}")
+    print_search_results(results, keyword, age, total)
 
 
 # ── stats ───────────────────────────────────────────────────────────
@@ -161,10 +190,10 @@ def stats_funnel(age):
 
     \b
     Example:
-        kbl stats funnel --age 22
+        kna stats funnel --age 22
     """
-    from kbl.queries import funnel_stats
-    from kbl.formatters import print_funnel
+    from kna.queries import funnel_stats
+    from kna.formatters import print_funnel
 
     db = _get_db()
     stages = funnel_stats(db, age)
@@ -177,10 +206,10 @@ def stats_passage_rate():
 
     \b
     Example:
-        kbl stats passage-rate
+        kna stats passage-rate
     """
-    from kbl.queries import passage_rate_stats
-    from kbl.formatters import print_passage_rate
+    from kna.queries import passage_rate_stats
+    from kna.formatters import print_passage_rate
 
     db = _get_db()
     data = passage_rate_stats(db)
@@ -204,10 +233,10 @@ def export(output, age, committee, status, kind):
 
     \b
     Examples:
-        kbl export health.csv --age 22 --committee 보건복지
-        kbl export enacted.parquet --status enacted
+        kna export health.csv --age 22 --committee 보건복지
+        kna export enacted.parquet --status enacted
     """
-    from kbl.queries import export_bills
+    from kna.queries import export_bills
 
     db = _get_db()
     df = export_bills(db, age=age, committee=committee, status=status, kind=kind)
