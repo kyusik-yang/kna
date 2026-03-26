@@ -1738,7 +1738,7 @@ footer a {{
                 <div><strong>데이터:</strong> 22대 full master (lifecycle 날짜 완비). 확장 시 17-22대 전체.</div>
             </div>
             <div class="rq-preview">
-                <em>Quick preview:</em> 22대 법률안 16,907건 중 소관위 처리까지 도달한 것은 23.6%.
+                <em>Quick preview:</em> 22대 법률안 {funnel_stages[0][1]:,}건 중 소관위 처리까지 도달한 것은 {funnel_stages[3][1]/funnel_stages[0][1]*100:.1f}%.
                 재정경제기획위원회 가결률 0.5%로 최저, 문화체육관광위원회 6.1%로 최고.
             </div>
         </div>
@@ -2012,7 +2012,7 @@ surv_data <- master %>%
     # 관측 종료: 처리일 또는 현재 날짜
     event = as.integer(!is.na(proc_dt)),
     duration = as.numeric(
-      difftime(coalesce(proc_dt, as.Date("2026-03-22")), ppsl_dt, units = "days")
+      difftime(coalesce(proc_dt, Sys.Date()), ppsl_dt, units = "days")
     )
   ) %>%
   filter(duration >= 0)

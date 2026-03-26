@@ -71,11 +71,11 @@ library(arrow)
 library(dplyr)
 
 master <- read_parquet("data/processed/master_bills_22.parquet")
-laws <- master |> filter(bill_kind == "법률안")
+laws <- master %>% filter(bill_kind == "법률안")
 
-laws |>
-  group_by(ppsr_kind) |>
-  summarise(total = n(), enacted = sum(enacted)) |>
+laws %>%
+  group_by(ppsr_kind) %>%
+  summarise(total = n(), enacted = sum(enacted)) %>%
   mutate(rate = enacted / total * 100)
 ```
 

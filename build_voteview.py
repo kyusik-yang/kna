@@ -28,6 +28,10 @@ OUT_DIR.mkdir(parents=True, exist_ok=True)
 # ── Load data ─────────────────────────────────────────────────────────
 df = pd.read_csv(DATA_DIR / "dw_ideal_points_20_22.csv")
 
+# Flip sign so that negative = liberal (진보), positive = conservative (보수)
+# Matches conventional left-right political spectrum
+df["aligned"] = -df["aligned"]
+
 # ── Party color mapping ───────────────────────────────────────────────
 # Conservative bloc -> red tones, liberal -> blue tones
 PARTY_COLORS = {
@@ -250,13 +254,13 @@ scatter_layout = {
     "height": 520,
     "annotations": [
         {
-            "x": -0.85, "y": 22.55, "text": "← 보수 Conservative",
-            "showarrow": False, "font": {"color": "#E61E2B", "size": 11},
+            "x": -0.85, "y": 22.55, "text": "← 진보 Liberal",
+            "showarrow": False, "font": {"color": "#004EA2", "size": 11},
             "xanchor": "left",
         },
         {
-            "x": 0.85, "y": 22.55, "text": "진보 Liberal →",
-            "showarrow": False, "font": {"color": "#004EA2", "size": 11},
+            "x": 0.85, "y": 22.55, "text": "보수 Conservative →",
+            "showarrow": False, "font": {"color": "#E61E2B", "size": 11},
             "xanchor": "right",
         },
     ],
@@ -335,7 +339,7 @@ polar_traces = [
         "type": "scatter",
         "name": "더불어민주당 계열 평균",
         "text": [f"{v:.3f}" for v in polar_df["liberal_mean"]],
-        "textposition": "top center",
+        "textposition": "bottom center",
         "textfont": {"color": "#7799cc", "size": 11},
         "line": {"color": "#004EA2", "width": 3},
         "marker": {"color": "#004EA2", "size": 10},
@@ -347,7 +351,7 @@ polar_traces = [
         "type": "scatter",
         "name": "국민의힘 계열 평균",
         "text": [f"{v:.3f}" for v in polar_df["conservative_mean"]],
-        "textposition": "bottom center",
+        "textposition": "top center",
         "textfont": {"color": "#cc7777", "size": 11},
         "line": {"color": "#E61E2B", "width": 3},
         "marker": {"color": "#E61E2B", "size": 10},
@@ -378,7 +382,7 @@ polar_layout = {
     },
     "yaxis": {
         "title": {"text": "평균 DW-NOMINATE (Aligned)", "font": {"size": 13, "color": "#aab"}},
-        "range": [-0.75, 0.65],
+        "range": [-0.65, 0.75],
         "zeroline": True,
         "zerolinecolor": "rgba(255,255,255,0.15)",
         "gridcolor": "rgba(255,255,255,0.05)",
