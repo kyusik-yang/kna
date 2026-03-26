@@ -7,7 +7,7 @@ Integrates 8 Open Assembly API endpoints into a single queryable interface
 covering six assembly terms (17th-22nd, 2004-2026).
 
 ```bash
-pip install kna
+pipx install kna
 ```
 
 **[Interactive Explorer](https://kyusik-yang.github.io/korean-bill-lifecycle/)** | **[Uijeong Jido 의정지도](https://kyusik-yang.github.io/korean-bill-lifecycle/voteview.html)** | **[Tutorial](https://kyusik-yang.github.io/assembly-tutorial/)** | **[PyPI](https://pypi.org/project/kna/)**
