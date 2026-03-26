@@ -1,11 +1,19 @@
 [project]
-name = "korean-national-assembly"
+name = "kna"
 version = "0.2.0"
 description = "Comprehensive CLI for the Korean National Assembly: bills, lifecycle, votes, ideal points, and bill texts"
+readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
 authors = [{ name = "Kyusik Yang", email = "kyusik.yang@nyu.edu" }]
-keywords = ["korean", "national-assembly", "legislative", "bills", "nominate", "dw-nominate"]
+keywords = ["korean", "national-assembly", "legislative", "bills", "nominate", "dw-nominate", "korea", "parliament"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+]
 
 dependencies = [
     "click>=8.0",
@@ -16,6 +24,12 @@ dependencies = [
 
 [project.optional-dependencies]
 mcp = ["mcp[cli]>=1.13.0"]
+
+[project.urls]
+Homepage = "https://github.com/kyusik-yang/korean-bill-lifecycle"
+Documentation = "https://kyusik-yang.github.io/assembly-tutorial/"
+Explorer = "https://kyusik-yang.github.io/korean-bill-lifecycle/"
+Issues = "https://github.com/kyusik-yang/korean-bill-lifecycle/issues"
 
 [project.scripts]
 kna = "kna.cli:cli"
