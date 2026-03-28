@@ -19,7 +19,7 @@ def _get_db() -> BillDB:
 
 
 @click.group()
-@click.version_option(package_name="korean-bill-lifecycle")
+@click.version_option(package_name="kna")
 def cli():
     """kna - Korean National Assembly CLI.
 

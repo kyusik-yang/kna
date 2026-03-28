@@ -12,7 +12,7 @@ pip install kna
 
 > If you see a PATH warning after install, either run `pipx install kna` instead, or add the displayed directory to your shell PATH.
 
-**[Interactive Explorer](https://kyusik-yang.github.io/korean-bill-lifecycle/)** | **[Uijeong Jido 의정지도](https://kyusik-yang.github.io/korean-bill-lifecycle/voteview.html)** | **[Tutorial](https://kyusik-yang.github.io/assembly-tutorial/)** | **[PyPI](https://pypi.org/project/kna/)**
+**[Interactive Explorer](https://kyusik-yang.github.io/kna/)** | **[Uijeong Jido 의정지도](https://kyusik-yang.github.io/kna/voteview.html)** | **[Tutorial](https://kyusik-yang.github.io/assembly-tutorial/)** | **[PyPI](https://pypi.org/project/kna/)**
 
 ## Key Statistics
 
@@ -127,8 +127,8 @@ bill_texts_linked (60K rows)
 | Tutorial | [kyusik-yang.github.io/assembly-tutorial](https://kyusik-yang.github.io/assembly-tutorial/) |
 | Codebook | [CODEBOOK.md](CODEBOOK.md) |
 | Data Availability | [DATA_AVAILABILITY.md](DATA_AVAILABILITY.md) |
-| Interactive Explorer | [kyusik-yang.github.io/korean-bill-lifecycle](https://kyusik-yang.github.io/korean-bill-lifecycle/) |
-| Ideology Map | [Uijeong Jido 의정지도](https://kyusik-yang.github.io/korean-bill-lifecycle/voteview.html) |
+| Interactive Explorer | [kyusik-yang.github.io/kna](https://kyusik-yang.github.io/kna/) |
+| Ideology Map | [Uijeong Jido 의정지도](https://kyusik-yang.github.io/kna/voteview.html) |
 
 ## Companion Data
 

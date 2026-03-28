@@ -26,10 +26,10 @@ dependencies = [
 mcp = ["mcp[cli]>=1.13.0"]
 
 [project.urls]
-Homepage = "https://github.com/kyusik-yang/korean-bill-lifecycle"
+Homepage = "https://github.com/kyusik-yang/kna"
 Documentation = "https://kyusik-yang.github.io/assembly-tutorial/"
-Explorer = "https://kyusik-yang.github.io/korean-bill-lifecycle/"
-Issues = "https://github.com/kyusik-yang/korean-bill-lifecycle/issues"
+Explorer = "https://kyusik-yang.github.io/kna/"
+Issues = "https://github.com/kyusik-yang/kna/issues"
 
 [project.scripts]
 kna = "kna.cli:cli"

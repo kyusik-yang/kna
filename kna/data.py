@@ -31,7 +31,7 @@ def _resolve_data_dir() -> Path:
 
     raise FileNotFoundError(
         "Cannot find data directory. Set KBL_DATA environment variable, "
-        "or run from the korean-bill-lifecycle repo root."
+        "or run from the kna repo root."
     )
 
 
