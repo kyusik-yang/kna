@@ -6,11 +6,87 @@ Comprehensive CLI and master database for the Korean National Assembly.
 Integrates 8 Open Assembly API endpoints into a single queryable interface
 covering six assembly terms (17th-22nd, 2004-2026).
 
+## Installation
+
+### Step 1: Install the CLI
+
 ```bash
 pip install kna
 ```
 
-> If you see a PATH warning after install, either run `pipx install kna` instead, or add the displayed directory to your shell PATH.
+If you see a PATH warning like:
+
+```
+WARNING: The script kna is installed in '/Users/you/Library/Python/3.x/bin' which is not on PATH.
+```
+
+Add it to your shell:
+
+```bash
+# Find where pip installed it
+python3 -c "import site; print(site.getusersitepackages().replace('lib/python/site-packages','bin'))"
+
+# Add to PATH (adjust the path from above)
+echo 'export PATH="$HOME/Library/Python/3.9/bin:$PATH"' >> ~/.zshrc
+source ~/.zshrc
+```
+
+Or use `pipx install kna` which handles PATH automatically.
+
+### Step 2: Get the data
+
+The CLI needs the parquet data files. The repository uses **Git LFS** for large files.
+
+```bash
+# Install Git LFS first (required, one-time)
+brew install git-lfs    # macOS
+# or: sudo apt install git-lfs    # Ubuntu/Debian
+
+git lfs install         # one-time setup
+
+# Clone with data
+git clone https://github.com/kyusik-yang/kna.git
+cd kna
+```
+
+If you already cloned without LFS, the parquet files will be tiny pointer files and `kna info` will fail. Fix it:
+
+```bash
+cd kna
+git lfs install
+git lfs pull            # downloads actual data files (~500MB)
+```
+
+### Step 3: Point the CLI to the data
+
+```bash
+# Set the environment variable
+export KBL_DATA=~/kna/data/processed
+
+# Make it permanent
+echo 'export KBL_DATA="$HOME/kna/data/processed"' >> ~/.zshrc
+source ~/.zshrc
+
+# Verify
+kna info
+```
+
+### Troubleshooting
+
+| Problem | Cause | Fix |
+|---------|-------|-----|
+| `kna: command not found` | pip bin dir not in PATH | Add pip's bin directory to `~/.zshrc` PATH (see Step 1) |
+| `ArrowInvalid: Parquet magic bytes not found` | Git LFS not installed; parquet files are pointer files | `brew install git-lfs && git lfs install && git lfs pull` |
+| `Cannot find data directory` | KBL_DATA not set and not running from repo root | `export KBL_DATA=~/kna/data/processed` |
+| `No master file for Nth assembly` | Data files missing for that assembly | Check `ls $KBL_DATA/master_bills_*.parquet` |
+| `ERROR: requires Python >=3.9` | Python too old | `python3 --version` - need 3.9+ |
+| `ModuleNotFoundError: No module named 'kna'` | Installed to wrong Python | `pip3 install --user kna` or use the same `python3 -m pip install kna` |
+
+### Requirements
+
+- Python 3.9+
+- Git LFS (for data files)
+- ~500MB disk space (data files)
 
 **[Interactive Explorer](https://kyusik-yang.github.io/kna/)** | **[Uijeong Jido 의정지도](https://kyusik-yang.github.io/kna/voteview.html)** | **[Tutorial](https://kyusik-yang.github.io/assembly-tutorial/)** | **[PyPI](https://pypi.org/project/kna/)**
 
