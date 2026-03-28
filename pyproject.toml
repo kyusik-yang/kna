@@ -1,9 +1,9 @@
 [project]
 name = "kna"
-version = "0.2.0"
+version = "0.2.1"
 description = "Comprehensive CLI for the Korean National Assembly: bills, lifecycle, votes, ideal points, and bill texts"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.9"
 license = "MIT"
 authors = [{ name = "Kyusik Yang", email = "kyusik.yang@nyu.edu" }]
 keywords = ["korean", "national-assembly", "legislative", "bills", "nominate", "dw-nominate", "korea", "parliament"]
