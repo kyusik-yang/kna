@@ -1,7 +1,6 @@
 """Core query functions for kna.
 
 All functions accept a BillDB instance and return DataFrames or dicts.
-Shared by both CLI (cli.py) and MCP server (future).
 """
 
 from __future__ import annotations
