@@ -1,4 +1,4 @@
-"""Data loader for the Korean Bill Lifecycle master database."""
+"""Data loader for the kna master database."""
 
 from __future__ import annotations
 
@@ -65,7 +65,7 @@ COLS_STATS = [
 
 
 class BillDB:
-    """Lazy-loading interface to the Korean Bill Lifecycle master database."""
+    """Lazy-loading interface to the kna master database."""
 
     def __init__(self, data_dir: Optional[Path] = None):
         self.data_dir = data_dir or _resolve_data_dir()

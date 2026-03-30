@@ -1,5 +1,5 @@
 """
-Korean Bill Lifecycle - Data Collection Pipeline
+kna - Data Collection Pipeline
 =================================================
 열린국회정보 Open API 8개를 수집하여 법안 생애주기 마스터 DB 구축.
 
@@ -506,7 +506,7 @@ def validate(age: int = DEFAULT_AGE):
 # ── CLI ────────────────────────────────────────────────────────────────────
 
 def main():
-    parser = argparse.ArgumentParser(description="Korean Bill Lifecycle Data Collector")
+    parser = argparse.ArgumentParser(description="kna Data Collector")
     parser.add_argument("command", choices=["phase1", "phase2", "validate"],
                         help="Which phase to run")
     parser.add_argument("--age", type=int, default=DEFAULT_AGE,

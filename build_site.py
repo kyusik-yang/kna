@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-build_site.py - Generate interactive HTML tutorial for Korean Bill Lifecycle DB.
+build_site.py - Generate interactive HTML tutorial for Korean National Assembly DB.
 
 Reads parquet data, computes aggregated statistics, builds Plotly charts,
 and outputs a single self-contained site/index.html file.
@@ -619,7 +619,7 @@ html = f"""<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Korean Bill Lifecycle Database</title>
+<title>Korean National Assembly Database</title>
 <script src="{PLOTLY_CDN}"></script>
 <style>
 /* ============================================================
@@ -1335,7 +1335,7 @@ footer a {{
      Hero
      ============================================================ -->
 <section class="hero" id="hero">
-    <h1>Korean Bill Lifecycle Database</h1>
+    <h1>Korean National Assembly Database</h1>
     <p class="subtitle">
         열린국회정보 Open API 8종을 결합하여 구축한 대한민국 국회 법안 생애주기 마스터 데이터베이스.
         17대부터 22대까지의 발의, 심사, 표결, 공포 전 과정을 추적합니다.
@@ -2066,7 +2066,7 @@ etable(m1, m2, se = "hetero",
 <!-- Footer -->
 <footer>
     <p>
-        Korean Bill Lifecycle Database &middot;
+        Korean National Assembly Database &middot;
         Data source: <a href="https://open.assembly.go.kr" target="_blank">열린국회정보 Open API</a> &middot;
         Built {pd.Timestamp.now().strftime('%Y-%m-%d')}
     </p>

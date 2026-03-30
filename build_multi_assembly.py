@@ -1,5 +1,5 @@
 """
-Korean Bill Lifecycle - Multi-Assembly Builder
+kna - Multi-Assembly Builder
 ===============================================
 Step 0: Build lite master tables for 17-21대 from existing data.
 Step 1A: Collect remaining batch APIs (votes + processed) for 17-21대.

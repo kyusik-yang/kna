@@ -171,14 +171,14 @@ laws %>%
 | 17th (2004-08) | 8,369 | 2,547 | 30.4% | 20,044 |
 | 18th (2008-12) | 14,762 | 2,930 | 19.8% | 57,003 |
 | 19th (2012-16) | 18,735 | 3,414 | 18.2% | 78,115 |
-| 20th (2016-20) | 24,996 | 3,795 | 15.2% | 107,933 |
+| 20th (2016-20) | 24,996 | 3,794 | 15.2% | 107,933 |
 | 21st (2020-24) | 26,711 | 3,554 | 13.3% | 200,283 |
 | 22nd (2024-) | 17,205 | 1,399 | 8.1% | 108,749 |
 
 ## Data Structure
 
 ```
-master_bills (1 row = 1 bill, up to 55 columns)
+master_bills (1 row = 1 bill, 49-55 columns)
 ├── Identifiers: bill_id, bill_no, age, bill_kind, bill_nm
 ├── Proposer: ppsr_kind, rst_proposer, rst_mona_cd, publ_mona_cd
 ├── Lifecycle: ppsl_dt → committee_dt → cmt_proc_dt → law_proc_dt → rgs_rsln_dt → prom_dt

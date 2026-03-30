@@ -1,10 +1,10 @@
-# Korean Bill Lifecycle Master Database - Codebook
+# kna Master Database - Codebook
 
-**Dataset**: `master_bills_22.parquet` / `master_bills_22.sqlite` (table: `bills`)
+**Dataset**: `master_bills_22.parquet`
 **Unit of observation**: Bill (의안)
 **N**: 17,205 (22대 국회, 2024-05-30 ~ 2026-03-20)
-**Variables**: 42
-**Last updated**: 2026-03-21
+**Variables**: 54
+**Last updated**: 2026-03-30
 
 ---
 
@@ -54,6 +54,18 @@
 | 40 | `member_list` | str | 93.8% | Meta |
 | 41 | `days_to_proc` | float | 21.3% | Derived |
 | 42 | `days_to_committee` | float | 22.4% | Derived |
+| 43 | `jrcmit_cmmt_dt` | datetime | 22.4% | Lifecycle (Phase 2) |
+| 44 | `law_cmmt_dt` | datetime | 2.7% | Lifecycle (Phase 2) |
+| 45 | `law_prsnt_dt` | datetime | 2.7% | Lifecycle (Phase 2) |
+| 46 | `law_proc_rslt` | str | 2.7% | Result (Phase 2) |
+| 47 | `rgs_prsnt_dt` | datetime | 7.2% | Lifecycle (Phase 2) |
+| 48 | `rgs_rsln_dt` | datetime | 7.2% | Lifecycle (Phase 2) |
+| 49 | `rgs_conf_nm` | str | 7.2% | Result (Phase 2) |
+| 50 | `rgs_conf_rslt` | str | 7.2% | Result (Phase 2) |
+| 51 | `gvrn_trsf_dt` | datetime | 2.6% | Lifecycle (Phase 2) |
+| 52 | `prom_dt` | datetime | 2.6% | Lifecycle (Phase 2) |
+| 53 | `prom_no` | str | 2.6% | Meta (Phase 2) |
+| 54 | `prom_law_nm` | str | 2.6% | Meta (Phase 2) |
 
 ---
 
@@ -252,9 +264,9 @@
 - **Range**: 2024-06-10 ~ 2026-03-20
 - **Notes**: 법안의 최종 처리 완료일. 원안가결/수정가결/폐기/철회 등 최종 상태가 결정된 날짜. `days_to_proc` 계산에 사용.
 
-#### Phase 2 추가 필드 (수집 중)
+#### Phase 2 필드 (BILLINFODETAIL)
 
-Phase 2 (BILLINFODETAIL)가 완료되면 다음 필드가 추가됩니다:
+Phase 2 수집 완료. 다음 필드는 Variable Index #43-54에 포함되어 있습니다:
 
 | 필드 | 설명 |
 |------|------|
@@ -424,9 +436,9 @@ Phase 2 (BILLINFODETAIL)가 완료되면 다음 필드가 추가됩니다:
 
 ### `committee_meetings` (위원회 회의정보)
 
-**Source**: BILLJUDGECONF (Phase 2, 수집 중)
+**Source**: BILLJUDGECONF
 **Unit**: Bill-Meeting (1 bill = N meetings)
-**Estimated rows**: ~50,000
+**Rows**: 572,127 (17-22대)
 
 | Variable | Type | Description |
 |----------|------|-------------|
@@ -437,9 +449,9 @@ Phase 2 (BILLINFODETAIL)가 완료되면 다음 필드가 추가됩니다:
 
 ### `judiciary_meetings` (법사위 회의정보)
 
-**Source**: BILLLWJUDGECONF (Phase 2, 수집 중)
+**Source**: BILLLWJUDGECONF
 **Unit**: Bill-Meeting (1 bill = N meetings)
-**Estimated rows**: ~5,000
+**Rows**: 15,325 (17-22대)
 
 | Variable | Type | Description |
 |----------|------|-------------|
@@ -478,7 +490,7 @@ Phase 2 (BILLINFODETAIL)가 완료되면 다음 필드가 추가됩니다:
 
 nzmimeepazxkubdpn이 의원 발의 법안 전체를 커버(16,142건)하고, BILLJUDGE는 처리된 법안 위주(3,859건). 둘 다 보유하여 cross-validation 가능.
 
-Phase 2의 BILLINFODETAIL은 가장 포괄적인 lifecycle 데이터를 제공하므로, 완료 후 이 필드들의 coverage가 크게 개선될 예정.
+Phase 2의 BILLINFODETAIL은 가장 포괄적인 lifecycle 데이터를 제공하며, 전 대수 수집 완료(2026-03-26).
 
 ---
 

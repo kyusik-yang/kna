@@ -1,5 +1,5 @@
 """
-Korean Bill Lifecycle - Phase 3: Data Integration
+kna - Data Integration
 ==================================================
 Join Phase 1 (batch) + Phase 2 (per-bill) data into master database.
 
