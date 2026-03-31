@@ -47,7 +47,7 @@ def info():
     print_info(
         data["file_info"], data["rc_count"], data["ip_count"],
         data["cm_count"], data["txt_count"], data.get("mem_count", 0),
-        data["freshness"],
+        data.get("asset_count", 0), data["freshness"],
     )
 
 

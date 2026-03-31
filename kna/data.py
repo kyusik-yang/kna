@@ -168,6 +168,27 @@ class BillDB:
             raise FileNotFoundError("No members_*.parquet files found")
         return pd.concat(frames, ignore_index=True)
 
+    def assets(
+        self,
+        assembly: Optional[int] = None,
+    ) -> pd.DataFrame:
+        """Load legislator asset disclosure panel (772 members, 2015-2024).
+
+        Returns member-year rows with 37 wealth variables (net_worth,
+        total_realestate, total_stocks, etc.) in thousands of KRW.
+        Source: OpenWatch (CC BY-SA 4.0), covers 19th-22nd assemblies.
+        """
+        key = f"assets_{assembly}"
+        if key not in self._cache:
+            p = self.data_dir / "assets_wealth_panel.parquet"
+            if not p.exists():
+                raise FileNotFoundError("assets_wealth_panel.parquet not found")
+            df = pd.read_parquet(p)
+            if assembly is not None:
+                df = df[df["assembly"] == assembly]
+            self._cache[key] = df
+        return self._cache[key]
+
     def legislator_map(self) -> pd.DataFrame:
         """Load legislator ID mapping table."""
         if "lm" not in self._cache:

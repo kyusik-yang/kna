@@ -71,6 +71,10 @@ def db_info(db: BillDB) -> dict:
         if p.exists():
             mem_count += pd.read_parquet(p).shape[0]
 
+    # Asset disclosure count
+    asset_path = db.data_dir / "assets_wealth_panel.parquet"
+    asset_count = len(pd.read_parquet(asset_path)) if asset_path.exists() else 0
+
     return {
         "file_info": file_info,
         "rc_count": rc_count,
@@ -78,6 +82,7 @@ def db_info(db: BillDB) -> dict:
         "cm_count": cm_count,
         "txt_count": txt_count,
         "mem_count": mem_count,
+        "asset_count": asset_count,
         "freshness": freshness,
     }
 

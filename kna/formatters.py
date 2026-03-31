@@ -65,7 +65,7 @@ def truncate(s, maxlen: int = 60) -> str:
 
 def print_info(file_info: list[dict], rc_count: int, ip_count: int,
                cm_count: int, txt_count: int, mem_count: int = 0,
-               freshness: str = "") -> None:
+               asset_count: int = 0, freshness: str = "") -> None:
     """Print database overview."""
     total_bills = sum(r["total"] for r in file_info)
     total_enacted = sum(r["enacted"] for r in file_info)
@@ -96,6 +96,7 @@ def print_info(file_info: list[dict], rc_count: int, ip_count: int,
     console.print(f"  Roll call votes   {rc_count:>10,}  {dim('(16-22nd, bulk: 20-22nd)')}")
     console.print(f"  Ideal points      {ip_count:>10,}  {dim('(20-22nd, DW-NOMINATE)')}")
     console.print(f"  Members           {mem_count:>10,}  {dim('(17-22nd, party/district/committee)')}")
+    console.print(f"  Asset disclosures {asset_count:>10,}  {dim('(19-22nd, member-year wealth)')}")
     console.print(f"  Committee mtgs    {cm_count:>10,}  {dim('(17-22nd)')}")
     console.print(f"  Bill texts        {txt_count:>10,}  {dim('(20-22nd, propose-reason)')}")
     console.print(f"  Data freshness    {freshness:>10}")

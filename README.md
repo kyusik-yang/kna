@@ -99,6 +99,7 @@ kna info
 | **DW-NOMINATE** | 936 legislator-terms (20-22nd, cross-assembly aligned) |
 | **Committee Meetings** | 572,127 records |
 | **Members** | 1,933 member-terms (17-22nd, party/district/committee) |
+| **Asset Disclosures** | 2,928 member-year rows (19-22nd, wealth panel) |
 | **Bill Texts** | 60,925 propose-reason texts (20-22nd) |
 | **Date Range** | 2004 - 2026 |
 
@@ -152,6 +153,9 @@ texts = db.bill_texts()
 # Member metadata (party, district, committee, gender)
 members = db.members(assembly=22)  # 306 members
 
+# Asset disclosures (net_worth, real estate, stocks, etc. in 천원)
+assets = db.assets(assembly=22)  # member-year wealth panel
+
 # Committee meetings
 meetings = db.committee_meetings(assembly=22)
 ```
@@ -201,6 +205,9 @@ dw_ideal_points_20_22 (936 rows)
 
 members_{age} (1,933 member-terms across 17-22nd)
 └── mona_cd, member_name, party, district, committee, sex, birth_date, election_type, reelection
+
+assets_wealth_panel (2,928 member-year rows, 19-22nd)
+└── mona_cd, wealth_year, assembly, net_worth, total_realestate, total_stocks, total_deposits, ...
 
 bill_texts_linked (60K rows)
 └── BILL_ID, propose_reason, scrape_status
