@@ -54,7 +54,7 @@ def info():
 
 @cli.command()
 @click.argument("keyword")
-@click.option("--age", type=int, default=None, help="Assembly number (17-22)")
+@click.option("--assembly", "age", type=int, default=None, help="Assembly number (17-22)")
 @click.option("--committee", default=None, help="Committee name (partial match)")
 @click.option("--proposer", default=None, help="Lead proposer name")
 @click.option("--status", type=click.Choice(["passed", "enacted", "pending", "rejected"]),
@@ -69,8 +69,8 @@ def search(keyword, age, committee, proposer, status, kind, date_from, date_to, 
     \b
     Examples:
         kna search "인공지능"
-        kna search "부동산" --age 22 --status enacted
-        kna search "형법" --proposer 박범계 --age 21
+        kna search "부동산" --assembly 22 --status enacted
+        kna search "형법" --proposer 박범계 --assembly 21
     """
     from kna.queries import search_bills
     from kna.formatters import print_search_results
@@ -117,7 +117,7 @@ def show(bill_ref):
 
 @cli.command()
 @click.argument("name")
-@click.option("--age", type=int, default=None, help="Assembly number (17-22)")
+@click.option("--assembly", "age", type=int, default=None, help="Assembly number (17-22)")
 @click.option("--mona", default=None, help="MONA_CD for exact match")
 def legislator(name, age, mona):
     """Show legislator profile.
@@ -127,8 +127,8 @@ def legislator(name, age, mona):
 
     \b
     Examples:
-        kna legislator 추미애 --age 21
-        kna legislator 김영식 --age 22
+        kna legislator 추미애 --assembly 21
+        kna legislator 김영식 --assembly 22
     """
     from kna.queries import get_legislator_profile
     from kna.formatters import print_legislator
@@ -145,7 +145,7 @@ def legislator(name, age, mona):
 
 @cli.command()
 @click.argument("keyword")
-@click.option("--age", type=int, default=None, help="Assembly number (20-22)")
+@click.option("--assembly", "age", type=int, default=None, help="Assembly number (20-22)")
 @click.option("-n", "--limit", type=int, default=20, help="Max results (default 20)")
 def text(keyword, age, limit):
     """Search within bill propose-reason texts.
@@ -156,7 +156,7 @@ def text(keyword, age, limit):
     \b
     Examples:
         kna text "기후변화"
-        kna text "인공지능" --age 22 -n 10
+        kna text "인공지능" --assembly 22 -n 10
     """
     from kna.queries import search_bill_texts
     from kna.formatters import print_search_results, dim
@@ -184,13 +184,13 @@ def stats():
 
 
 @stats.command("funnel")
-@click.option("--age", type=int, default=22, help="Assembly number (default 22)")
+@click.option("--assembly", "age", type=int, default=22, help="Assembly number (default 22)")
 def stats_funnel(age):
     """Legislative funnel (법률안 only).
 
     \b
     Example:
-        kna stats funnel --age 22
+        kna stats funnel --assembly 22
     """
     from kna.queries import funnel_stats
     from kna.formatters import print_funnel
@@ -220,7 +220,7 @@ def stats_passage_rate():
 
 @cli.command()
 @click.argument("output", type=click.Path())
-@click.option("--age", type=int, default=None, help="Assembly number (17-22)")
+@click.option("--assembly", "age", type=int, default=None, help="Assembly number (17-22)")
 @click.option("--committee", default=None, help="Committee name (partial match)")
 @click.option("--status", type=click.Choice(["passed", "enacted", "pending", "rejected"]),
               default=None, help="Status group")
@@ -233,7 +233,7 @@ def export(output, age, committee, status, kind):
 
     \b
     Examples:
-        kna export health.csv --age 22 --committee 보건복지
+        kna export health.csv --assembly 22 --committee 보건복지
         kna export enacted.parquet --status enacted
     """
     from kna.queries import export_bills

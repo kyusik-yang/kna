@@ -108,25 +108,25 @@ kna info
 kna info
 
 # Search bills by title
-kna search "인공지능" --age 22 --status enacted
+kna search "인공지능" --assembly 22 --status enacted
 
 # Full-text search in propose-reason texts
-kna text "기후변화" --age 22
+kna text "기후변화" --assembly 22
 
 # Bill lifecycle timeline (proposal → promulgation)
 kna show 2217673
 
 # Legislator profile with DW-NOMINATE ideal point
-kna legislator 이재명 --age 22
+kna legislator 이재명 --assembly 22
 
 # Legislative funnel
-kna stats funnel --age 22
+kna stats funnel --assembly 22
 
 # Passage rate trend across assemblies
 kna stats passage-rate
 
 # Export to CSV or Parquet
-kna export health.csv --age 22 --committee 보건복지 --status enacted
+kna export health.csv --assembly 22 --committee 보건복지 --status enacted
 ```
 
 ## Python API
