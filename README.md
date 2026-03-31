@@ -208,6 +208,8 @@ bill_texts_linked (60K rows)
 
 ## Companion Data
 
+**kna vs open-assembly-mcp**: kna is an offline master database for statistical analysis in Python/R. For real-time lookups and exploratory queries via Claude, use [open-assembly-mcp](https://github.com/kyusik-yang/open-assembly-mcp).
+
 | Dataset | Description |
 |---------|-------------|
 | [kr-hearings-data](https://github.com/kyusik-yang/kr-hearings-data) | 9.9M speech-level records from 16,830 hearings (2000-2025) |
