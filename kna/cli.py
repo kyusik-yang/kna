@@ -46,7 +46,8 @@ def info():
     data = db_info(db)
     print_info(
         data["file_info"], data["rc_count"], data["ip_count"],
-        data["cm_count"], data["txt_count"], data["freshness"],
+        data["cm_count"], data["txt_count"], data.get("mem_count", 0),
+        data["freshness"],
     )
 
 

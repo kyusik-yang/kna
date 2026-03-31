@@ -64,7 +64,8 @@ def truncate(s, maxlen: int = 60) -> str:
 # ── Info ────────────────────────────────────────────────────────────
 
 def print_info(file_info: list[dict], rc_count: int, ip_count: int,
-               cm_count: int, txt_count: int, freshness: str) -> None:
+               cm_count: int, txt_count: int, mem_count: int = 0,
+               freshness: str = "") -> None:
     """Print database overview."""
     total_bills = sum(r["total"] for r in file_info)
     total_enacted = sum(r["enacted"] for r in file_info)
@@ -94,6 +95,7 @@ def print_info(file_info: list[dict], rc_count: int, ip_count: int,
     console.print()
     console.print(f"  Roll call votes   {rc_count:>10,}  {dim('(16-22nd, bulk: 20-22nd)')}")
     console.print(f"  Ideal points      {ip_count:>10,}  {dim('(20-22nd, DW-NOMINATE)')}")
+    console.print(f"  Members           {mem_count:>10,}  {dim('(17-22nd, party/district/committee)')}")
     console.print(f"  Committee mtgs    {cm_count:>10,}  {dim('(17-22nd)')}")
     console.print(f"  Bill texts        {txt_count:>10,}  {dim('(20-22nd, propose-reason)')}")
     console.print(f"  Data freshness    {freshness:>10}")
@@ -227,11 +229,16 @@ def print_legislator(
     name: str,
     age: Optional[int],
     party: str,
-    ideal_point: Optional[float],
-    rank: Optional[int],
-    total_in_term: Optional[int],
-    bills_df: pd.DataFrame,
-    top_enacted: pd.DataFrame,
+    district: str = "",
+    committee: str = "",
+    sex: str = "",
+    election_type: str = "",
+    reelection: str = "",
+    ideal_point: Optional[float] = None,
+    rank: Optional[int] = None,
+    total_in_term: Optional[int] = None,
+    bills_df: pd.DataFrame = None,
+    top_enacted: pd.DataFrame = None,
 ) -> None:
     """Print legislator profile."""
     age_str = f"{ordinal(age)} Assembly" if age else "All assemblies"
@@ -240,6 +247,12 @@ def print_legislator(
 
     if party:
         console.print(f"  {dim('party'):<20} {party}")
+    if district:
+        console.print(f"  {dim('district'):<20} {district}")
+    if committee:
+        console.print(f"  {dim('committee'):<20} {committee}")
+    if election_type:
+        console.print(f"  {dim('election'):<20} {election_type}" + (f" ({reelection})" if reelection else ""))
     if ideal_point is not None:
         console.print(f"  {dim('ideal point'):<20} {ideal_point:.3f} (DW-NOMINATE)")
     if rank is not None and total_in_term is not None:

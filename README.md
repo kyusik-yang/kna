@@ -98,6 +98,7 @@ kna info
 | **Roll Call Votes** | 2,425,113 member-level records |
 | **DW-NOMINATE** | 936 legislator-terms (20-22nd, cross-assembly aligned) |
 | **Committee Meetings** | 572,127 records |
+| **Members** | 1,933 member-terms (17-22nd, party/district/committee) |
 | **Bill Texts** | 60,925 propose-reason texts (20-22nd) |
 | **Date Range** | 2004 - 2026 |
 
@@ -148,11 +149,11 @@ votes = db.roll_calls(age=22)
 # Bill texts
 texts = db.bill_texts()
 
+# Member metadata (party, district, committee, gender)
+members = db.members(age=22)  # 306 members
+
 # Committee meetings
 meetings = db.committee_meetings(age=22)
-
-# Legislator ID mapping
-mapping = db.legislator_map()
 ```
 
 ## R
@@ -198,6 +199,9 @@ roll_calls_all (2.4M rows, member-level)
 dw_ideal_points_20_22 (936 rows)
 └── member_id, member_name, term, party, aligned, party_bloc
 
+members_{age} (1,933 member-terms across 17-22nd)
+└── mona_cd, member_name, party, district, committee, sex, birth_date, election_type, reelection
+
 bill_texts_linked (60K rows)
 └── BILL_ID, propose_reason, scrape_status
 ```
@@ -237,6 +241,9 @@ python3 build_multi_assembly.py lite && python3 build_multi_assembly.py batch
 
 # Roll call votes
 python3 collect_roll_calls.py && python3 consolidate_votes.py
+
+# Member metadata
+python3 collect_members.py
 
 # Rebuild interactive site
 python3 build_site.py && python3 build_voteview.py

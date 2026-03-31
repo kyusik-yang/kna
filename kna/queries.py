@@ -64,12 +64,20 @@ def db_info(db: BillDB) -> dict:
     txt_path = db.data_dir / "bill_texts_linked.parquet"
     txt_count = len(pd.read_parquet(txt_path, columns=["BILL_ID"])) if txt_path.exists() else 0
 
+    # Member count
+    mem_count = 0
+    for age in range(17, 23):
+        p = db.data_dir / f"members_{age}.parquet"
+        if p.exists():
+            mem_count += pd.read_parquet(p).shape[0]
+
     return {
         "file_info": file_info,
         "rc_count": rc_count,
         "ip_count": ip_count,
         "cm_count": cm_count,
         "txt_count": txt_count,
+        "mem_count": mem_count,
         "freshness": freshness,
     }
 
@@ -225,10 +233,39 @@ def get_legislator_profile(
     # Top enacted bills
     top_enacted = bills[bills["enacted"] == 1].sort_values("ppsl_dt", ascending=False)
 
+    # Member metadata (district, committee, gender, etc.)
+    district = ""
+    committee = ""
+    sex = ""
+    election_type = ""
+    reelection = ""
+    try:
+        mem_df = db.members(age=age)
+        if actual_mona:
+            mem_match = mem_df[mem_df["mona_cd"] == actual_mona]
+        else:
+            mem_match = mem_df[mem_df["member_name"] == name]
+        if len(mem_match) > 0:
+            m = mem_match.iloc[0]
+            district = m.get("district", "")
+            committee = m.get("committee", "")
+            sex = m.get("sex", "")
+            election_type = m.get("election_type", "")
+            reelection = m.get("reelection", "")
+            if not party:
+                party = m.get("party", "")
+    except FileNotFoundError:
+        pass
+
     return {
         "name": name,
         "age": age,
         "party": party,
+        "district": district,
+        "committee": committee,
+        "sex": sex,
+        "election_type": election_type,
+        "reelection": reelection,
         "ideal_point": ip,
         "rank": rank,
         "total_in_term": total_in_term,

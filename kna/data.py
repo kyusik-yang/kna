@@ -152,6 +152,22 @@ class BillDB:
             self._cache["texts"] = df
         return self._cache["texts"]
 
+    def members(
+        self,
+        age: Optional[int] = None,
+        columns: Optional[list[str]] = None,
+    ) -> pd.DataFrame:
+        """Load member metadata (party, district, committee, gender, etc.)."""
+        ages = [age] if age else ASSEMBLIES
+        frames = []
+        for a in ages:
+            p = self.data_dir / f"members_{a}.parquet"
+            if p.exists():
+                frames.append(pd.read_parquet(p, columns=columns))
+        if not frames:
+            raise FileNotFoundError("No members_*.parquet files found")
+        return pd.concat(frames, ignore_index=True)
+
     def legislator_map(self) -> pd.DataFrame:
         """Load legislator ID mapping table."""
         if "lm" not in self._cache:
