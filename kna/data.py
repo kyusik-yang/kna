@@ -73,11 +73,11 @@ class BillDB:
 
     def bills(
         self,
-        age: Optional[int] = None,
+        assembly: Optional[int] = None,
         columns: Optional[list[str]] = None,
     ) -> pd.DataFrame:
         """Load master bills, optionally for a single assembly."""
-        ages = [age] if age else ASSEMBLIES
+        ages = [assembly] if assembly else ASSEMBLIES
         frames = [self._load_bills(a, columns) for a in ages]
         return pd.concat(frames, ignore_index=True)
 
@@ -103,18 +103,18 @@ class BillDB:
 
     def roll_calls(
         self,
-        age: Optional[int] = None,
+        assembly: Optional[int] = None,
         columns: Optional[list[str]] = None,
     ) -> pd.DataFrame:
-        """Load roll call votes (2.4M rows). Filter by age for speed."""
-        key = f"rc_{age}_{hash(tuple(sorted(columns or [])))}"
+        """Load roll call votes (2.4M rows). Filter by assembly for speed."""
+        key = f"rc_{assembly}_{hash(tuple(sorted(columns or [])))}"
         if key not in self._cache:
             p = self.data_dir / "roll_calls_all.parquet"
             if not p.exists():
                 raise FileNotFoundError("roll_calls_all.parquet not found")
             df = pd.read_parquet(p, columns=columns)
-            if age is not None:
-                df = df[df["term"] == age]
+            if assembly is not None:
+                df = df[df["term"] == assembly]
             self._cache[key] = df
         return self._cache[key]
 
@@ -132,13 +132,13 @@ class BillDB:
 
     def committee_meetings(
         self,
-        age: int,
+        assembly: int,
         columns: Optional[list[str]] = None,
     ) -> pd.DataFrame:
         """Load committee meeting records for a given assembly."""
-        p = self.data_dir / f"committee_meetings_{age}.parquet"
+        p = self.data_dir / f"committee_meetings_{assembly}.parquet"
         if not p.exists():
-            raise FileNotFoundError(f"committee_meetings_{age}.parquet not found")
+            raise FileNotFoundError(f"committee_meetings_{assembly}.parquet not found")
         return pd.read_parquet(p, columns=columns)
 
     def bill_texts(self) -> pd.DataFrame:
@@ -154,11 +154,11 @@ class BillDB:
 
     def members(
         self,
-        age: Optional[int] = None,
+        assembly: Optional[int] = None,
         columns: Optional[list[str]] = None,
     ) -> pd.DataFrame:
         """Load member metadata (party, district, committee, gender, etc.)."""
-        ages = [age] if age else ASSEMBLIES
+        ages = [assembly] if assembly else ASSEMBLIES
         frames = []
         for a in ages:
             p = self.data_dir / f"members_{a}.parquet"

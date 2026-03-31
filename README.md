@@ -138,22 +138,22 @@ from kna.data import BillDB
 db = BillDB()
 
 # Load bills (with column pruning)
-bills = db.bills(age=22, columns=["bill_id", "bill_nm", "status", "ppsl_dt"])
+bills = db.bills(assembly=22, columns=["bill_id", "bill_nm", "status", "ppsl_dt"])
 
 # Ideal points (sign-flipped: negative = liberal, positive = conservative)
 ip = db.ideal_points()
 
 # Roll call votes
-votes = db.roll_calls(age=22)
+votes = db.roll_calls(assembly=22)
 
 # Bill texts
 texts = db.bill_texts()
 
 # Member metadata (party, district, committee, gender)
-members = db.members(age=22)  # 306 members
+members = db.members(assembly=22)  # 306 members
 
 # Committee meetings
-meetings = db.committee_meetings(age=22)
+meetings = db.committee_meetings(assembly=22)
 ```
 
 ## R

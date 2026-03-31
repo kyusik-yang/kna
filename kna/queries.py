@@ -54,7 +54,7 @@ def db_info(db: BillDB) -> dict:
     latest = None
     for info in file_info:
         age = info["age"]
-        df = db.bills(age=age, columns=["ppsl_dt"])
+        df = db.bills(assembly=age, columns=["ppsl_dt"])
         mx = df["ppsl_dt"].max()
         if pd.notna(mx) and (latest is None or mx > latest):
             latest = mx
@@ -97,7 +97,7 @@ def search_bills(
     limit: int = 20,
 ) -> tuple[pd.DataFrame, int]:
     """Search bills by keyword and filters. Returns (results_df, total_count)."""
-    df = db.bills(age=age, columns=COLS_SEARCH)
+    df = db.bills(assembly=age, columns=COLS_SEARCH)
 
     # Keyword filter on bill_nm
     mask = df["bill_nm"].str.contains(keyword, case=False, na=False)
@@ -163,7 +163,7 @@ def search_bill_texts(
 ) -> tuple[pd.DataFrame, int]:
     """Search within propose-reason texts (full-text search)."""
     texts = db.bill_texts()
-    bills = db.bills(age=age, columns=COLS_SEARCH)
+    bills = db.bills(assembly=age, columns=COLS_SEARCH)
 
     # Join texts to bills on bill_id
     merged = bills.merge(texts[["bill_id", "propose_reason"]], on="bill_id", how="inner")
@@ -186,7 +186,7 @@ def get_legislator_profile(
     mona: Optional[str] = None,
 ) -> Optional[dict]:
     """Build legislator profile from bills, ideal points, and roll calls."""
-    df = db.bills(age=age, columns=COLS_LEGISLATOR)
+    df = db.bills(assembly=age, columns=COLS_LEGISLATOR)
 
     if mona:
         bills = df[df["rst_mona_cd"] == mona]
@@ -240,7 +240,7 @@ def get_legislator_profile(
     election_type = ""
     reelection = ""
     try:
-        mem_df = db.members(age=age)
+        mem_df = db.members(assembly=age)
         if actual_mona:
             mem_match = mem_df[mem_df["mona_cd"] == actual_mona]
         else:
@@ -294,7 +294,7 @@ def funnel_stats(db: BillDB, age: int) -> list[tuple[str, int]]:
     for all expired bills (임기만료폐기). We exclude these to count
     only actual plenary votes.
     """
-    df = db.bills(age=age, columns=COLS_STATS)
+    df = db.bills(assembly=age, columns=COLS_STATS)
     bills = df[df["bill_kind"] == "법률안"]
 
     # Detect term-end date (most common rgs_rsln_dt is the expiry date)
@@ -330,7 +330,7 @@ def passage_rate_stats(db: BillDB) -> list[dict]:
     """Compute passage/enactment rates across all assemblies."""
     results = []
     for age in [17, 18, 19, 20, 21, 22]:
-        df = db.bills(age=age, columns=["bill_kind", "passed", "enacted"])
+        df = db.bills(assembly=age, columns=["bill_kind", "passed", "enacted"])
         bills = df[df["bill_kind"] == "법률안"]
         total = len(bills)
         passed = int(bills["passed"].sum())
@@ -356,7 +356,7 @@ def export_bills(
     kind: Optional[str] = None,
 ) -> pd.DataFrame:
     """Export filtered bills for downstream analysis."""
-    df = db.bills(age=age)
+    df = db.bills(assembly=age)
 
     if committee:
         df = df[df["committee_nm"].str.contains(committee, case=False, na=False)]
