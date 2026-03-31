@@ -1,6 +1,6 @@
 [project]
 name = "kna"
-version = "0.2.1"
+version = "0.2.2"
 description = "Comprehensive CLI for the Korean National Assembly: bills, lifecycle, votes, ideal points, and bill texts"
 readme = "README.md"
 requires-python = ">=3.9"

@@ -147,6 +147,12 @@ votes = db.roll_calls(age=22)
 
 # Bill texts
 texts = db.bill_texts()
+
+# Committee meetings
+meetings = db.committee_meetings(age=22)
+
+# Legislator ID mapping
+mapping = db.legislator_map()
 ```
 
 ## R
