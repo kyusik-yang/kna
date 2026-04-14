@@ -217,8 +217,15 @@ for party in all_parties:
     }
     scatter_traces.append(trace)
 
+PLOT_FONT = {
+    "family": "-apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', "
+              "'Noto Sans KR', 'Segoe UI', Roboto, sans-serif",
+    "color": "#ccd",
+}
+
 scatter_layout = {
     "title": None,
+    "font": PLOT_FONT,
     "xaxis": {
         "title": {"text": "DW-NOMINATE (1st Dimension, Aligned)", "font": {"size": 13, "color": "#aab"}},
         "range": [-1.15, 1.15],
@@ -299,6 +306,7 @@ for term in [20, 21, 22]:
 
 violin_layout = {
     "title": None,
+    "font": PLOT_FONT,
     "xaxis": {
         "title": {"text": "국회 대수", "font": {"size": 13, "color": "#aab"}},
         "tickfont": {"color": "#889", "size": 12},
@@ -375,6 +383,7 @@ polar_traces.append({
 
 polar_layout = {
     "title": None,
+    "font": PLOT_FONT,
     "xaxis": {
         "title": {"text": "국회 대수", "font": {"size": 13, "color": "#aab"}},
         "tickfont": {"color": "#889", "size": 12},
@@ -403,12 +412,12 @@ polar_layout = {
     "height": 400,
     "annotations": [
         {
-            "x": f"{row['term']}대",
+            "x": f"{int(row['term'])}대",
             "y": (row["liberal_mean"] + row["conservative_mean"]) / 2,
-            "text": f"거리: {row['gap']:.3f}",
+            "text": f"거리 {row['gap']:.3f}",
             "showarrow": False,
-            "font": {"color": "#b388d9", "size": 12, "family": "monospace"},
-            "bgcolor": "rgba(87,6,140,0.3)",
+            "font": {"color": "#e8d4ff", "size": 12},
+            "bgcolor": "rgba(87,6,140,0.45)",
             "borderpad": 4,
         }
         for _, row in polar_df.iterrows()
@@ -435,7 +444,17 @@ html_template = """<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Korean National Assembly Voteview</title>
+<title>Korean National Assembly Voteview - 대한민국 국회 이념지도</title>
+<meta name="description" content="DW-NOMINATE ideal point estimates for 936 legislators across the 20th-22nd Korean National Assemblies (2016-2026), with polarization trends and party distributions.">
+<meta name="author" content="Kyusik Yang">
+<meta property="og:title" content="Korean National Assembly Voteview">
+<meta property="og:description" content="Interactive DW-NOMINATE ideology map for Korean legislators, 20th-22nd Assemblies.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://kyusik-yang.github.io/kna/voteview.html">
+<meta name="twitter:card" content="summary">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
 <style>
   :root {
@@ -479,6 +498,21 @@ html_template = """<!DOCTYPE html>
     display: flex;
     flex-direction: column;
     gap: 16px;
+  }
+
+  .home-link {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 0.85rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    width: fit-content;
+    transition: color 0.2s;
+  }
+
+  .home-link:hover {
+    color: var(--accent-light);
   }
 
   .header-top {
@@ -826,6 +860,7 @@ html_template = """<!DOCTYPE html>
 <!-- ═══════════════ HEADER ═══════════════ -->
 <header>
   <div class="container">
+    <a href="index.html" class="home-link">&larr; kna home</a>
     <div class="header-top">
       <h1>Korean National Assembly Voteview</h1>
     </div>
