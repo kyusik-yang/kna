@@ -1054,10 +1054,10 @@ let sortAsc = false;
 let currentData = tableData.slice();
 
 function makeScoreBar(score) {
-  // score is -1 to 1. Map to a bar.
+  // score is -1 to 1. Match scatter map: negative = liberal (blue), positive = conservative (red).
   const absScore = Math.abs(score);
   const width = Math.round(absScore * 60);
-  const color = score < 0 ? 'var(--red)' : 'var(--blue)';
+  const color = score < 0 ? 'var(--blue)' : 'var(--red)';
   return '<span class="score-bar" style="width:' + width + 'px;background:' + color + '"></span>';
 }
 
