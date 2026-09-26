@@ -1,6 +1,6 @@
 [project]
 name = "kna"
-version = "0.6.0"
+version = "0.7.0"
 description = "Comprehensive CLI for the Korean National Assembly: bills, lifecycle, votes, ideal points, and bill texts"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -21,6 +21,9 @@ dependencies = [
     "pyarrow>=10.0",
     "rich>=12.0",
 ]
+
+[project.optional-dependencies]
+test = ["pytest>=7"]
 
 [project.urls]
 Homepage = "https://github.com/kyusik-yang/kna"
@@ -43,10 +46,19 @@ include = [
   "pyproject.toml",
   "*.py",
   "*.R",
+  # Named explicitly so they stay in the sdist if the globs above are narrowed:
+  # the shared API client and the 2026-09 structural-data scripts.
+  "kna_api.py",
+  "collect_structure.py",
+  "build_structure.py",
+  "tests/",
 ]
 
 [tool.hatch.build.targets.wheel]
 packages = ["kna"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
 
 [build-system]
 requires = ["hatchling"]

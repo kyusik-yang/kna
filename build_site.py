@@ -3,27 +3,57 @@
 build_site.py - Generate interactive HTML tutorial for Korean National Assembly DB.
 
 Reads parquet data, computes aggregated statistics, builds Plotly charts,
-and outputs a single self-contained site/index.html file.
+and outputs a single self-contained index.html file. Every number on the
+page is computed from the data directory.
 
 Usage:
-    python3 build_site.py
+    python3 build_site.py                                # data/processed -> docs/
+    python3 build_site.py --data data/_build --out docs  # staged build
 """
 
+import argparse
 import json
-import os
 from pathlib import Path
 
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.io as pio
+import pyarrow.parquet as pq
+
+from kna.data import BillDB
+from kna.queries import funnel_stats
 
 # ---------------------------------------------------------------------------
 # Paths
 # ---------------------------------------------------------------------------
 BASE = Path(__file__).resolve().parent
-DATA = BASE / "data" / "processed"
-OUT = BASE / "docs"
-OUT.mkdir(exist_ok=True)
+
+
+def _parse_args():
+    p = argparse.ArgumentParser(description="Build the kna overview page (index.html).")
+    p.add_argument("--data", default=str(BASE / "data" / "processed"),
+                   help="data directory to read (default data/processed)")
+    p.add_argument("--out", default=str(BASE / "docs"),
+                   help="directory to write index.html into (default docs)")
+    return p.parse_args()
+
+
+ARGS = _parse_args()
+DATA = Path(ARGS.data).expanduser().resolve()
+OUT = Path(ARGS.out).expanduser().resolve()
+if not DATA.is_dir():
+    raise SystemExit(f"ERROR: data directory {DATA} not found")
+OUT.mkdir(parents=True, exist_ok=True)
+
+
+def claim(ok, sentence: str):
+    """Stop the build when the data no longer support a sentence on the page."""
+    if not ok:
+        raise SystemExit(f"ERROR: the data no longer support this page text, revise it: {sentence}")
+
+
+def pct(num, den) -> float:
+    return num / den * 100 if den else 0.0
 
 # ---------------------------------------------------------------------------
 # Okabe-Ito palette
@@ -105,13 +135,26 @@ for age in sorted(all_frames.keys()):
         chair_bills=int(ppsr_counts.get("위원장", 0)),
     ))
 
-astats = pd.DataFrame(assembly_stats)
+astats = pd.DataFrame(assembly_stats).set_index("age", drop=False)
 
-# Grand totals
-grand_total = astats["total"].sum()
-grand_enacted = astats["enacted"].sum()
-date_range_min = "2004"
-date_range_max = "2026"
+# Grand totals. "Laws enacted" counts 법률안 passed as is or amended
+# (enacted == 1), the same basis as `kna info`.
+grand_total = int(astats["total"].sum())
+grand_enacted_laws = int(sum(((df["bill_kind"] == "법률안") & (df["enacted"] == 1)).sum()
+                             for df in all_frames.values()))
+all_ppsl = pd.concat([pd.to_datetime(df["ppsl_dt"]) for df in all_frames.values()])
+date_range_min = str(all_ppsl.min().year)
+date_range_max = str(all_ppsl.max().year)
+latest_ppsl = all_ppsl.max().strftime("%Y-%m-%d")
+
+# Sentences in Section 1 and in the research-question cards
+completed = [a for a in sorted(all_frames) if a < 22]
+claim(astats.loc[completed, "total"].is_monotonic_increasing,
+      "발의 건수는 꾸준히 증가 (17-21대)")
+claim(astats["passage_broad"].is_monotonic_decreasing
+      and astats["passage_narrow"].is_monotonic_decreasing,
+      "가결률은 지속적으로 하락 (17-22대)")
+growth_17_21 = astats.loc[21, "total"] / astats.loc[17, "total"]
 
 # ===================================================================
 # Chart 1: Bills per assembly by bill_kind composition
@@ -388,16 +431,13 @@ fig7_json = fig_to_json(fig7)
 # ===================================================================
 print("Building Chart 8: Legislative funnel...")
 
-bills_only = df22[df22["bill_kind"] == "법률안"]
-funnel_stages = [
-    ("발의", len(bills_only)),
-    ("소관위 회부", int(bills_only["committee_dt"].notna().sum())),
-    ("소관위 상정", int(bills_only["cmt_present_dt"].notna().sum())),
-    ("소관위 처리", int(bills_only["cmt_proc_dt"].notna().sum())),
-    ("법사위 회부", int(bills_only["law_submit_dt"].notna().sum())),
-    ("본회의 의결", int(bills_only["rgs_rsln_dt"].notna().sum())),
-    ("공포", int(bills_only["prom_dt"].notna().sum())),
-]
+# Same definition as `kna stats funnel` (kna.queries.funnel_stats): 법률안
+# only, and each stage counts the bills that reached it or any later stage.
+# 본회의 의결 is plenary_decided (원안가결, 수정가결 or 부결 on the floor)
+# and 공포 is promulgated.
+db = BillDB(DATA)
+funnel_stages = funnel_stats(db, 22)
+funnel = dict(funnel_stages)
 
 funnel_labels = [s[0] for s in funnel_stages]
 funnel_values = [s[1] for s in funnel_stages]
@@ -518,12 +558,22 @@ fig10_json = fig_to_json(fig10)
 # ===================================================================
 print("Building Chart 11: Top legislators...")
 
+# Count by MONA_CD, so each joint lead (comma-joined codes) is credited and
+# same-name legislators stay apart. Names come from members_22.
 member_bills = laws22[laws22["ppsr_kind"] == "의원"].copy()
+lead_rows = member_bills.assign(mona=member_bills["rst_mona_cd"].str.split(",")).explode("mona")
+lead_rows["mona"] = lead_rows["mona"].str.strip()
+names22 = pd.read_parquet(DATA / "members_22.parquet", columns=["mona_cd", "member_name"])
 leg_stats = (
-    member_bills.groupby("rst_proposer")
+    lead_rows.dropna(subset=["mona"]).groupby("mona")
     .agg(total=("bill_id", "count"), enacted=("enacted", "sum"))
     .reset_index()
+    .merge(names22, left_on="mona", right_on="mona_cd", how="left")
 )
+# Label with the name, and add the code when two legislators share it
+dup = leg_stats["member_name"].duplicated(keep=False)
+leg_stats["rst_proposer"] = leg_stats["member_name"].fillna(leg_stats["mona"])
+leg_stats.loc[dup, "rst_proposer"] += " (" + leg_stats.loc[dup, "mona"] + ")"
 leg_stats["enact_rate"] = (leg_stats["enacted"] / leg_stats["total"] * 100).round(1)
 top20 = leg_stats.nlargest(20, "total").sort_values("total", ascending=True)
 
@@ -543,7 +593,7 @@ fig11 = go.Figure(go.Bar(
     customdata=top20["enact_rate"],
 ))
 fig11.update_layout(make_layout(
-    title=dict(text="22대 발의 상위 20인 (법률안, 대표발의 기준)", font=dict(size=18)),
+    title=dict(text="22대 발의 상위 20인 (법률안, 공동 대표발의 포함)", font=dict(size=18)),
     xaxis=dict(title="대표발의 건수", gridcolor="#eee"),
     yaxis=dict(title=""),
     height=600,
@@ -557,6 +607,14 @@ fig11_json = fig_to_json(fig11)
 # ===================================================================
 print("Building data availability table...")
 
+# Bills with cosponsorship edges, per assembly (official edge table)
+edges_path = DATA / "cosponsorship_edges.parquet"
+edges = pd.read_parquet(edges_path) if edges_path.exists() else None
+if edges is not None and "age" not in edges.columns:
+    raise SystemExit(f"ERROR: {edges_path} has no age column. It predates the 0.7.0 rebuild, "
+                     "so point --data at a 0.7.0 data directory.")
+edge_bills = edges.groupby("age")["bill_id"].nunique().to_dict() if edges is not None else {}
+
 avail_rows = []
 for age in sorted(all_frames.keys()):
     df = all_frames[age]
@@ -564,9 +622,11 @@ for age in sorted(all_frames.keys()):
     has_vote = int(df.get("vote_total", pd.Series(dtype="float64")).notna().sum()) if "vote_total" in df.columns else 0
     has_cmt_proc = int(df["cmt_proc_dt"].notna().sum()) if "cmt_proc_dt" in df.columns else 0
     has_prom = 0
-    if "prom_dt" in df.columns:
+    if "promulgated" in df.columns:
+        has_prom = int(df["promulgated"].sum())
+    elif "prom_dt" in df.columns:
         has_prom = int(df["prom_dt"].notna().sum())
-    has_member = int(df["member_list"].notna().sum()) if "member_list" in df.columns else 0
+    has_member = int(edge_bills.get(age, 0))
     has_days = int(df["days_to_proc"].notna().sum()) if "days_to_proc" in df.columns else 0
 
     avail_rows.append(dict(
@@ -576,11 +636,187 @@ for age in sorted(all_frames.keys()):
         vote_n=f"{has_vote:,}" if has_vote > 0 else "-",
         cmt_proc="O" if has_cmt_proc > 0 else "-",
         promulgated=f"{has_prom:,}" if has_prom > 0 else "-",
-        member_list="O" if has_member > 0 else "-",
+        member_list=f"{has_member:,}" if has_member > 0 else "-",
         proc_days="O" if has_days > 0 else "-",
         detail_level="Full Master" if "prom_dt" in df.columns else "Lite Master",
     ))
 
+
+# ===================================================================
+# Numbers quoted in the page text
+# ===================================================================
+print("Computing the numbers quoted in the text...")
+
+
+def nrows(name: str):
+    """Row count of a parquet file in DATA, or None when it is absent."""
+    p = DATA / name
+    return pq.read_metadata(p).num_rows if p.exists() else None
+
+
+laws22_n = len(laws22)
+
+# Proposer types (22nd, 법률안)
+ppsr22 = ppsr_stats.set_index("ppsr_kind")
+chair_enact = ppsr22.loc["위원장", "enact_rate"]
+member_enact = ppsr22.loc["의원", "enact_rate"]
+govt_enact = ppsr22.loc["정부", "enact_rate"]
+claim(govt_enact > member_enact and chair_enact > member_enact,
+      "정부 제출 법안과 위원장 발의 법안은 의원 발의 법안보다 가결률이 높습니다")
+
+# Processing time, processed 22nd 법률안 only
+proc_median = proc_data.groupby("ppsr_kind")["days_to_proc"].median().round().astype(int)
+proc_n = proc_data.groupby("ppsr_kind").size()
+first22 = pd.to_datetime(df22["ppsl_dt"]).min()
+
+# Funnel text
+f_total = funnel["발의"]
+status22 = laws22["status"].value_counts()
+pending22 = int(status22.get("계류중", 0))
+absorbed22 = int(status22.get("대안반영폐기", 0))
+
+# Votes (bills with a plenary tally)
+yes_share = voted["vote_yes"] / voted["vote_total"]
+hi_share = pct(int((yes_share >= 0.9).sum()), len(voted))
+n_contested = int(voted["contested"].sum())
+claim(hi_share > 50, "대다수 법안은 찬성률 90% 이상")
+
+# Research-question previews
+tax_nm = "조세특례제한법 일부개정법률안"
+tax_n = int((df22["bill_nm"] == tax_nm).sum())
+uniq_names22 = int(df22["bill_nm"].nunique())
+cmt_lo, cmt_hi = cmt_stats.iloc[0], cmt_stats.iloc[-1]
+law_marks = laws22[["law_submit_dt", "law_cmmt_dt"]].notna().any(axis=1)
+law_reached = laws22[law_marks]
+law_decided = law_reached[law_reached["law_proc_rslt"].notna()]
+law_ok = int(law_decided["law_proc_rslt"].isin(["원안가결", "수정가결"]).sum())
+claim(len(law_decided) and law_ok / len(law_decided) >= 0.95,
+      "법사위에 도달한 법안은 대부분 가결 (핵심 필터는 법사위 회부 여부 자체)")
+law_ok_text = (f"{law_ok:,}건은 모두 원안가결 또는 수정가결" if law_ok == len(law_decided) else
+               f"{len(law_decided):,}건 가운데 {law_ok:,}건이 원안가결 또는 수정가결")
+member_bills_all = int(sum((df["ppsr_kind"] == "의원").sum() for df in all_frames.values()))
+if edges is not None:
+    edge_rows = len(edges)
+    edge_bill_n = int(edges["bill_id"].nunique())
+    e22 = edges[edges["age"] == 22]
+    leads22 = int(e22.loc[e22["role"] == "대표발의", "member_id"].nunique())
+    edges22_n = len(e22)
+
+# Limitations (Section 7)
+limits = []
+rc_path = DATA / "roll_calls_all.parquet"
+ve_path = DATA / "vote_events.parquet"
+if rc_path.exists() and ve_path.exists():
+    rc22 = pd.read_parquet(rc_path, columns=["term", "bill_id", "member_id", "vote"],
+                           filters=[("term", "==", 22)])
+    last_vote = pd.read_parquet(rc_path, columns=["date"])["date"].max()[:8]
+    no_rows = names22[~names22["mona_cd"].isin(rc22["member_id"])]
+    counts = rc22.pivot_table(index="bill_id", columns="vote", aggfunc="size", fill_value=0)
+    ve22 = pd.read_parquet(ve_path)
+    ve22 = ve22[ve22["age"] == 22].set_index("vote_bill_id").join(counts, how="left").fillna(0)
+    diff = ((ve22["찬성"] != ve22["yes"]) | (ve22["반대"] != ve22["no"])
+            | (ve22["기권"] != ve22["abstain"]))
+    below = diff & (ve22["찬성"] <= ve22["yes"]) & (ve22["반대"] <= ve22["no"]) \
+        & (ve22["기권"] <= ve22["abstain"])
+    other = int(diff.sum() - below.sum())
+    ip_path = DATA / "ideal_points_bridged.csv"
+    if ip_path.exists():
+        ip = pd.read_csv(ip_path, dtype={"member_id": str})
+        claim(not ip[(ip["term"] == 22) & ip["member_id"].isin(no_rows["mona_cd"])].shape[0],
+              "기록이 없는 의원은 22대 이념점수가 없습니다")
+    limits.append(
+        f"22대 의원별 표결은 {last_vote[:4]}년 {int(last_vote[4:6])}월 {int(last_vote[6:])}일까지 수집했습니다. "
+        f"의원별 표결 API에는 22대 재직 의원 {len(names22):,}명 중 {len(no_rows)}명의 기록이 없어 "
+        f"이들은 22대 이념점수가 없습니다. 22대 표결 {len(ve22):,}건 중 {int(diff.sum()):,}건은 "
+        f"의원별 찬성·반대·기권 수가 공식 집계와 다릅니다. 그중 {int(below.sum()):,}건은 세 수가 모두 "
+        f"공식 집계 이하여서 빠진 기록으로 설명됩니다"
+        + (f". 나머지 {other}건은 기록된 표 가운데 공식 집계와 다른 것이 있습니다." if other else "."))
+aa_path = DATA / "alternative_absorption.parquet"
+if aa_path.exists():
+    absorbed_ids = set(pd.read_parquet(aa_path, columns=["absorbed_bill_id"])["absorbed_bill_id"])
+    cover = {}
+    for age, df in all_frames.items():
+        u = df.loc[df["status"] == "대안반영폐기", "bill_id"]
+        cover[age] = pct(int(u.isin(absorbed_ids).sum()), len(u))
+    later = [a for a in cover if a != 17]
+    limits.append(
+        f"대안반영폐기 법안을 흡수한 대안에 연결하는 비율은 17대가 {cover[17]:.1f}%로, "
+        f"18-22대의 {min(cover[a] for a in later):.1f}% 이상보다 낮습니다. 17대의 숫자형 의안 ID 대안은 "
+        f"공식 API가 흡수 법안 목록을 거의 돌려주지 않기 때문입니다.")
+if edges is not None:
+    nonlaw_member = pd.concat([df.loc[(df["ppsr_kind"] == "의원") & (df["bill_kind"] != "법률안"), "bill_id"]
+                               for df in all_frames.values()])
+    nonlaw_edges = int(nonlaw_member.isin(edges["bill_id"]).sum())
+    claim(nonlaw_edges == 0, "의원이 발의한 법률안 외 의안은 공동발의 edge가 없습니다")
+    limits.append(
+        f"의원이 발의한 결의안 등 법률안 외 의안 {len(nonlaw_member):,}건은 제안자 목록이 없어 "
+        f"공동발의 edge가 없습니다.")
+txt_path = DATA / "bill_texts_linked.parquet"
+if txt_path.exists():
+    txt_ids = set(pd.read_parquet(txt_path, columns=["BILL_ID"])["BILL_ID"])
+    txt_last = max(pd.to_datetime(df.loc[df["bill_id"].isin(txt_ids), "ppsl_dt"]).max()
+                   for df in all_frames.values() if df["bill_id"].isin(txt_ids).any())
+    limits.append(
+        f"제안이유 텍스트는 외부 저장소의 스냅샷에서 가져옵니다. 텍스트가 있는 가장 최근 법안은 "
+        f"{txt_last:%Y-%m-%d}에 발의되었고, 그 뒤에 발의된 법안은 텍스트가 없습니다.")
+limits_html = "".join(f"<li>{t}</li>" for t in limits)
+if edges is not None:
+    edge_data_text = (f"공식 공동발의 테이블 <code>cosponsorship_edges</code>. 17-22대 의원발의 법안 "
+                      f"{edge_bill_n:,}건, edge {edge_rows:,}개.")
+    edge_preview_text = (f"22대 기준 대표발의자 {leads22:,}명, 공동발의 edge {edges22_n:,}개. "
+                         "대표발의, 공동발의, 찬성 역할이 구분되어 있습니다.")
+else:
+    edge_data_text = f"17-22대 의원발의 법안 {member_bills_all:,}건의 <code>publ_mona_cd</code>를 파싱."
+    edge_preview_text = "<code>publ_mona_cd</code> 필드를 파싱하면 의원 간 공동발의 edge list를 만들 수 있습니다."
+exp_rows = nrows("roll_calls_16_19_experimental.parquet")
+exp_text = (f"16-19대 의원별 표결 기록 {exp_rows:,}행은 회의록에서 추출한 실험적 자료입니다. "
+            "한 회의의 여러 표결이 하나로 합쳐지는 한계가 있어 roll_calls_16_19_experimental.parquet에 "
+            "따로 담았고, 이념점수 추정에는 쓰지 않습니다." if exp_rows else "")
+
+# Life of a Bill: the funnel stages, with the fields that mark them
+LIFECYCLE = [
+    ("발의", "ppsl_dt", "lc-stage lc-start"),
+    ("소관위 회부", "committee_dt", "lc-stage"),
+    ("소관위 처리", "cmt_proc_dt", "lc-stage"),
+    ("법사위 회부", "law_submit_dt / law_cmmt_dt", "lc-stage"),
+    ("본회의 의결", "plenary_decided", "lc-stage"),
+    ("공포", "promulgated", "lc-stage lc-end"),
+]
+lifecycle_html = '\n            <div class="lc-connector"><span>&rarr;</span></div>\n'.join(
+    f'''            <div class="{cls}">
+                <div class="lc-name">{label}</div>
+                <div class="lc-field">{field}</div>
+                <div class="lc-n">{funnel[label]:,}</div>
+            </div>'''
+    for label, field, cls in LIFECYCLE)
+
+# Official structural tables (drawn only when the file exists)
+TABLE_CARDS = [
+    ("&#128101;", "cosponsorship_edges", "공동발의 네트워크 (17-22대)", "1 row = 1 bill x 발의자",
+     "bill_id (FK), member_id, role, party, age"),
+    ("&#128269;", "subcommittee_reviews", "소위원회 회부·심사 (17-22대)", "1 row = 1 bill x 소위 단계",
+     "bill_id (FK), sub_committee_name, present_dt, proc_dt, proc_result_cd"),
+    ("&#128279;", "alternative_absorption", "대안에 흡수된 법안 (17-22대)", "1 row = 1 대안 x 흡수 법안",
+     "alt_bill_id, absorbed_bill_id, absorbed_proc_rslt"),
+    ("&#128188;", "committee_assignments", "의원 위원회 경력", "1 row = 1 의원 x 위원회 기간",
+     "mona_cd, assembly, committee, start_date, end_date"),
+    ("&#9888;", "veto_events", "재의요구 (거부권) 사건", "1 row = 1 재의요구",
+     "bill_id (FK), veto_bill_id, veto_dt, revote_rslt, final_status"),
+    ("&#128499;", "vote_events", "본회의 표결 집계 (20-22대)", "1 row = 1 표결",
+     "vote_bill_id, master_bill_id, vote_type, yes, no, abstain"),
+]
+table_cards_html = "\n".join(
+    f'''            <div class="schema-card schema-satellite">
+                <div class="schema-icon">{icon}</div>
+                <div class="schema-name">{name}</div>
+                <div class="schema-desc">{desc}</div>
+                <div class="schema-meta">{meta}</div>
+                <div class="schema-cols">
+                    {cols}
+                </div>
+                <div class="schema-stat">{nrows(name + ".parquet"):,} rows</div>
+            </div>'''
+    for icon, name, desc, meta, cols in TABLE_CARDS if nrows(name + ".parquet") is not None)
 
 # ===================================================================
 # 3. Build HTML
@@ -593,7 +829,7 @@ avail_table_html = """
 <thead>
 <tr>
   <th>대수</th><th>총 법안</th><th>수준</th><th>표결 데이터</th><th>표결 건수</th>
-  <th>소관위 처리</th><th>공포 건수</th><th>공동발의자</th><th>처리 소요일</th>
+  <th>소관위 처리</th><th>공포 (법률안)</th><th>공동발의 법안</th><th>처리 소요일</th>
 </tr>
 </thead>
 <tbody>
@@ -966,7 +1202,7 @@ tr:hover td {{
     border: 1px solid #e0d6ec;
     border-radius: 10px;
     padding: 14px 16px;
-    min-width: 160px;
+    min-width: 130px;
     flex: 1;
 }}
 
@@ -1337,8 +1573,8 @@ footer a {{
 <section class="hero" id="hero">
     <h1>Korean National Assembly Database</h1>
     <p class="subtitle">
-        열린국회정보 Open API 8종을 결합하여 구축한 대한민국 국회 법안 생애주기 마스터 데이터베이스.
-        17대부터 22대까지의 발의, 심사, 표결, 공포 전 과정을 추적합니다.
+        열린국회정보 Open API의 여러 endpoint를 결합하여 구축한 대한민국 국회 법안 생애주기 마스터 데이터베이스.
+        17대부터 22대까지의 발의, 심사, 표결, 공포 전 과정을 추적합니다. {latest_ppsl}까지 발의된 법안을 포함합니다.
     </p>
     <div class="stat-cards">
         <div class="stat-card">
@@ -1346,12 +1582,12 @@ footer a {{
             <span class="label">Total Bills</span>
         </div>
         <div class="stat-card">
-            <span class="num">6</span>
-            <span class="label">Assemblies (17-22대)</span>
+            <span class="num">{len(all_frames)}</span>
+            <span class="label">Assemblies ({min(all_frames)}-{max(all_frames)}대)</span>
         </div>
         <div class="stat-card">
-            <span class="num">{grand_enacted:,}</span>
-            <span class="label">Laws Enacted</span>
+            <span class="num">{grand_enacted_laws:,}</span>
+            <span class="label">Laws Enacted (법률안 원안·수정가결)</span>
         </div>
         <div class="stat-card">
             <span class="num">{date_range_min}-{date_range_max}</span>
@@ -1368,8 +1604,8 @@ footer a {{
         <span class="section-num">DATA ARCHITECTURE</span>
         <h2>데이터 구조와 수집 파이프라인</h2>
         <p>
-            8개의 열린국회정보 Open API를 결합하여 법안 단위(bill-level) 마스터 테이블과
-            회의 단위(meeting-level) 위성 테이블을 구축합니다.
+            열린국회정보 Open API의 목록, 법안별 상세, 제안자·소위·대안 endpoint를 결합하여
+            법안 단위(bill-level) 마스터 테이블과 회의·의원 단위 위성 테이블을 구축합니다.
         </p>
     </div>
 
@@ -1389,7 +1625,7 @@ footer a {{
                 <div class="pipe-api">심사정보 (BILLJUDGE)</div>
                 <div class="pipe-api">표결현황</div>
                 <div class="pipe-api">처리의안</div>
-                <div class="pipe-note">~180 requests / 대수</div>
+                <div class="pipe-note">대수별 목록 일괄 수집</div>
             </div>
             <div class="pipe-arrow">&rarr;</div>
             <div class="pipe-phase">
@@ -1397,12 +1633,23 @@ footer a {{
                 <div class="pipe-api">BILLINFODETAIL</div>
                 <div class="pipe-api">BILLJUDGECONF</div>
                 <div class="pipe-api">BILLLWJUDGECONF</div>
-                <div class="pipe-note">~17,000 x 3 calls / 대수</div>
+                <div class="pipe-note">법안별 상세 조회</div>
+            </div>
+            <div class="pipe-arrow">&rarr;</div>
+            <div class="pipe-phase">
+                <div class="pipe-phase-title">Structure &amp; Votes</div>
+                <div class="pipe-api">제안자 목록 (BILLINFOPPSR)</div>
+                <div class="pipe-api">소위 심사 (TVBPMCONFINFO)</div>
+                <div class="pipe-api">대안 흡수 (TVBPMBILL11)</div>
+                <div class="pipe-api">의원별 표결</div>
+                <div class="pipe-api">의원 명단·위원회 경력</div>
+                <div class="pipe-note">공동발의·소위·대안·표결·위원회 테이블</div>
             </div>
             <div class="pipe-arrow">&rarr;</div>
             <div class="pipe-phase" style="background:linear-gradient(135deg, #57068C, #7b2faa); color:#fff;">
                 <div class="pipe-phase-title" style="color:#fff;">Phase 3: Integration</div>
                 <div class="pipe-api" style="background:rgba(255,255,255,0.15); color:#fff;">BILL_ID JOIN</div>
+                <div class="pipe-api" style="background:rgba(255,255,255,0.15); color:#fff;">재의요구 병합</div>
                 <div class="pipe-api" style="background:rgba(255,255,255,0.15); color:#fff;">Derived Variables</div>
                 <div class="pipe-api" style="background:rgba(255,255,255,0.15); color:#fff;">.parquet + .sqlite</div>
             </div>
@@ -1413,44 +1660,10 @@ footer a {{
     <div class="arch-diagram" style="margin-top:28px;">
         <div class="arch-title">법안의 여정 (Life of a Bill)</div>
         <div class="lifecycle-flow">
-            <div class="lc-stage lc-start">
-                <div class="lc-name">발의</div>
-                <div class="lc-field">ppsl_dt</div>
-                <div class="lc-n">{len(df22):,}</div>
-            </div>
-            <div class="lc-connector"><span>&rarr;</span></div>
-            <div class="lc-stage">
-                <div class="lc-name">소관위 회부</div>
-                <div class="lc-field">committee_dt</div>
-                <div class="lc-n">{int(df22['committee_dt'].notna().sum()):,}</div>
-            </div>
-            <div class="lc-connector"><span>&rarr;</span></div>
-            <div class="lc-stage">
-                <div class="lc-name">소관위 심사</div>
-                <div class="lc-field">cmt_proc_dt</div>
-                <div class="lc-n">{int(df22['cmt_proc_dt'].notna().sum()):,}</div>
-            </div>
-            <div class="lc-connector"><span>&rarr;</span></div>
-            <div class="lc-stage">
-                <div class="lc-name">법사위</div>
-                <div class="lc-field">law_proc_dt</div>
-                <div class="lc-n">{int(df22['law_proc_dt'].notna().sum()):,}</div>
-            </div>
-            <div class="lc-connector"><span>&rarr;</span></div>
-            <div class="lc-stage">
-                <div class="lc-name">본회의</div>
-                <div class="lc-field">rgs_rsln_dt</div>
-                <div class="lc-n">{int(df22['rgs_rsln_dt'].notna().sum()) if 'rgs_rsln_dt' in df22.columns else 0:,}</div>
-            </div>
-            <div class="lc-connector"><span>&rarr;</span></div>
-            <div class="lc-stage lc-end">
-                <div class="lc-name">공포</div>
-                <div class="lc-field">prom_dt</div>
-                <div class="lc-n">{int(df22['prom_dt'].notna().sum()) if 'prom_dt' in df22.columns else 0:,}</div>
-            </div>
+{lifecycle_html}
         </div>
         <div style="text-align:center; font-size:0.78rem; color:#888; margin-top:8px;">
-            각 단계의 날짜가 개별 변수로 기록됨 &middot; 22대 법안 기준 건수 표시
+            각 단계의 날짜와 결과가 개별 변수로 기록됨 &middot; 22대 법률안 기준, 그 단계 또는 이후 단계에 도달한 법안 수
         </div>
     </div>
 
@@ -1467,7 +1680,8 @@ footer a {{
                     <span class="col-group">ID</span> bill_id, bill_no, age, bill_kind, bill_nm<br>
                     <span class="col-group">발의자</span> ppsr_kind, rst_proposer, rst_mona_cd, publ_mona_cd<br>
                     <span class="col-group">타임스탬프</span> ppsl_dt &rarr; committee_dt &rarr; cmt_proc_dt &rarr; law_proc_dt &rarr; rgs_rsln_dt &rarr; prom_dt<br>
-                    <span class="col-group">결과</span> status, passed, enacted, proc_rslt<br>
+                    <span class="col-group">결과</span> status, passed, enacted, plenary_decided, promulgated, law_reflected<br>
+                    <span class="col-group">재의요구</span> vetoed, veto_dt, revote_rslt, first_plenary_rslt<br>
                     <span class="col-group">표결</span> vote_yes, vote_no, vote_abstain<br>
                     <span class="col-group">파생</span> days_to_proc, days_to_committee
                 </div>
@@ -1477,22 +1691,23 @@ footer a {{
                 <div class="schema-icon">&#128197;</div>
                 <div class="schema-name">committee_meetings</div>
                 <div class="schema-desc">위원회 회의 기록 (1:N)</div>
-                <div class="schema-meta">1 row = 1 bill-meeting</div>
+                <div class="schema-meta">1 row = 1 bill-meeting step</div>
                 <div class="schema-cols">
-                    bill_id (FK), conf_name, conf_dt, conf_result
+                    bill_id (FK), jrcmit_conf_nm, jrcmit_conf_dt, jrcmit_conf_rslt
                 </div>
-                <div class="schema-stat">108,749 rows (22대)</div>
+                <div class="schema-stat">{len(cm22):,} rows (22대)</div>
             </div>
             <div class="schema-card schema-satellite">
                 <div class="schema-icon">&#9878;</div>
                 <div class="schema-name">judiciary_meetings</div>
                 <div class="schema-desc">법사위 회의 기록 (1:N)</div>
-                <div class="schema-meta">1 row = 1 bill-meeting</div>
+                <div class="schema-meta">1 row = 1 bill-meeting step</div>
                 <div class="schema-cols">
-                    bill_id (FK), conf_name, conf_dt, conf_result
+                    bill_id (FK), lwcmit_conf_nm, lwcmit_conf_dt, lwcmit_conf_rslt
                 </div>
-                <div class="schema-stat">1,082 rows (22대)</div>
+                <div class="schema-stat">{nrows("judiciary_meetings_22.parquet") or 0:,} rows (22대)</div>
             </div>
+{table_cards_html}
         </div>
     </div>
 </div>
@@ -1519,9 +1734,9 @@ footer a {{
     </div>
     <div class="narrative">
         <strong>Key finding:</strong>
-        17대에 {astats.iloc[0]['total']:,}건이었던 발의 법안 수가 21대에는 {astats.iloc[4]['total']:,}건으로 약 3.2배 증가했습니다.
-        반면, 광의 가결률(대안반영 포함)은 {astats.iloc[0]['passage_broad']}%에서 {astats.iloc[4]['passage_broad']}%로,
-        협의 가결률(공포 기준)은 {astats.iloc[0]['passage_narrow']}%에서 {astats.iloc[4]['passage_narrow']}%로 하락했습니다.
+        17대에 {astats.loc[17, 'total']:,}건이었던 발의 법안 수가 21대에는 {astats.loc[21, 'total']:,}건으로 약 {growth_17_21:.1f}배 증가했습니다.
+        반면, 광의 가결률(대안반영 포함)은 {astats.loc[17, 'passage_broad']}%에서 {astats.loc[21, 'passage_broad']}%로,
+        협의 가결률(원안·수정가결)은 {astats.loc[17, 'passage_narrow']}%에서 {astats.loc[21, 'passage_narrow']}%로 하락했습니다.
         '입법 인플레이션'의 전형적 패턴입니다. 22대는 아직 진행 중이므로 최종 수치는 변동될 수 있습니다.
     </div>
 </div>
@@ -1554,9 +1769,9 @@ footer a {{
 
     <div class="narrative">
         <strong>발의자 유형 비교:</strong>
-        정부제출 법안과 위원장 발의 법안은 의원 발의 법안 대비 현저히 높은 가결률을 보입니다.
-        위원장 발의 법안은 소관위에서 여야 합의로 마련된 대안(위원회안)이기 때문에
-        사실상 전수 통과합니다. 의원 발의 법안의 실질 가결률은 3.3%에 불과합니다.
+        정부 제출 법안과 위원장 발의 법안은 의원 발의 법안보다 가결률이 높습니다.
+        위원장 발의 법안은 소관위에서 여야 합의로 마련된 대안(위원회안)으로, 22대 법률안 기준 협의 가결률이 {chair_enact}%입니다.
+        정부 제출 법안은 {govt_enact}%, 의원 발의 법안은 {member_enact}%입니다.
     </div>
 </div>
 
@@ -1568,7 +1783,7 @@ footer a {{
         <span class="section-num">SECTION 3</span>
         <h2>입법 타임라인</h2>
         <p>
-            22대 국회 개원(2024.5) 이후 월별 법률안 발의 추이와, 발의자 유형에 따른 처리 소요일 분포를 보여줍니다.
+            22대 국회 개원({first22.year}.{first22.month}) 이후 월별 법률안 발의 추이와, 발의자 유형에 따른 처리 소요일 분포를 보여줍니다.
         </p>
     </div>
 
@@ -1583,8 +1798,9 @@ footer a {{
 
     <div class="narrative">
         <strong>처리 소요일:</strong>
-        정부 제출 법안은 중위 처리기간이 상대적으로 짧으며 분포도 좁은 편입니다.
-        의원 발의 법안은 편차가 크고, 장기 계류되는 사례가 많아 분포의 꼬리가 깁니다.
+        처리가 끝난 22대 법률안의 중위 처리 소요일은 위원장 발의 {proc_median['위원장']}일,
+        정부 제출 {proc_median['정부']}일, 의원 발의 {proc_median['의원']}일입니다.
+        아직 계류 중인 법안은 이 분포에 들어가지 않습니다.
     </div>
 </div>
 
@@ -1597,8 +1813,10 @@ footer a {{
         <h2>입법 퍼널</h2>
         <p>
             법률안이 발의부터 공포까지 각 단계를 얼마나 통과하는지 보여줍니다.
-            대안반영(위원회 대안에 흡수)된 법안은 별도 경로를 거치므로, 단계별 수치가
-            단순 감소하지 않을 수 있습니다.
+            각 단계의 건수는 그 단계에 도달했거나 이후 단계까지 간 법안 수입니다.
+            위원장 대안처럼 앞 단계를 건너뛴 법안도 이후 단계에 도달했다면 앞 단계에 포함됩니다.
+            본회의 의결은 본회의에서 원안가결, 수정가결 또는 부결된 법안(plenary_decided)이고,
+            공포는 공포일이 기록된 법률안(promulgated)입니다. <code>kna stats funnel</code>과 같은 정의입니다.
         </p>
     </div>
 
@@ -1608,10 +1826,10 @@ footer a {{
 
     <div class="narrative">
         <strong>생존율:</strong>
-        22대 법률안 {funnel_stages[0][1]:,}건 중 소관위에 상정된 것은 {funnel_stages[2][1]:,}건({funnel_stages[2][1]/funnel_stages[0][1]*100:.1f}%),
-        소관위 처리까지 이른 것은 {funnel_stages[3][1]:,}건({funnel_stages[3][1]/funnel_stages[0][1]*100:.1f}%),
-        최종 공포에 이른 것은 {funnel_stages[6][1]:,}건({funnel_stages[6][1]/funnel_stages[0][1]*100:.1f}%)입니다.
-        대부분의 법안이 소관위 단계에서 계류 또는 대안반영으로 소멸합니다.
+        22대 법률안 {f_total:,}건 중 소관위 상정 단계에 이른 것은 {funnel['소관위 상정']:,}건으로 {pct(funnel['소관위 상정'], f_total):.1f}%,
+        소관위 처리 단계에 이른 것은 {funnel['소관위 처리']:,}건으로 {pct(funnel['소관위 처리'], f_total):.1f}%,
+        공포에 이른 것은 {funnel['공포']:,}건으로 {pct(funnel['공포'], f_total):.1f}%입니다.
+        처리 상태로 보면 계류중이 {pending22:,}건, 대안반영폐기가 {absorbed22:,}건으로 둘을 합치면 전체의 {pct(pending22 + absorbed22, laws22_n):.1f}%입니다.
     </div>
 </div>
 
@@ -1639,8 +1857,8 @@ footer a {{
 
     <div class="narrative">
         <strong>표결 분포:</strong>
-        대다수 법안은 찬성률 90% 이상으로 가결되며, 이는 본회의 상정 전에 이미 여야 합의가 이루어졌음을 시사합니다.
-        찬성률이 낮은 쟁점 법안은 소수이지만, 정치적으로 중요한 법안이 포함되어 있습니다.
+        표결이 기록된 법안의 {hi_share:.1f}%가 찬성률 90% 이상이며, 이는 본회의 상정 전에 이미 여야 합의가 이루어졌음을 시사합니다.
+        찬성률 80% 미만인 쟁점 법안은 {n_contested:,}건으로 소수이지만, 정치적으로 중요한 법안이 포함되어 있습니다.
     </div>
 </div>
 
@@ -1652,7 +1870,7 @@ footer a {{
         <span class="section-num">SECTION 6</span>
         <h2>의원 발의 순위</h2>
         <p>
-            22대 국회에서 법률안을 가장 많이 대표발의한 의원 20인입니다.
+            22대 국회에서 법률안을 가장 많이 대표발의한 의원 20인입니다. 공동 대표발의도 각 의원의 건수에 포함합니다.
             막대 색상은 해당 의원의 협의 가결률(enacted rate)을 나타냅니다.
         </p>
     </div>
@@ -1677,12 +1895,17 @@ footer a {{
         </p>
     </div>
 
-    {avail_table_html}
+    <div style="overflow-x:auto;">{avail_table_html}</div>
 
     <div class="narrative" style="margin-top:24px;">
         <strong>갱신 안내:</strong>
-        22대 데이터는 현재 진행 중인 회기이므로 주기적으로 갱신됩니다.
-        16대 이전 데이터는 API 제공 범위 밖이므로 PDF 본회의 회의록에서 별도 추출합니다.
+        22대 데이터는 현재 진행 중인 회기이므로 주기적으로 갱신됩니다. 이번 판은 {latest_ppsl}까지 발의된 법안을 포함합니다.
+        {exp_text}
+    </div>
+
+    <div class="narrative">
+        <strong>데이터 한계:</strong>
+        <ul style="margin:8px 0 0 20px;">{limits_html}</ul>
     </div>
 </div>
 
@@ -1710,8 +1933,8 @@ footer a {{
                 <div><strong>데이터:</strong> 17-22대 lite master만으로 가능</div>
             </div>
             <div class="rq-preview">
-                <em>Quick preview:</em> 22대에서 <code>조세특례제한법 일부개정법률안</code>만 661건이 발의되었습니다.
-                17,205건 중 고유 법안명은 2,984종뿐입니다.
+                <em>Quick preview:</em> 22대에서 <code>{tax_nm}</code>만 {tax_n:,}건이 발의되었습니다.
+                {len(df22):,}건 중 고유 법안명은 {uniq_names22:,}종뿐입니다.
             </div>
         </div>
 
@@ -1722,10 +1945,10 @@ footer a {{
             <div class="rq-detail">
                 <div><strong>핵심 변수:</strong> <code>passed</code>, <code>enacted</code>, <code>days_to_proc</code>, <code>ppsr_kind</code> + 외부 여소야대 코딩</div>
                 <div><strong>방법론:</strong> DiD (대통령 교체/선거 전후), 단계별 생존분석</div>
-                <div><strong>데이터:</strong> Phase 2 완료 후 17-22대 full master 권장. 20-21대(박근혜 탄핵 전후)가 자연실험 조건.</div>
+                <div><strong>데이터:</strong> 17-22대 full master. 20-21대(박근혜 탄핵 전후)가 자연실험 조건.</div>
             </div>
             <div class="rq-preview">
-                <em>Quick preview:</em> 통과율이 17대 53.3%에서 21대 35.7%로 꾸준히 하락.
+                <em>Quick preview:</em> 통과율이 17대 {astats.loc[17, 'passage_broad']}%에서 21대 {astats.loc[21, 'passage_broad']}%로 꾸준히 하락.
                 이것이 여소야대의 빈도 증가 때문인지, 발의 건수 증가 때문인지 분리해야 합니다.
             </div>
         </div>
@@ -1740,8 +1963,8 @@ footer a {{
                 <div><strong>데이터:</strong> 22대 full master (lifecycle 날짜 완비). 확장 시 17-22대 전체.</div>
             </div>
             <div class="rq-preview">
-                <em>Quick preview:</em> 22대 법률안 {funnel_stages[0][1]:,}건 중 소관위 처리까지 도달한 것은 {funnel_stages[3][1]/funnel_stages[0][1]*100:.1f}%.
-                재정경제기획위원회 가결률 0.5%로 최저, 문화체육관광위원회 6.1%로 최고.
+                <em>Quick preview:</em> 22대 법률안 {f_total:,}건 중 소관위 처리 단계에 이른 것은 {pct(funnel['소관위 처리'], f_total):.1f}%.
+                법률안 50건 이상 위원회 가운데 {cmt_lo['committee_nm']} 가결률 {cmt_lo['passage_rate']}%로 최저, {cmt_hi['committee_nm']} {cmt_hi['passage_rate']}%로 최고.
             </div>
         </div>
 
@@ -1752,11 +1975,11 @@ footer a {{
             <div class="rq-detail">
                 <div><strong>핵심 변수:</strong> <code>law_submit_dt</code>, <code>law_proc_dt</code>, <code>law_proc_rslt</code> + 발의자 여야 코딩</div>
                 <div><strong>방법론:</strong> 법사위 단계 체류기간의 발의자 정당별 차이, hazard models</div>
-                <div><strong>데이터:</strong> 22대 full master + judiciary_meetings 위성 테이블. Phase 2 완료 후 다세대 비교 가능.</div>
+                <div><strong>데이터:</strong> 17-22대 full master + judiciary_meetings 위성 테이블로 다세대 비교 가능.</div>
             </div>
             <div class="rq-preview">
-                <em>Quick preview:</em> 법사위 회부까지 도달하는 법안은 22대 기준 3.0% (510건)에 불과.
-                도달한 법안의 가결률은 99.6% (459/461건). 핵심 필터는 법사위 회부 여부 자체.
+                <em>Quick preview:</em> 법사위 회부 기록이 있는 법안은 22대 법률안의 {pct(len(law_reached), laws22_n):.1f}%인 {len(law_reached):,}건에 불과.
+                그중 법사위 처리 결과가 있는 {law_ok_text}. 핵심 필터는 법사위 회부 여부 자체.
             </div>
         </div>
 
@@ -1771,7 +1994,7 @@ footer a {{
             </div>
             <div class="rq-preview">
                 <em>Quick preview:</em> 발의 주체가 가장 강력한 예측 변수일 가능성 높음.
-                의원 가결률 3.3% vs 정부 62.6% vs 위원장 99.7% - 이 격차가 다른 변수 통제 후에도 유지되는지가 관건.
+                22대 법률안 협의 가결률은 의원 {member_enact}%, 정부 {govt_enact}%, 위원장 {chair_enact}%. 이 격차가 다른 변수 통제 후에도 유지되는지가 관건.
             </div>
         </div>
 
@@ -1780,13 +2003,12 @@ footer a {{
             <h3>공동발의 네트워크와 입법 성과</h3>
             <p class="rq-question">교차정당 공동발의 관계가 실제 법안 통과율을 높이는가? 네트워크상 중심성이 높은 의원의 법안이 더 성공적인가?</p>
             <div class="rq-detail">
-                <div><strong>핵심 변수:</strong> <code>rst_mona_cd</code>, <code>publ_mona_cd</code>(파싱 → edge list), <code>passed</code>, <code>enacted</code></div>
+                <div><strong>핵심 변수:</strong> <code>cosponsorship_edges</code>의 <code>bill_id</code>, <code>member_id</code>, <code>role</code>, <code>party</code> + 마스터의 <code>passed</code>, <code>enacted</code></div>
                 <div><strong>방법론:</strong> Cosponsorship 네트워크 구축, centrality 측정, GNN (Graph Neural Networks)</div>
-                <div><strong>데이터:</strong> 17-22대 의원발의 법안 (93,288건). na-legislative-events-korea 프로젝트와 직접 연결 가능.</div>
+                <div><strong>데이터:</strong> {edge_data_text}</div>
             </div>
             <div class="rq-preview">
-                <em>Quick preview:</em> <code>publ_mona_cd</code> 필드를 파싱하면 의원 간 공동발의 edge list를 즉시 생성 가능.
-                22대 기준 421명의 대표발의자, 13,894개의 고유 공동발의 조합이 존재합니다.
+                <em>Quick preview:</em> {edge_preview_text}
             </div>
         </div>
 
@@ -1797,7 +2019,7 @@ footer a {{
             <div class="rq-detail">
                 <div><strong>핵심 변수:</strong> <code>bill_nm</code> (법안명 텍스트), <code>ppsr_kind</code>, <code>rst_mona_cd</code> + 의원 정당 정보</div>
                 <div><strong>방법론:</strong> Korean LLM 임베딩 (KLUE-RoBERTa), UMAP 시각화, Zero-shot CAP 분류</div>
-                <div><strong>데이터:</strong> 17-22대 법안명 (110,778건). 법안 원문 크롤링 시 더 정밀한 분류 가능.</div>
+                <div><strong>데이터:</strong> 17-22대 법안명 {grand_total:,}건. 법안 원문 크롤링 시 더 정밀한 분류 가능.</div>
             </div>
             <div class="rq-preview">
                 <em>Quick preview:</em> 법안명만으로도 주제 분류 가능. "부동산", "조세", "형법" 등 키워드 기반 초기 분류 후
@@ -1856,22 +2078,15 @@ enacted = laws[laws["enacted"] == 1]</code></pre>
     </div>
 
     <div class="code-block">
-        <div class="code-header">3. 공동발의자 네트워크 Edge List 생성</div>
-        <pre><code># publ_mona_cd를 파싱하여 edge list 생성
-edges = []
-for _, row in member_bills.iterrows():
-    if pd.notna(row["publ_mona_cd"]) and pd.notna(row["rst_mona_cd"]):
-        co_sponsors = row["publ_mona_cd"].split(",")
-        for cs in co_sponsors:
-            edges.append({{
-                "bill_id": row["bill_id"],
-                "from": row["rst_mona_cd"],
-                "to": cs.strip(),
-                "passed": row["passed"],
-            }})
+        <div class="code-header">3. 공동발의자 네트워크 Edge List</div>
+        <pre><code># 공식 공동발의 테이블 (17-22대, 1 row = 1 bill x 발의자)
+edges = pd.read_parquet("data/processed/cosponsorship_edges.parquet")
+edges22 = edges[edges["age"] == 22]
+print(edges22["role"].value_counts())  # 대표발의 / 공동발의 / 찬성
 
-edge_df = pd.DataFrame(edges)
-print(f"Edges: {{len(edge_df):,}}")  # 수십만 개의 공동발의 관계</code></pre>
+# 법안 결과를 붙여 발의자-법안 네트워크 구성
+edge_df = edges22.merge(master[["bill_id", "passed", "enacted"]], on="bill_id")
+print(f"Edges: {{len(edge_df):,}}")</code></pre>
     </div>
 
     <div class="code-block">
@@ -2055,9 +2270,9 @@ etable(m1, m2, se = "hetero",
 
     <div class="narrative">
         <strong>추가 리소스:</strong>
-        <code>CODEBOOK.md</code>에 54개 변수의 상세 설명,
+        <code>CODEBOOK.md</code>에 마스터 테이블 {len(df22.columns)}개 변수의 상세 설명,
         <code>DATA_AVAILABILITY.md</code>에 대수별 데이터 가용성 및 제약사항,
-        <code>MASTER_DATA_PLAN.md</code>에 확장 로드맵이 정리되어 있습니다.
+        <code>CORRECTIONS.md</code>에 정정 이력이 정리되어 있습니다.
     </div>
 </div>
 

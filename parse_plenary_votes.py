@@ -17,6 +17,7 @@ Usage:
 
 import argparse
 import logging
+import os
 import re
 import sys
 from pathlib import Path
@@ -25,7 +26,8 @@ import pandas as pd
 
 # ── Configuration ──────────────────────────────────────────────────────────
 
-KR_HEARINGS_DATA = Path("/Users/kyusik/Desktop/kyusik-github/kr-hearings-data/data")
+KR_HEARINGS_DATA = Path(os.environ.get(
+    "KNA_HEARINGS_DIR", Path(__file__).resolve().parent.parent / "kr-hearings-data" / "data"))
 SPEECHES_FILE = KR_HEARINGS_DATA / "all_speeches_16_22_v9.parquet"
 DATA_DIR = Path(__file__).parent / "data"
 RAW_DIR = DATA_DIR / "raw"

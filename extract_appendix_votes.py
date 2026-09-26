@@ -39,7 +39,8 @@ except ImportError:
 
 # ── Configuration ──────────────────────────────────────────────────────────
 
-KR_HEARINGS = Path("/Users/kyusik/Desktop/kyusik-github/kr-hearings-data/data")
+KR_HEARINGS = Path(os.environ.get(
+    "KNA_HEARINGS_DIR", Path(__file__).resolve().parent.parent / "kr-hearings-data" / "data"))
 SPEECHES_FILE = KR_HEARINGS / "all_speeches_16_22_v9.parquet"
 
 API_KEY = os.environ["ASSEMBLY_API_KEY"]  # Set via: export ASSEMBLY_API_KEY=your_key

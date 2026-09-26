@@ -6,35 +6,36 @@ Collects individual legislator votes for each bill that went to plenary vote.
 Usage:
     python3 collect_roll_calls.py             # Collect all 20-22대
     python3 collect_roll_calls.py --age 22    # Single assembly
-    python3 collect_roll_calls.py --resume    # Resume from checkpoint
+
+Each bill's answer is appended to data/raw/fetchlog/nojepdqqaweusdfbi_{age}.jsonl,
+so an interrupted run resumes, and a rerun of a finished run re-pulls nothing.
+Pass --refresh to re-pull every bill (the API back-fills votes of members who
+were missing at first, so an ongoing assembly should be re-pulled in full).
+
+After collection the member-level counts of every bill are compared with the
+official tallies (ncocpgfiaoituanbr) and the result is written to
+data/raw/roll_calls_{age}_tally_check.csv.
 """
 
 import argparse
-import json
 import logging
-import os
 import sys
-import time
 from pathlib import Path
 
 import pandas as pd
-import requests
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
+
+import kna_api
+from kna_api import fetch_many, rows_from_log, write_parquet_atomic
 
 # ── Configuration ──────────────────────────────────────────────────────────
 
-BASE_URL = "https://open.assembly.go.kr/portal/openapi"
-API_KEY = os.environ["ASSEMBLY_API_KEY"]  # Set via: export ASSEMBLY_API_KEY=your_key
 DATA_DIR = Path(__file__).parent / "data"
 RAW_DIR = DATA_DIR / "raw"
 PROCESSED_DIR = DATA_DIR / "processed"
+FETCHLOG_DIR = RAW_DIR / "fetchlog"
 
 ENDPOINT = "nojepdqqaweusdfbi"  # 의원별 표결 (member-level roll calls)
 VOTE_ENDPOINT = "ncocpgfiaoituanbr"  # 의안별 표결 (bill-level tallies)
-
-RATE_LIMIT_SEC = 0.3
-HEADERS = {"User-Agent": "Mozilla/5.0"}
 
 LOG_DIR = Path(__file__).parent / "logs"
 LOG_DIR.mkdir(exist_ok=True)
@@ -49,78 +50,20 @@ logging.basicConfig(
 )
 log = logging.getLogger(__name__)
 
-
-def make_session() -> requests.Session:
-    session = requests.Session()
-    session.headers.update(HEADERS)
-    retry = Retry(total=5, backoff_factor=1.0,
-                  status_forcelist=[429, 500, 502, 503, 504],
-                  allowed_methods=["GET"])
-    adapter = HTTPAdapter(max_retries=retry)
-    session.mount("https://", adapter)
-    session.mount("http://", adapter)
-    return session
-
-
-def fetch_member_votes(session: requests.Session,
-                       bill_id: str, age: int) -> list[dict]:
-    """Fetch all member votes for a single bill."""
-    all_rows = []
-    page = 1
-
-    while True:
-        params = {
-            "KEY": API_KEY,
-            "Type": "json",
-            "pIndex": page,
-            "pSize": 300,  # Max ~300 members per bill
-            "BILL_ID": bill_id,
-            "AGE": str(age),
-        }
-        try:
-            resp = session.get(f"{BASE_URL}/{ENDPOINT}",
-                               params=params, timeout=30)
-            data = resp.json()
-        except Exception as e:
-            log.error(f"  Request failed for {bill_id}: {e}")
-            break
-
-        # Parse response
-        body = data.get(ENDPOINT)
-        if body is None:
-            # Check for error
-            result = data.get("RESULT", {})
-            if result.get("CODE") == "ERROR-300":
-                break
-            break
-
-        rows = None
-        total = None
-        for entry in body:
-            if isinstance(entry, dict):
-                if "head" in entry:
-                    for h in entry["head"]:
-                        if "list_total_count" in h:
-                            total = h["list_total_count"]
-                        if "RESULT" in h and h["RESULT"]["CODE"] != "INFO-000":
-                            return all_rows
-                if "row" in entry:
-                    rows = entry["row"]
-
-        if rows is None:
-            break
-
-        all_rows.extend(rows)
-
-        if total and len(all_rows) >= total:
-            break
-        if len(rows) < 300:
-            break
-
-        page += 1
-        time.sleep(RATE_LIMIT_SEC)
-
-    return all_rows
+RENAME = {
+    "HG_NM": "member_name",
+    "HJ_NM": "member_hanja",
+    "POLY_NM": "party",
+    "ORIG_NM": "district",
+    "MONA_CD": "member_id",
+    "RESULT_VOTE_MOD": "vote",
+    "BILL_NO": "bill_no",
+    "BILL_ID": "bill_id_api",
+    "VOTE_DATE": "vote_date",
+    "AGE": "age_api",
+    "_BILL_ID": "bill_id",
+    "_AGE": "age",
+}
 
 
 def get_voted_bill_ids(age: int) -> list[str]:
@@ -135,22 +78,37 @@ def get_voted_bill_ids(age: int) -> list[str]:
     return bill_ids
 
 
-def load_checkpoint(age: int) -> dict:
-    path = RAW_DIR / f"rollcall_checkpoint_{age}.json"
-    if path.exists():
-        with open(path, "r") as f:
-            return json.load(f)
-    return {"completed": [], "failed": []}
+def tally_check(age: int, votes: pd.DataFrame) -> pd.DataFrame:
+    """Compare member-level counts per bill with the official tallies."""
+    tallies = pd.read_parquet(RAW_DIR / f"{VOTE_ENDPOINT}_{age}.parquet")
+    # A bill can carry more than one tally row upstream; keep them all visible
+    t = tallies.groupby("BILL_ID").agg(
+        proc_dt=("PROC_DT", "first"),
+        tally_members=("MEMBER_TCNT", "first"),
+        tally_yes=("YES_TCNT", "first"),
+        tally_no=("NO_TCNT", "first"),
+        tally_abstain=("BLANK_TCNT", "first"),
+        n_tally_rows=("BILL_ID", "size"),
+    )
+    for c in ["tally_members", "tally_yes", "tally_no", "tally_abstain"]:
+        t[c] = pd.to_numeric(t[c], errors="coerce")
+    v = votes.groupby("bill_id").agg(
+        rows=("vote", "size"),
+        yes=("vote", lambda s: (s == "찬성").sum()),
+        no=("vote", lambda s: (s == "반대").sum()),
+        abstain=("vote", lambda s: (s == "기권").sum()),
+    )
+    out = t.join(v, how="left").fillna({"rows": 0, "yes": 0, "no": 0, "abstain": 0})
+    out["rows_short"] = out["tally_members"] - out["rows"]
+    out["yna_match"] = ((out["yes"] == out["tally_yes"]) & (out["no"] == out["tally_no"])
+                        & (out["abstain"] == out["tally_abstain"]))
+    out.index.name = "bill_id"
+    return out.reset_index()
 
 
-def save_checkpoint(age: int, ckpt: dict):
-    path = RAW_DIR / f"rollcall_checkpoint_{age}.json"
-    with open(path, "w") as f:
-        json.dump(ckpt, f)
-
-
-def collect_assembly(age: int, resume: bool = False):
+def collect_assembly(age: int, refresh: bool = False, workers: int = 4):
     """Collect all member-level roll calls for one assembly."""
+    kna_api.get_key()
     log.info(f"{'='*50}")
     log.info(f"Roll Call Collection: {age}대")
     log.info(f"{'='*50}")
@@ -159,108 +117,53 @@ def collect_assembly(age: int, resume: bool = False):
     if not bill_ids:
         return
 
-    ckpt = load_checkpoint(age) if resume else {"completed": [], "failed": []}
-    done = set(ckpt["completed"])
-
-    if resume and done:
-        log.info(f"  Resuming: {len(done):,} done, {len(bill_ids) - len(done):,} remaining")
-
-    remaining = [b for b in bill_ids if b not in done]
-    total = len(remaining)
-
-    if total == 0:
-        log.info("  All done!")
+    log_path = FETCHLOG_DIR / f"{ENDPOINT}_{age}.jsonl"
+    if refresh and log_path.exists():
+        log_path.rename(log_path.with_suffix(".jsonl.prev"))
+    done = fetch_many(ENDPOINT, bill_ids,
+                      lambda b: {"BILL_ID": b, "AGE": str(age)},
+                      log_path, workers=workers, page_size=1000)
+    failed = [b for b in bill_ids if done.get(b, {}).get("status") != "ok"]
+    if failed:
+        log.error(f"  {len(failed):,} bills failed; rerun to retry. Not writing output.")
         return
 
-    log.info(f"  Collecting {total:,} bills x ~300 members")
-    log.info(f"  Estimated time: {total * RATE_LIMIT_SEC / 60:.1f} min")
+    rows = rows_from_log({b: done[b] for b in bill_ids})
+    for r in rows:
+        r["_AGE"] = age
+    clean = pd.DataFrame(rows).rename(columns=RENAME)
+    dup = clean.duplicated(subset=["bill_id", "member_id"]).sum()
+    if dup:
+        log.warning(f"  {dup} duplicate (bill_id, member_id) rows from the API, dropped")
+        clean = clean.drop_duplicates(subset=["bill_id", "member_id"])
 
-    session = make_session()
-    all_rows = []
-    start = time.time()
-    errors = 0
+    outpath = RAW_DIR / f"roll_calls_{age}.parquet"
+    write_parquet_atomic(clean, outpath)
+    log.info(f"  Saved: {outpath.name} ({len(clean):,} rows, "
+             f"{clean['bill_id'].nunique():,} bills)")
 
-    for i, bill_id in enumerate(remaining):
-        if (i + 1) % 100 == 0 or i == 0:
-            elapsed = time.time() - start
-            rate = (i + 1) / elapsed if elapsed > 0 else 0
-            eta = (total - i - 1) / rate / 60 if rate > 0 else 0
-            log.info(f"  [{age}대] {i+1:,}/{total:,} ({(i+1)/total*100:.1f}%) "
-                     f"| {rate:.1f} bills/s | ETA: {eta:.0f} min "
-                     f"| {len(all_rows):,} votes collected")
-
-        try:
-            rows = fetch_member_votes(session, bill_id, age)
-            if rows:
-                for r in rows:
-                    r["_BILL_ID"] = bill_id
-                    r["_AGE"] = age
-                all_rows.extend(rows)
-            ckpt["completed"].append(bill_id)
-        except Exception as e:
-            log.error(f"  Exception for {bill_id}: {e}")
-            ckpt["failed"].append(bill_id)
-            errors += 1
-
-        time.sleep(RATE_LIMIT_SEC)
-
-        # Periodic save
-        if (i + 1) % 500 == 0:
-            save_checkpoint(age, ckpt)
-            if all_rows:
-                pd.DataFrame(all_rows).to_parquet(
-                    RAW_DIR / f"roll_calls_{age}_partial.parquet", index=False)
-            log.info(f"  Checkpoint at {i+1:,} (errors: {errors})")
-
-    # Final save
-    save_checkpoint(age, ckpt)
-
-    if all_rows:
-        df = pd.DataFrame(all_rows)
-
-        # Clean columns
-        clean = df.rename(columns={
-            "HG_NM": "member_name",
-            "HJ_NM": "member_hanja",
-            "POLY_NM": "party",
-            "ORIG_NM": "district",
-            "MONA_CD": "member_id",
-            "RESULT_VOTE_MOD": "vote",
-            "BILL_NO": "bill_no",
-            "BILL_ID": "bill_id_api",
-            "VOTE_DATE": "vote_date",
-            "AGE": "age_api",
-            "_BILL_ID": "bill_id",
-            "_AGE": "age",
-        })
-
-        outpath = RAW_DIR / f"roll_calls_{age}.parquet"
-        clean.to_parquet(outpath, index=False)
-        log.info(f"  Saved: {outpath.name} ({len(clean):,} rows)")
-
-        # Remove partial
-        partial = RAW_DIR / f"roll_calls_{age}_partial.parquet"
-        if partial.exists():
-            partial.unlink()
-
-    elapsed = time.time() - start
-    log.info(f"\n[{age}대] Done in {elapsed/60:.1f} min | "
-             f"{len(all_rows):,} votes | {errors} errors")
+    check = tally_check(age, clean)
+    check.to_csv(RAW_DIR / f"roll_calls_{age}_tally_check.csv", index=False)
+    short = (check["rows_short"] > 0).sum()
+    mism = (~check["yna_match"]).sum()
+    log.info(f"  Tally check: {len(check):,} bills, {short:,} with fewer member rows "
+             f"than MEMBER_TCNT, {mism:,} with Y/N/A different from the tally")
 
 
 def main():
     parser = argparse.ArgumentParser(description="Collect member-level roll calls")
     parser.add_argument("--age", type=int, help="Single assembly (default: all 20-22)")
-    parser.add_argument("--resume", action="store_true")
+    parser.add_argument("--refresh", action="store_true",
+                        help="Re-pull every bill instead of resuming")
+    parser.add_argument("--workers", type=int, default=4)
+    parser.add_argument("--resume", action="store_true",
+                        help="Kept for compatibility; collection always resumes")
     args = parser.parse_args()
 
     RAW_DIR.mkdir(parents=True, exist_ok=True)
 
-    if args.age:
-        collect_assembly(args.age, args.resume)
-    else:
-        for age in [20, 21, 22]:
-            collect_assembly(age, args.resume)
+    for age in ([args.age] if args.age else [20, 21, 22]):
+        collect_assembly(age, args.refresh, args.workers)
 
 
 if __name__ == "__main__":

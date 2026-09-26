@@ -1,0 +1,127 @@
+{
+  "vintage": "v20260917",
+  "cutoff": null,
+  "created": "2026-09-26T09:06:06-0400",
+  "script": {
+    "path": "build_ideal_points.R",
+    "sha256": "c7888acae568b8f0f334bfffbd4c622a26c649d258f254547ecc39b362393691",
+    "git_head": "3d8d55dcaed687d7cdf3c94bc89cd1b60581b44c"
+  },
+  "input": {
+    "path": "data/processed/roll_calls_all.parquet",
+    "sha256": "e060775a7a07b3412265d1cd93f97ea2407f08b1b2b9619b08ebc36bff7b6c6b",
+    "api_rows_after_cutoff": 2557618,
+    "scaled_rows": 1828927
+  },
+  "members": [
+    {
+      "path": "data/processed/members_20.parquet",
+      "sha256": "abc6a7ad7d1ee3efbe54f8cc059cc70605ef30f49f45a194cf1e862ce338d42e"
+    },
+    {
+      "path": "data/processed/members_21.parquet",
+      "sha256": "0948f1d7c90f8b0a0e0d2f7c3cc6920338719206c55231fe01a0066370883a35"
+    },
+    {
+      "path": "data/processed/members_22.parquet",
+      "sha256": "f8b0718599aa9eb372b7434d05fe7861d548cbe43e71a92f7da54e734c040851"
+    }
+  ],
+  "settings": {
+    "min_minority": 0.025,
+    "min_votes": 20,
+    "ref_term": 20,
+    "conservative": ["국민의힘", "미래통합당", "자유한국당", "미래한국당", "새누리당", "국민의미래"],
+    "liberal": ["더불어민주당", "더불어시민당", "더불어민주연합"],
+    "polarity_anchor": {
+      "20": "G152611B",
+      "21": "G152611B",
+      "22": "G152611B"
+    },
+    "row_order": ["term", "date", "bill_id", "member_id"],
+    "party": "party at election (members_{term}.party), roll-call party fallback",
+    "skip_dw": false
+  },
+  "seeds": {
+    "dwnominate": 20260718
+  },
+  "terms": [
+    {
+      "term": 20,
+      "first_vote_date": "20160609",
+      "last_vote_date": "20200520",
+      "recorded_votes": 3491,
+      "legislators": 317,
+      "contested_votes": 269,
+      "polarity_anchor": "G152611B",
+      "party_fallback_members": 0,
+      "apre_1d": 0.416388332843781,
+      "apre_2d": 0.480739265680313
+    },
+    {
+      "term": 21,
+      "first_vote_date": "20200608",
+      "last_vote_date": "20240528",
+      "recorded_votes": 3272,
+      "legislators": 318,
+      "contested_votes": 331,
+      "polarity_anchor": "G152611B",
+      "party_fallback_members": 0,
+      "apre_1d": 0.609178304672241,
+      "apre_2d": 0.655205070972443
+    },
+    {
+      "term": 22,
+      "first_vote_date": "20240704",
+      "last_vote_date": "20260917",
+      "recorded_votes": 1847,
+      "legislators": 305,
+      "contested_votes": 223,
+      "polarity_anchor": "G152611B",
+      "party_fallback_members": 0,
+      "apre_1d": 0.84868049621582,
+      "apre_2d": 0.873598396778107
+    }
+  ],
+  "bridging": [
+    {
+      "term": 21,
+      "reference_term": 20,
+      "n_bridging": 126,
+      "slope": 0.898460826050008,
+      "intercept": -0.0229869212969329,
+      "r_squared": 0.903616742680186,
+      "vintage": "v20260917"
+    },
+    {
+      "term": 22,
+      "reference_term": 21,
+      "n_bridging": 151,
+      "slope": 0.706518446390103,
+      "intercept": -0.0307367591962772,
+      "r_squared": 0.950183554341173,
+      "vintage": "v20260917"
+    }
+  ],
+  "dwnominate_seconds": 540.747567892075,
+  "r_version": "R version 4.4.1 (2024-06-14)",
+  "packages": {
+    "arrow": "23.0.1.1",
+    "dplyr": "1.1.4",
+    "tidyr": "1.3.1",
+    "pscl": "1.5.9",
+    "wnominate": "1.5",
+    "dwnominate": "1.2",
+    "jsonlite": "1.8.8",
+    "digest": "0.6.36"
+  },
+  "dwnominate_remote_sha": "fd39e6a85ada1ba491030ac14a1b0f3c1fefb736",
+  "outputs": {
+    "ideal_points_wnominate.csv": "cb15f2da0ea3d73e30d85c514e522538cd6c984df382b4a14d45ae983fbcdc68",
+    "ideal_points_bridged.csv": "ff55108db188f436149ac9cc7da385b16e497a3944b51e2abc3947e1607a71a9",
+    "ideal_points_bridging_params.csv": "c4736e8dfad2a412ffbeb7e604190ced6df91baa2c038a8b9ecae3c55139f487",
+    "ideal_points_dwnominate.csv": "5de6946c8806cd91b616c526cbb7e1d6d04b0a57ca4bf4f496b4b56ff7ea3808",
+    "dwnominate_fit.rds": "569c24146b2d182824d6cf0c4e1afcb903c258223599adb5f65767a602fec8c9",
+    "ideal_points_sessioninfo.txt": "8aa1173f227883d39933d190a2f7eefa786ff4a8bf535a127d3c1fbb55dd667f"
+  }
+}

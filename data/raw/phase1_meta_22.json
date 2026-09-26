@@ -1,11 +1,14 @@
 {
   "phase": 1,
   "age": 22,
-  "collected_at": "2026-03-21 08:51:50",
+  "collected_at": "2026-09-25 06:52:04",
   "endpoints": {
     "nzmimeepazxkubdpn": {
       "name": "의원발의법률안",
-      "rows": 16142,
+      "params": {
+        "AGE": "22"
+      },
+      "rows": 19651,
       "columns": [
         "BILL_ID",
         "BILL_NO",
@@ -35,7 +38,10 @@
     },
     "BILLRCP": {
       "name": "접수목록",
-      "rows": 118466,
+      "params": {
+        "ERACO": "제22대"
+      },
+      "rows": 21581,
       "columns": [
         "ERACO",
         "BILL_ID",
@@ -50,7 +56,10 @@
     },
     "BILLJUDGE": {
       "name": "심사정보",
-      "rows": 35165,
+      "params": {
+        "ERACO": "제22대"
+      },
+      "rows": 5241,
       "columns": [
         "ERACO",
         "BILL_ID",
@@ -68,7 +77,10 @@
     },
     "ncocpgfiaoituanbr": {
       "name": "의안별표결현황",
-      "rows": 1286,
+      "params": {
+        "AGE": "22"
+      },
+      "rows": 1847,
       "columns": [
         "BILL_ID",
         "PROC_DT",
@@ -89,7 +101,10 @@
     },
     "nzpltgfqabtcpsmai": {
       "name": "처리의안",
-      "rows": 4421,
+      "params": {
+        "AGE": "22"
+      },
+      "rows": 6088,
       "columns": [
         "BILL_ID",
         "BILL_NO",
