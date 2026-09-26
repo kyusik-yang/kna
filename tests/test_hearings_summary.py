@@ -68,3 +68,17 @@ def test_v10_layout_gives_the_v9_schema(tmp_path):
     res = bhs.compare(got, ref, key="v9_meeting_id")
     assert res["matched"] == 2 and res["mismatch"]["n_speeches"] == 1
     assert sum(v for k, v in res["mismatch"].items() if k != "n_speeches") == 0
+
+
+def test_compare_with_a_repeated_key():
+    ref = pd.DataFrame({"meeting_id": ["1", "2"], "term": pd.array([21, 21], dtype="Int64"),
+                        "committee": ["법제사법위원회"] * 2, "hearing_type": ["상임위원회"] * 2,
+                        "date": ["2020-06-16"] * 2, "n_speeches": [3, 4],
+                        "n_legislators": [1, 2], "parties": ["", ""]})
+    # Two v10 meetings that name the same v9 meeting
+    new = pd.concat([ref.assign(v9_meeting_id=ref["meeting_id"]),
+                     ref.iloc[[0]].assign(meeting_id="3", v9_meeting_id="1", n_speeches=9)],
+                    ignore_index=True)
+    res = bhs.compare(new, ref, key="v9_meeting_id")
+    assert (res["matched"], res["only_new"], res["only_ref"]) == (2, 1, 0)
+    assert sum(res["mismatch"].values()) == 0

@@ -189,6 +189,13 @@ def summarize_v10(v10_dir: Path) -> pd.DataFrame:
 def compare(new: pd.DataFrame, ref: pd.DataFrame, key: str = "meeting_id") -> dict:
     """Differences between a new summary and a reference, aligned on new[key] = ref.meeting_id."""
     a = new[new[key].notna()].set_index(key)
+    repeated = a.index[a.index.duplicated()].unique()
+    if len(repeated):
+        # Several new meetings name the same reference meeting. Compare the first
+        # and count the others as new
+        print(f"  WARNING: {len(repeated):,} {key} value(s) occur more than once in the new "
+              f"table, only the first row of each is compared: {list(repeated[:5])}")
+        a = a[~a.index.duplicated()]
     b = ref.set_index("meeting_id")
     common = a.index.intersection(b.index)
     res = {"rows_new": len(new), "rows_ref": len(ref), "matched": len(common),
