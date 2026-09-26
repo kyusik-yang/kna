@@ -409,6 +409,13 @@ rebuilt by it:
   member IDs cannot be reproduced.
 - `hearing_meetings_summary.parquet` and `assets_wealth_panel.parquet` are
   not rebuilt. They are carried over unchanged from 0.6.0.
+  `python3 build_hearings_summary.py --source v9 --out data/_build`
+  reproduces the hearing summary exactly from the kr-hearings-data version 9
+  corpus in `KNA_HEARINGS_DIR`. The summary will be rebuilt with
+  `--source v10` when kr-hearings-data version 10 is released. `--v10-dir` or
+  `KNA_HEARINGS_V10_DIR` sets the location of the v10 release files, by
+  default `../kr-hearings-data/v10/build`. CODEBOOK.md section 15 lists what
+  changes with v10.
 - `ideal_points_archive/` is produced by step 3. `v0.6.0_legacy/` is a copy
   of the six ideal-point files of release 0.6.0, and `v20260312_corrected/`
   is `build_ideal_points.R` run on the 0.7.0 roll calls and members with

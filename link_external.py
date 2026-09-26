@@ -35,6 +35,8 @@ from pathlib import Path
 
 import pandas as pd
 
+from build_hearings_summary import summarize_v9_speeches
+
 PROCESSED = Path(__file__).parent / "data" / "processed"
 SIBLINGS = Path(__file__).resolve().parent.parent
 AB_PATH = Path(os.environ.get("KNA_ASSEMBLY_BILLS_DIR", SIBLINGS / "korean-assembly-bills" / "data"))
@@ -104,12 +106,9 @@ def link_speeches(out: Path, in_dir: Path, allow_missing: bool):
         types = sub["hearing_type"].value_counts().to_dict()
         print(f"  {term}대: {n_meetings:,} meetings, {n_speeches:,} speeches")
 
-    # Build meeting-level summary for linking
-    meeting_summary = speeches.groupby(["meeting_id", "term", "committee", "hearing_type", "date"]).agg(
-        n_speeches=("speaker", "count"),
-        n_legislators=("naas_cd", "nunique"),
-        parties=("party", lambda x: ",".join(sorted(x.dropna().unique()))),
-    ).reset_index()
+    # Build meeting-level summary for linking (same aggregation as
+    # build_hearings_summary.py --source v9)
+    meeting_summary = summarize_v9_speeches(speeches)
 
     outpath = out / "hearing_meetings_summary.parquet"
     meeting_summary.to_parquet(outpath, index=False)

@@ -63,6 +63,7 @@ known limitations in [DATA_AVAILABILITY.md](DATA_AVAILABILITY.md).
 
 `hearing_meetings_summary.parquet` and `assets_wealth_panel.parquet` are
 carried over unchanged from 0.6.0. `build_all.sh` does not rebuild them.
+`build_hearings_summary.py` reproduces the hearing summary (section 15).
 
 ## Conventions
 
@@ -1159,6 +1160,7 @@ does not join to the master.
 |---|---|
 | File | `hearing_meetings_summary.parquet`, carried over from 0.6.0 |
 | Source | the kr-hearings-data speech corpus, version 9 |
+| Script | `build_hearings_summary.py` |
 | Unit | one committee, plenary, audit or hearing meeting |
 
 | Column | Definition |
@@ -1176,7 +1178,30 @@ The table has 16,829 meetings dated from 2000-06-01 to 2025-07-21. Version 9
 of the source corpus is known to be defective and is being rebuilt, so treat
 this table as provisional. `n_legislators` counts an empty speaker code as a
 legislator in 2,119 meetings, and some legislators' speeches are not linked
-to a code upstream.
+to a code upstream. The same 2,119 meetings have an empty party label in
+`parties`, which shows as a leading comma in 2,018 of them.
+
+**Rebuilding.** `python3 build_hearings_summary.py --source v9 --out DIR`
+rebuilds the table from `all_speeches_16_22_v9.parquet` in `KNA_HEARINGS_DIR`
+(default `../kr-hearings-data/data`). Its output equals the shipped file row
+for row, which `tests/test_hearings_summary.py` checks. The 266 speeches of
+meeting 43038 have no term or date and are left out, as in the shipped file.
+`link_external.py speeches` writes the same table with the same code.
+
+The table will be rebuilt from kr-hearings-data version 10 when that version
+is released, with `--source v10`. `--v10-dir` or `KNA_HEARINGS_V10_DIR` sets
+the location of the v10 release files, by default
+`../kr-hearings-data/v10/build`. Until then this file stays as shipped. The
+v10 build keeps the eight columns and their types, with these changes.
+
+| Column | In the v10 build |
+|---|---|
+| `meeting_id` | The Open API CONF_ID, verbatim. It differs from the v9 ID of most meetings because v9 dropped the leading zero. |
+| `committee` | The committee, with the 국정감사 audit team appended as in v9. Subcommittee meetings carry the name of the parent committee. |
+| `hearing_type` | The six v9 values plus 특별위원회 and 전원위원회. |
+| `n_speeches` | Merged speaker turns in the meeting. |
+| `n_legislators` | Distinct non-empty legislator codes among the turns. |
+| `parties` | Distinct non-empty party labels of the turns, each the party on the speech date, sorted and comma-joined. |
 
 ---
 
