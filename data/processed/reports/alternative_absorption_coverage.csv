@@ -1,0 +1,7 @@
+age,alternatives,fetchlog_done,fetchlog_failed,file,alts_with_rows,links,absorbed_universe,absorbed_linked,links_not_대안반영폐기,absorbed_in_2plus_alts,alt_bill_no_missing,absorbed_not_in_bill_lists,self_links_dropped,duplicates_dropped,share_alts_with_rows,share_absorbed_linked
+17,605,605,0,alt_absorption_17.parquet,321,1106,1911,1099,7,0,0,0,0,0,0.5305785123966942,0.575091575091575
+18,963,963,0,alt_absorption_18.parquet,953,3831,3845,3825,6,0,0,0,0,0,0.9896157840083074,0.9947984395318595
+19,1228,1228,0,alt_absorption_19.parquet,1217,4663,4681,4663,0,0,0,0,0,0,0.991042345276873,0.9961546678060244
+20,1402,1402,0,alt_absorption_20.parquet,1400,5563,5568,5563,0,0,0,0,0,0,0.9985734664764622,0.9991020114942529
+21,1373,1373,0,alt_absorption_21.parquet,1356,5996,5987,5947,49,0,0,0,0,0,0.98761835396941,0.9933188575246367
+22,864,864,0,alt_absorption_22.parquet,860,4280,4211,4206,74,0,0,0,0,0,0.9953703703703703,0.9988126335787224

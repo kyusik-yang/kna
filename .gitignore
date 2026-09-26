@@ -31,3 +31,13 @@ paper/
 # Build artifacts
 dist/
 Rplots.pdf
+
+# Per-bill fetch logs (resume state, regenerable)
+data/raw/fetchlog/
+*.tmp
+
+# Staging area for rebuilt outputs before promotion
+data/_build/
+
+# Convenience copy of members_* for kna-research-agents (regenerated, not shipped)
+data/processed/member_info_17_22.parquet

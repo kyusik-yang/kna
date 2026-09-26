@@ -1,46 +1,112 @@
 #!/usr/bin/env python3
 """
 build_voteview.py
-Generate a Korean Voteview-style interactive website (docs/voteview.html).
+Generate a Korean Voteview-style interactive website (voteview.html).
 
 Inspired by voteview.com but for the Korean National Assembly.
-Uses bridging-aligned W-NOMINATE ideal points for the 20th-22nd Assemblies.
-See CODEBOOK.md, section 'Ideal Points', for how the series is built.
+Uses the default bridged ideal-point series for the 20th-22nd Assemblies,
+labelled with each legislator's party at election. Party blocs come from
+the party_bloc column of the ideal-point files, and every number on the
+page is computed from the data directory. See CODEBOOK.md, section
+'Ideal Points', for how the series is built.
 
-Data:
-  - data/processed/ideal_points_bridged.csv  (936 legislator-terms)
-  - data/processed/roll_calls_all.parquet     (2.4M individual votes)
+Data (read from --data, default data/processed):
+  - ideal_points_bridged.csv          default series (bridged_1d, party, party_bloc, vintage)
+  - ideal_points_wnominate.csv        per-assembly W-NOMINATE (comparison text)
+  - ideal_points_dwnominate.csv       pooled DW-NOMINATE (comparison text)
+  - ideal_points_bridging_params.csv  bridging legislators per term
+  - ideal_points_manifest.json        vote dates, record counts, scaling settings
+  - roll_calls_all.parquet, members_22.parquet  record count, coverage note
+  - ideal_points_archive/v0.6.0_legacy/  earlier series, for the correction notice (optional)
 
 Output:
-  - docs/voteview.html  (standalone, self-contained HTML with Plotly CDN)
+  - voteview.html in --out (default docs), standalone HTML with Plotly CDN
+
+Usage:
+    python3 build_voteview.py                                # data/processed -> docs/
+    python3 build_voteview.py --data data/_build --out docs  # staged build
 """
 
+import argparse
 import json
+import re
 import numpy as np
 import pandas as pd
 from pathlib import Path
 
 # ── Paths ─────────────────────────────────────────────────────────────
-ROOT = Path(__file__).parent
-DATA_DIR = ROOT / "data" / "processed"
-OUT_DIR = ROOT / "docs"
+ROOT = Path(__file__).resolve().parent
+
+
+def _parse_args():
+    p = argparse.ArgumentParser(description="Build the ideal-point map (voteview.html).")
+    p.add_argument("--data", default=str(ROOT / "data" / "processed"),
+                   help="data directory to read (default data/processed)")
+    p.add_argument("--out", default=str(ROOT / "docs"),
+                   help="directory to write voteview.html into (default docs)")
+    return p.parse_args()
+
+
+ARGS = _parse_args()
+DATA_DIR = Path(ARGS.data).expanduser().resolve()
+OUT_DIR = Path(ARGS.out).expanduser().resolve()
+if not (DATA_DIR / "ideal_points_bridged.csv").exists():
+    raise SystemExit(f"ERROR: {DATA_DIR / 'ideal_points_bridged.csv'} not found")
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # ── Load data ─────────────────────────────────────────────────────────
-df = pd.read_csv(DATA_DIR / "ideal_points_bridged.csv")
+df = pd.read_csv(DATA_DIR / "ideal_points_bridged.csv", dtype={"member_id": str})
 
 # ideal_points_bridged.csv is already oriented to the Voteview convention:
 # positive = conservative (보수), negative = liberal (진보). No flip needed.
 df["aligned"] = df["bridged_1d"]
 
+# Vintage: one label per file, "v" + the date of the last vote used
+vintages = sorted(df["vintage"].dropna().unique()) if "vintage" in df.columns else []
+if len(vintages) > 1:
+    raise SystemExit(f"ERROR: ideal_points_bridged.csv mixes vintages {vintages}")
+VINTAGE = vintages[0] if vintages else None
+manifest_path = DATA_DIR / "ideal_points_manifest.json"
+MANIFEST = json.loads(manifest_path.read_text(encoding="utf-8")) if manifest_path.exists() else {}
+if MANIFEST and VINTAGE and MANIFEST.get("vintage") != VINTAGE:
+    raise SystemExit(f"ERROR: manifest vintage {MANIFEST.get('vintage')} != CSV vintage {VINTAGE}")
+
+rc_path = DATA_DIR / "roll_calls_all.parquet"
+if MANIFEST.get("terms"):
+    FIRST_VOTE = min(t["first_vote_date"] for t in MANIFEST["terms"])
+    LAST_VOTE = max(t["last_vote_date"] for t in MANIFEST["terms"])
+    N_VOTE_RECORDS = MANIFEST["input"]["api_rows_after_cutoff"]
+else:
+    rc_dates = pd.read_parquet(rc_path, columns=["date"])["date"]
+    FIRST_VOTE, LAST_VOTE = rc_dates.min()[:8], rc_dates.max()[:8]
+    if VINTAGE and re.fullmatch(r"v\d{8}", VINTAGE):
+        LAST_VOTE = VINTAGE[1:]
+    N_VOTE_RECORDS = int(((rc_dates.str[:8] <= LAST_VOTE)).sum())
+
+
+def ymd(s: str) -> str:
+    """'YYYYMMDD...' -> 'YYYY-MM-DD'."""
+    return f"{s[:4]}-{s[4:6]}-{s[6:8]}"
+
+
+TERMS = sorted(int(t) for t in df["term"].unique())
+SETTINGS = MANIFEST.get("settings", {})
+bridge_path = DATA_DIR / "ideal_points_bridging_params.csv"
+BRIDGING = pd.read_csv(bridge_path) if bridge_path.exists() else pd.DataFrame()
+
 # ── Party color mapping ───────────────────────────────────────────────
-# Conservative bloc -> red tones, liberal -> blue tones
+# Parties are the party at election, so the conservative and liberal
+# lineages appear under their election-time names and satellite parties.
 PARTY_COLORS = {
     "국민의힘": "#E61E2B",
     "자유한국당": "#E61E2B",
     "미래통합당": "#E61E2B",
     "미래한국당": "#E61E2B",
+    "새누리당": "#E61E2B",
+    "국민의미래": "#E61E2B",
     "더불어민주당": "#004EA2",
+    "더불어시민당": "#004EA2",
+    "더불어민주연합": "#004EA2",
     "정의당": "#FFCC00",
     "조국혁신당": "#003764",
     "진보당": "#D6001C",
@@ -59,15 +125,20 @@ PARTY_COLORS = {
     "민중당": "#999999",
     "자유통일당": "#999999",
     "사회민주당": "#999999",
+    "시대전환": "#999999",
 }
 
 # Party grouping for display order / legend (major parties first)
 PARTY_ORDER = [
     "더불어민주당",
+    "더불어시민당",
+    "더불어민주연합",
     "국민의힘",
+    "국민의미래",
     "미래통합당",
     "미래한국당",
     "자유한국당",
+    "새누리당",
     "정의당",
     "조국혁신당",
     "진보당",
@@ -85,41 +156,32 @@ PARTY_ORDER = [
     "민중당",
     "자유통일당",
     "사회민주당",
+    "시대전환",
 ]
 
-# Party bloc assignment for violin / aggregation
-PARTY_BLOC = {
-    "더불어민주당": "더불어민주당",
-    "열린민주당": "더불어민주당 계열",
-    "국민의힘": "국민의힘",
-    "미래통합당": "국민의힘 계열",
-    "미래한국당": "국민의힘 계열",
-    "자유한국당": "국민의힘 계열",
-    "정의당": "정의당",
-    "조국혁신당": "조국혁신당",
-    "진보당": "진보당",
-    "개혁신당": "개혁신당",
-    "무소속": "무소속",
+# Party blocs come from the party_bloc column written by
+# build_ideal_points.R, so the page, the CSV files and CODEBOOK share one
+# coding. The polarization gap is conservative minus liberal bloc means.
+BLOC_ORDER = ["liberal", "conservative", "progressive", "rebuilding",
+              "centrist", "liberal_minor", "independent"]
+BLOC_LABELS = {
+    "liberal": "더불어민주당 계열",
+    "conservative": "국민의힘 계열",
+    "progressive": "진보 정당",
+    "rebuilding": "조국혁신당",
+    "centrist": "중도 정당",
+    "liberal_minor": "민주 계열 소수정당",
+    "independent": "무소속·기타",
 }
-
-# Broader grouping for polarization measure
-BROAD_BLOC = {}
-for p in [
-    "국민의힘", "미래통합당", "미래한국당", "자유한국당",
-    "우리공화당", "친박신당", "바른미래당",
-]:
-    BROAD_BLOC[p] = "conservative"
-for p in [
-    "더불어민주당", "열린민주당", "민생당", "민주평화당",
-    "새로운미래",
-]:
-    BROAD_BLOC[p] = "liberal"
-for p in ["정의당", "조국혁신당", "진보당", "민중당", "기본소득당", "사회민주당"]:
-    BROAD_BLOC[p] = "progressive"
-BROAD_BLOC["개혁신당"] = "centrist"
-BROAD_BLOC["무소속"] = "independent"
-BROAD_BLOC["국민의당"] = "centrist"
-BROAD_BLOC["자유통일당"] = "conservative"
+BLOC_COLORS = {
+    "liberal": "#004EA2",
+    "conservative": "#E61E2B",
+    "progressive": "#FFCC00",
+    "rebuilding": "#003764",
+    "centrist": "#FF6B00",
+    "liberal_minor": "#5B8FD6",
+    "independent": "#808080",
+}
 
 
 def get_color(party):
@@ -129,7 +191,9 @@ def get_color(party):
 # ── Assign colors and jitter ─────────────────────────────────────────
 np.random.seed(42)
 df["color"] = df["party"].apply(get_color)
-df["bloc"] = df["party"].map(BROAD_BLOC).fillna("other")
+df["bloc"] = df["party_bloc"]
+blocs_in_data = [b for b in BLOC_ORDER if b in set(df["bloc"])] + \
+    sorted(set(df["bloc"]) - set(BLOC_ORDER))
 
 # Y-axis jitter for scatter
 jitter_amount = 0.25
@@ -139,20 +203,34 @@ df["y_jitter"] = df["term"] + np.random.uniform(
 
 # ── Compute aggregations ─────────────────────────────────────────────
 
+
+def bloc_gaps(frame: pd.DataFrame, col: str) -> pd.DataFrame:
+    """Liberal and conservative bloc means per term, and their distance."""
+    rows = []
+    for term, tdf in frame.groupby("term"):
+        lib = tdf.loc[tdf["party_bloc"] == "liberal", col].mean()
+        con = tdf.loc[tdf["party_bloc"] == "conservative", col].mean()
+        rows.append({"term": int(term), "liberal_mean": lib,
+                     "conservative_mean": con, "gap": abs(con - lib)})
+    return pd.DataFrame(rows)
+
+
+def gap_growth(frame: pd.DataFrame, col: str) -> float:
+    """Percent change of the bloc distance from the first to the last term."""
+    g = bloc_gaps(frame, col).set_index("term")["gap"]
+    return (g.iloc[-1] - g.iloc[0]) / g.iloc[0] * 100
+
+
+def change_words(x: float) -> str:
+    """Korean phrase for a percent change, rounded to a whole percent."""
+    r = int(round(abs(x)))
+    if r == 0:
+        return "거의 변하지 않는다"
+    return f"약 {r}% {'증가한다' if x > 0 else '감소한다'}"
+
+
 # 1. Polarization: mean distance between liberal and conservative blocs per term
-polar_data = []
-for term in sorted(df["term"].unique()):
-    tdf = df[df["term"] == term]
-    lib_mean = tdf[tdf["bloc"] == "liberal"]["aligned"].mean()
-    con_mean = tdf[tdf["bloc"] == "conservative"]["aligned"].mean()
-    gap = abs(lib_mean - con_mean)
-    polar_data.append({
-        "term": term,
-        "liberal_mean": round(lib_mean, 3),
-        "conservative_mean": round(con_mean, 3),
-        "gap": round(gap, 3),
-    })
-polar_df = pd.DataFrame(polar_data)
+polar_df = bloc_gaps(df, "aligned").round(3)
 
 # 2. Party means per term (for violin data)
 party_term_stats = []
@@ -173,9 +251,49 @@ for term in sorted(df["term"].unique()):
             })
 party_stats_df = pd.DataFrame(party_term_stats)
 
-# 3. Rank within each term
-df["rank"] = df.groupby("term")["aligned"].rank(ascending=False).astype(int)
+# 3. Rank within each term. 1 = most liberal, the same convention as the
+# kna CLI (kna legislator), so ranks are comparable between the two.
+df["rank"] = df.groupby("term")["aligned"].rank(ascending=True, method="min").astype(int)
 df["total_in_term"] = df.groupby("term")["aligned"].transform("count").astype(int)
+
+# 4. Numbers for the page text
+wnom_path = DATA_DIR / "ideal_points_wnominate.csv"
+dw_path = DATA_DIR / "ideal_points_dwnominate.csv"
+growth = {"bridged": gap_growth(df, "aligned")}
+if wnom_path.exists():
+    growth["wnom"] = gap_growth(pd.read_csv(wnom_path), "wnom_1d")
+if dw_path.exists():
+    growth["dw"] = gap_growth(pd.read_csv(dw_path), "dwnom_1d")
+
+legacy_path = DATA_DIR / "ideal_points_archive" / "v0.6.0_legacy" / "ideal_points_bridged.csv"
+legacy = {}
+if legacy_path.exists():
+    old = pd.read_csv(legacy_path, dtype={"member_id": str})
+    legacy["own_labels"] = gap_growth(old, "bridged_1d")
+    relabeled = old.drop(columns="party_bloc").merge(
+        df[["member_id", "term", "party_bloc"]], on=["member_id", "term"], how="inner")
+    legacy["election_labels"] = gap_growth(relabeled, "bridged_1d")
+    legacy["n"] = len(old)
+
+# Members of the latest term with no member-level votes, hence no score
+last_term = TERMS[-1]
+mem_path = DATA_DIR / f"members_{last_term}.parquet"
+no_votes = None
+if mem_path.exists() and rc_path.exists():
+    mem_last = pd.read_parquet(mem_path, columns=["mona_cd"])
+    rc_ids = pd.read_parquet(rc_path, columns=["term", "member_id"],
+                             filters=[("term", "==", last_term)])["member_id"]
+    no_votes = mem_last[~mem_last["mona_cd"].isin(rc_ids)]
+    scored = df.loc[df["term"] == last_term, "member_id"]
+    if no_votes["mona_cd"].isin(scored).any():
+        raise SystemExit("ERROR: a legislator without member-level votes has an ideal point")
+    n_members_last = len(mem_last)
+
+# Bloc composition, listed under the charts
+bloc_parties = {
+    b: df.loc[df["bloc"] == b, "party"].value_counts().index.tolist()
+    for b in blocs_in_data
+}
 
 # ── Build Plotly JSON traces ──────────────────────────────────────────
 
@@ -195,10 +313,10 @@ for party in all_parties:
     for _, row in pdf.iterrows():
         hover_text.append(
             f"<b>{row['member_name']}</b><br>"
-            f"정당: {row['party']}<br>"
+            f"정당 (선거 당시): {row['party']}<br>"
             f"대수: {int(row['term'])}대 국회<br>"
             f"이념점수: {row['aligned']:.3f}<br>"
-            f"순위: {int(row['rank'])}/{int(row['total_in_term'])}"
+            f"순위: {int(row['rank'])}/{int(row['total_in_term'])} (1 = 가장 진보)"
         )
     trace = {
         "x": pdf["aligned"].round(4).tolist(),
@@ -275,35 +393,37 @@ scatter_layout = {
 }
 
 # --- Violin / box plot (Section 3) ---
-# Use box plots grouped by party and term for the distribution view
+# Distributions by party bloc and term. Election-time party names split the
+# two main lineages across terms (새누리당, 미래통합당, 국민의힘, ...), so
+# the view groups them by party_bloc.
 violin_traces = []
-# Select parties with enough members across terms
-dist_parties = ["더불어민주당", "국민의힘", "정의당", "조국혁신당", "개혁신당", "무소속"]
-dist_colors = {p: get_color(p) for p in dist_parties}
+legend_shown = set()
 
-for term in [20, 21, 22]:
-    for party in dist_parties:
-        subset = df[(df["term"] == term) & (df["party"] == party)]
+for term in TERMS:
+    for bloc in blocs_in_data:
+        subset = df[(df["term"] == term) & (df["bloc"] == bloc)]
         if len(subset) < 2:
             continue
+        label = BLOC_LABELS.get(bloc, bloc)
         violin_traces.append({
             "type": "violin",
             "x": [f"{term}대"] * len(subset),
             "y": subset["aligned"].round(4).tolist(),
-            "name": party,
-            "legendgroup": party,
-            "showlegend": (term == 20),
+            "name": label,
+            "legendgroup": bloc,
+            "showlegend": bloc not in legend_shown,
             "scalemode": "width",
             "width": 0.45,
             "box": {"visible": True},
             "meanline": {"visible": True},
-            "line": {"color": dist_colors.get(party, "#999")},
-            "fillcolor": dist_colors.get(party, "#999"),
+            "line": {"color": BLOC_COLORS.get(bloc, "#999")},
+            "fillcolor": BLOC_COLORS.get(bloc, "#999"),
             "opacity": 0.6,
             "side": "both",
             "points": False,
             "spanmode": "hard",
         })
+        legend_shown.add(bloc)
 
 violin_layout = {
     "title": None,
@@ -446,10 +566,10 @@ html_template = """<!DOCTYPE html>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Korean National Assembly Voteview - 대한민국 국회 이념지도</title>
-<meta name="description" content="Bridging-aligned ideal point estimates for 936 legislators across the 20th-22nd Korean National Assemblies (2016-2026), with polarization trends and party distributions.">
+<meta name="description" content="__META_DESC__">
 <meta name="author" content="Kyusik Yang">
 <meta property="og:title" content="Korean National Assembly Voteview">
-<meta property="og:description" content="Interactive ideology map for Korean legislators, 20th-22nd Assemblies.">
+<meta property="og:description" content="Interactive ideology map for Korean legislators, __TERM_RANGE_EN__ Assemblies.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://kyusik-yang.github.io/kna/voteview.html">
 <meta name="twitter:card" content="summary">
@@ -869,20 +989,20 @@ html_template = """<!DOCTYPE html>
     </div>
     <div class="subtitle-ko">대한민국 국회 이념지도</div>
     <div class="header-desc">
-      이념점수 추정치, 20대 - 22대 국회 (2016 - 2026)
+      __HEADER_DESC__
     </div>
     <div class="stats-row">
       <div class="stat-item">
-        <span class="stat-num">936</span>
+        <span class="stat-num">__N_LEG__</span>
         <span class="stat-label">Legislator-Terms</span>
       </div>
       <div class="stat-item">
-        <span class="stat-num">3</span>
+        <span class="stat-num">__N_TERMS__</span>
         <span class="stat-label">Assemblies</span>
       </div>
       <div class="stat-item">
-        <span class="stat-num">2.4M</span>
-        <span class="stat-label">Roll Call Votes</span>
+        <span class="stat-num">__N_VOTES__</span>
+        <span class="stat-label">Vote Records</span>
       </div>
     </div>
   </div>
@@ -893,7 +1013,7 @@ html_template = """<!DOCTYPE html>
   <div class="container">
     <div class="section-head">
       <h2>Legislator Ideal Point Map</h2>
-      <div class="section-sub">Each dot represents one legislator-term. Hover for details.</div>
+      <div class="section-sub">Each dot represents one legislator-term, colored by party at election. Hover for details.</div>
     </div>
     <div class="chart-container">
       <div id="scatter-chart"></div>
@@ -909,7 +1029,7 @@ html_template = """<!DOCTYPE html>
       <div>
         <div class="section-head">
           <h2>Party Distribution</h2>
-          <div class="section-sub">Ideological spread by party across assemblies</div>
+          <div class="section-sub">Ideological spread by party bloc across assemblies</div>
         </div>
         <div class="chart-container">
           <div id="violin-chart"></div>
@@ -925,6 +1045,9 @@ html_template = """<!DOCTYPE html>
         </div>
       </div>
     </div>
+    <div class="section-sub" style="margin-top:4px; line-height:1.9;">
+      __BLOC_NOTE__
+    </div>
   </div>
 </section>
 
@@ -933,7 +1056,7 @@ html_template = """<!DOCTYPE html>
   <div class="container">
     <div class="section-head">
       <h2>Legislator Search</h2>
-      <div class="section-sub">936 legislator-terms sorted by ideological score</div>
+      <div class="section-sub">__N_LEG__ legislator-terms sorted by ideological score. Rank 1 is the most liberal legislator of the term.</div>
     </div>
     <div class="table-controls">
       <input type="text" class="search-box" id="search-input"
@@ -953,14 +1076,14 @@ html_template = """<!DOCTYPE html>
             <th data-col="party">정당 <span class="sort-arrow">&#9650;</span></th>
             <th data-col="term">대수 <span class="sort-arrow">&#9650;</span></th>
             <th data-col="score" class="sorted">점수 <span class="sort-arrow">&#9660;</span></th>
-            <th data-col="rank">순위 <span class="sort-arrow">&#9650;</span></th>
+            <th data-col="rank">순위 (1=진보) <span class="sort-arrow">&#9650;</span></th>
           </tr>
         </thead>
         <tbody id="table-body"></tbody>
       </table>
     </div>
     <div class="table-footer">
-      <span id="table-count">936</span> results shown
+      <span id="table-count">__N_LEG__</span> results shown
     </div>
   </div>
 </section>
@@ -972,44 +1095,7 @@ html_template = """<!DOCTYPE html>
       <h2>Methodology</h2>
     </div>
     <div class="method-note">
-      <h3>추정 방법</h3>
-      <p>
-        이념점수는 본회의 기명표결에 <strong>W-NOMINATE</strong> 스케일링을 적용해 추정한다.
-        각 대수를 독립적으로 추정한 뒤, 두 대수 모두에 재직한 <strong>bridging 의원</strong>을
-        이용해 이후 대수를 이전 대수의 단위로 사상(affine map)한다. 20대를 기준으로 21대를
-        정렬하고(bridging 126명), 정렬된 21대를 기준으로 22대를 정렬한다(150명).
-      </p>
-      <p>
-        소수파 비율 2.5% 미만인 표결(사실상 만장일치)과 그런 표결에 20회 미만 참여한 의원은
-        제외한다. 부호는 <strong>양수 = 보수, 음수 = 진보</strong>로 통일했다.
-        척도는 대략 -1에서 +1 사이다.
-      </p>
-
-      <div class="method-warning">
-        <h3>&#9888; 정정 안내 (2026-07-18)</h3>
-        <p>
-          이전 버전은 이 지표를 <strong>DW-NOMINATE</strong>로 표기했으나 정확하지 않았다.
-          실제로는 위에 설명한 대수별 W-NOMINATE + bridging 정렬이다. 표기를 정정하고
-          정렬 절차를 문서화했으며, 생성 스크립트(<code>build_ideal_points.R</code>)를
-          공개했다. 상세는
-          <a href="https://github.com/kyusik-yang/kna/blob/main/CORRECTIONS.md" target="_blank" rel="noopener">CORRECTIONS.md</a>를 참조.
-        </p>
-        <p>
-          <strong>대수 간 비교 시 주의.</strong> 대수별로 따로 추정한 원점수를 그대로
-          비교하면 각 대수가 재정규화되기 때문에 양극화 증가폭이 과대평가된다. 20대와 22대
-          사이 양대 정당 간 거리는 원점수로는 65% 증가하지만, 이 사이트가 쓰는 bridging
-          정렬로는 6%, 통합 DW-NOMINATE로는 12% 증가한다. 저장소는 세 계열을 모두 제공한다.
-        </p>
-      </div>
-
-      <h3>Data Sources</h3>
-      <p>
-        Roll call voting data was collected from the
-        <a href="https://open.assembly.go.kr" target="_blank" rel="noopener">열린국회정보 Open API</a>,
-        covering all plenary votes in the 20th (2016-2020), 21st (2020-2024), and 22nd
-        (2024-present) National Assemblies. The dataset includes 2,425,113 individual vote
-        records from 936 legislator-terms.
-      </p>
+__METHOD_HTML__
     </div>
   </div>
 </section>
@@ -1071,7 +1157,7 @@ function makeScoreBar(score) {
 
 function renderTable(data) {
   let html = '';
-  const limit = Math.min(data.length, 936);
+  const limit = data.length;
   for (let i = 0; i < limit; i++) {
     const r = data[i];
     html += '<tr>'
@@ -1147,6 +1233,148 @@ for party in all_parties:
             "n": n,
         })
 
+# ── Page text (every number computed above) ──────────────────────────
+def ordinal(n: int) -> str:
+    return f"{n}{'th' if 10 <= n % 100 <= 20 else {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th')}"
+
+
+def amount(x: float) -> str:
+    """Absolute percent change, whole percent unless it rounds to zero."""
+    return f"{abs(x):.0f}%" if round(abs(x)) else f"{abs(x):.1f}%"
+
+
+def stem(x: float) -> str:
+    return "증가" if x > 0 else "감소"
+
+
+# The fixed axis ranges must still hold every point
+if df["aligned"].abs().max() > 1.15:
+    raise SystemExit("ERROR: an ideal point lies outside the scatter/violin axis range [-1.15, 1.15]")
+if polar_df["liberal_mean"].min() < -0.65 or polar_df["conservative_mean"].max() > 0.75:
+    raise SystemExit("ERROR: a bloc mean lies outside the polarization axis range [-0.65, 0.75]")
+
+n_leg = len(df)
+term_range_ko = f"{TERMS[0]}대 - {TERMS[-1]}대"
+term_range_en = f"{ordinal(TERMS[0])}-{ordinal(TERMS[-1])}"
+vintage_ko = f"추정 계열 {VINTAGE}, " if VINTAGE else ""
+header_desc = (f"이념점수 추정치, {term_range_ko} 국회 ({FIRST_VOTE[:4]} - {LAST_VOTE[:4]}) &middot; "
+               f"{vintage_ko}{ymd(LAST_VOTE)}까지의 본회의 표결")
+meta_desc = (f"Bridging-aligned ideal point estimates for {n_leg:,} legislator-terms across the "
+             f"{term_range_en} Korean National Assemblies ({FIRST_VOTE[:4]}-{LAST_VOTE[:4]}), "
+             f"with polarization trends and party-bloc distributions.")
+n_votes_short = f"{N_VOTE_RECORDS / 1e6:.1f}M"
+
+bloc_note = "<strong>정당 계열 구성</strong> (선거 당시 정당, 이념점수 파일의 party_bloc) &middot; " + \
+    " &middot; ".join(f"{BLOC_LABELS.get(b, b)} = {', '.join(bloc_parties[b])}" for b in blocs_in_data) + \
+    "<br>양극화 거리 = 국민의힘 계열 평균 - 더불어민주당 계열 평균"
+
+# Methodology
+bparts = []
+for i, r in enumerate(BRIDGING.sort_values("term").itertuples() if len(BRIDGING) else []):
+    ref = f"{r.reference_term}대" if i == 0 else f"정렬된 {r.reference_term}대"
+    who = "bridging 의원 " if i == 0 else ""
+    bparts.append(f"{ref}를 기준으로 {r.term}대를 정렬할 때는 {who}{r.n_bridging}명을")
+bridging_txt = (", ".join(bparts) + " 쓴다.") if bparts else ""
+if SETTINGS.get("min_minority") is not None and SETTINGS.get("min_votes") is not None:
+    filter_txt = (f"소수파 비율 {SETTINGS['min_minority'] * 100:g}% 미만인 표결은 사실상 만장일치로 보고 제외하고, "
+                  f"남은 표결에 {SETTINGS['min_votes']}회 미만 참여한 의원도 제외한다.")
+else:
+    filter_txt = "사실상 만장일치인 표결과, 남은 표결에 참여한 횟수가 너무 적은 의원은 제외한다."
+if df["aligned"].abs().max() > 1.0 + 1e-9:
+    raise SystemExit("ERROR: the text says the scale runs from -1 to +1, revise it")
+
+archives = sorted(d.name for d in (DATA_DIR / "ideal_points_archive").iterdir() if d.is_dir()) \
+    if (DATA_DIR / "ideal_points_archive").is_dir() else []
+ARCHIVE_DESC = {
+    "v0.6.0_legacy": "0.6.0에 공개한 계열",
+    "v20260312_corrected": "0.6.0과 같은 표결 범위에서 오류만 고친 계열",
+}
+archive_txt = ""
+if archives:
+    archive_txt = "이전 계열은 저장소의 <code>ideal_points_archive/</code> 폴더에 남겨 두었다. " + " ".join(
+        f"<code>{a}</code>는 {ARCHIVE_DESC[a]}이다." if a in ARCHIVE_DESC else f"<code>{a}</code>도 있다."
+        for a in archives)
+
+legacy_txt = ""
+if legacy:
+    b = growth["bridged"]
+    lo, le = legacy["own_labels"], legacy["election_labels"]
+    if not abs(lo - le) > abs(le - b):
+        raise SystemExit("ERROR: relabelling no longer explains most of the change, revise the notice")
+    legacy_txt = (
+        f"<p>0.6.0 계열에서는 {TERMS[0]}대에서 {TERMS[-1]}대 사이 양대 정당 계열 간 bridging 거리가 약 {amount(lo)} {stem(lo)}했으나, "
+        f"현재 계열에서는 약 {amount(b)} {stem(b)}한다. 차이의 대부분은 정당 분류 기준의 변경에서 온다. "
+        f"0.6.0 추정치를 선거 당시 정당 계열로 다시 묶기만 해도 약 {amount(le)} {stem(le)}로 바뀐다.</p>")
+
+if "wnom" in growth and "dw" in growth:
+    w, b, d = growth["wnom"], growth["bridged"], growth["dw"]
+    if not w > max(b, d):
+        raise SystemExit("ERROR: the per-assembly series no longer shows the largest growth, revise the text")
+    compare_txt = (
+        f"{TERMS[0]}대와 {TERMS[-1]}대 사이 양대 정당 계열 간 거리는 원점수로는 약 {amount(w)} {stem(w)}하지만, "
+        f"이 사이트가 쓰는 bridging 정렬로는 약 {amount(b)} {stem(b)}하고, "
+        f"통합 DW-NOMINATE로는 약 {amount(d)} {stem(d)}한다. 저장소는 세 계열을 모두 제공한다.")
+else:
+    compare_txt = "저장소는 대수별 원점수, bridging 정렬, 통합 DW-NOMINATE의 세 계열을 제공한다."
+
+missing_ko = missing_en = ""
+if no_votes is not None and len(no_votes):
+    missing_ko = (f" {last_term}대 재직 의원 {n_members_last}명 중 {len(no_votes)}명은 의원별 표결 API에 "
+                  f"기록이 없어 {last_term}대 이념점수가 없다.")
+    missing_en = (f" {len(no_votes)} of the {n_members_last} members of the {ordinal(last_term)} Assembly "
+                  f"are missing from the member-level vote feed and have no score for that Assembly.")
+
+method_html = f"""      <h3>추정 방법</h3>
+      <p>
+        이념점수는 본회의 기명표결에 <strong>W-NOMINATE</strong> 스케일링을 적용해 추정한다.
+        각 대수를 독립적으로 추정한 뒤, 두 대수 모두에 재직한 <strong>bridging 의원</strong>을
+        이용해 이후 대수를 이전 대수의 단위로 사상(affine map)한다. {bridging_txt}
+      </p>
+      <p>
+        {filter_txt} 부호는 <strong>양수 = 보수, 음수 = 진보</strong>로 통일했다.
+        척도는 대략 -1에서 +1 사이다. 정당은 <strong>선거 당시 정당</strong>이며, 정당 계열은 이념점수 파일의
+        <code>party_bloc</code> 분류를 그대로 쓴다.
+      </p>
+      <p>
+        이 페이지의 계열은 <strong>{VINTAGE or "vintage 표기 없음"}</strong>로, {ymd(FIRST_VOTE)}부터
+        {ymd(LAST_VOTE)}까지의 본회의 표결을 쓴다.{missing_ko}
+      </p>
+
+      <div class="method-warning">
+        <h3>&#9888; 정정 안내 (v0.7.0)</h3>
+        <p>
+          이념점수를 다시 추정했다. 표결 통합 단계가 의원 이름으로 중복을 제거해 동명이인 의원의 표가
+          빠지던 오류와, DW-NOMINATE 입력의 정당 코드가 어긋나던 오류를 고쳤다. 정당 표기도 수집 시점의
+          현재 정당에서 선거 당시 정당으로 바꿨다. 기본 계열은 이제 {ymd(LAST_VOTE)}까지의 표결을 포함한다.
+          {archive_txt}
+        </p>
+        {legacy_txt}
+      </div>
+
+      <div class="method-warning">
+        <h3>&#9888; 정정 안내 (2026-07-18)</h3>
+        <p>
+          이전 버전은 이 지표를 <strong>DW-NOMINATE</strong>로 표기했으나 정확하지 않았다.
+          실제로는 위에 설명한 대수별 W-NOMINATE + bridging 정렬이다. 표기를 정정하고
+          정렬 절차를 문서화했으며, 생성 스크립트(<code>build_ideal_points.R</code>)를
+          공개했다. 상세는
+          <a href="https://github.com/kyusik-yang/kna/blob/main/CORRECTIONS.md" target="_blank" rel="noopener">CORRECTIONS.md</a>를 참조.
+        </p>
+        <p>
+          <strong>대수 간 비교 시 주의.</strong> 대수별로 따로 추정한 원점수를 그대로
+          비교하면 각 대수가 재정규화되기 때문에 양극화 증가폭이 과대평가된다. {compare_txt}
+        </p>
+      </div>
+
+      <h3>Data Sources</h3>
+      <p>
+        Roll call voting data was collected from the
+        <a href="https://open.assembly.go.kr" target="_blank" rel="noopener">열린국회정보 Open API</a>,
+        covering plenary votes in the {term_range_en} National Assemblies from {ymd(FIRST_VOTE)} to
+        {ymd(LAST_VOTE)}. The estimates use {N_VOTE_RECORDS:,} individual vote records and cover
+        {n_leg:,} legislator-terms.{missing_en}
+      </p>"""
+
 # ── Inject JSON into template ─────────────────────────────────────────
 def to_json(obj):
     return json.dumps(obj, ensure_ascii=False)
@@ -1161,6 +1389,19 @@ html = html.replace("POLAR_TRACES_JSON", to_json(polar_traces))
 html = html.replace("POLAR_LAYOUT_JSON", to_json(polar_layout))
 html = html.replace("TABLE_DATA_JSON", to_json(table_rows))
 html = html.replace("LEGEND_PARTIES_JSON", to_json(legend_parties))
+for token, value in {
+    "__META_DESC__": meta_desc,
+    "__TERM_RANGE_EN__": term_range_en,
+    "__HEADER_DESC__": header_desc,
+    "__N_LEG__": f"{n_leg:,}",
+    "__N_TERMS__": str(len(TERMS)),
+    "__N_VOTES__": n_votes_short,
+    "__BLOC_NOTE__": bloc_note,
+    "__METHOD_HTML__": method_html,
+}.items():
+    html = html.replace(token, value)
+if "__" in "".join(re.findall(r"__[A-Z_]+__", html)):
+    raise SystemExit(f"ERROR: unfilled tokens {sorted(set(re.findall(r'__[A-Z_]+__', html)))}")
 
 out_path = OUT_DIR / "voteview.html"
 out_path.write_text(html, encoding="utf-8")
@@ -1171,6 +1412,11 @@ print(f"  File size: {out_path.stat().st_size / 1024:.0f} KB")
 print(f"  Legislator-terms: {len(df)}")
 print(f"  Parties: {df['party'].nunique()}")
 print(f"  Assemblies: {sorted(df['term'].unique())}")
+print(f"  Vintage: {VINTAGE}, votes {ymd(FIRST_VOTE)} to {ymd(LAST_VOTE)}, {N_VOTE_RECORDS:,} records")
+print(f"  Gap growth, first to last term: " + ", ".join(f"{k} {v:+.2f}%" for k, v in growth.items()))
+if legacy:
+    print(f"  v0.6.0 legacy bridged growth: own labels {legacy['own_labels']:+.2f}%, "
+          f"election-time blocs {legacy['election_labels']:+.2f}%")
 print(f"\nPolarization:")
 for _, row in polar_df.iterrows():
     print(f"  {int(row['term'])}대: gap = {row['gap']:.3f}"

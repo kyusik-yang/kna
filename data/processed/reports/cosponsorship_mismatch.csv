@@ -1,0 +1,11 @@
+bill_id,bill_no,proposer_text,age,text_total,text_supporters,source,n_edges,n_대표발의,n_공동발의,n_찬성,legacy_rows,ppsr_status,match,role_match,mismatch_type,diff
+PRC_L0W7S0V4D2C5I1L5J5S0B2J2N7W3M2,176488,전여옥의원 외 19인,17,20,19,BILLINFOPPSR,1,1,0,0,0,rows,False,False,count,-19
+PRC_Y0B7O0R4V2A4S1A7G1D1N0X5F7C2M9,176487,전여옥의원 외 19인,17,20,19,BILLINFOPPSR,1,1,0,0,0,rows,False,False,count,-19
+PRC_O0N7U0J2V0G6L1J5F4R9D4D5B9N4A0,176050,김형오의원 외 126인,17,127,126,BILLINFOPPSR,1,1,0,0,0,rows,False,False,count,-126
+PRC_A0O7I0T2I0Q6P1H5E4X8B1M7D8I1T3,176049,김형오의원 외 126인,17,127,126,BILLINFOPPSR,1,1,0,0,0,rows,False,False,count,-126
+PRC_W0V7T0Y1Z1Z1A1P6H0A2G4V7B5C5H1,175903,권경석의원등 11인,17,11,0,BILLINFOPPSR,12,1,11,0,0,rows,False,False,count,1
+038678,175719,윤두환의원등 15인,17,15,0,BILLINFOPPSR,11,1,10,0,0,rows,False,False,count,-4
+037452,175179,김명자의원등 35인,17,35,0,BILLINFOPPSR,34,1,33,0,0,rows,False,False,count,-1
+032461,173184,정병국의원등 20인,17,20,0,BILLINFOPPSR,19,1,18,0,0,rows,False,False,count,-1
+028892,170620,채수찬의원등 27인,17,27,0,BILLINFOPPSR,21,1,20,0,0,rows,False,False,count,-6
+PRC_G2G2Y0W4J1Q5Y0T9G3A8P2H4Q3R6C3,2118255,이개호의원 등 11인,21,11,0,legacy_edges,12,1,10,1,12,not_fetched,False,False,count,1

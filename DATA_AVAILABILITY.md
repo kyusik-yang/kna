@@ -1,190 +1,251 @@
-# Data Availability by Assembly (대수별 데이터 가용성)
+# Data Availability by Assembly
 
-**Last updated**: 2026-03-30
+| | |
+|---|---|
+| Release | 0.7.0 |
+| Raw data collected | Mostly on 2026-09-25, from the Open Assembly API (열린국회정보). See below for the exceptions. |
 
-이 문서는 각 국회 대수별로 어떤 데이터가 확보되어 있고, 어떤 제약이 있는지를 정리합니다.
-Phase 2 수집이 진행되면 이 문서를 업데이트합니다.
+This document lists what each assembly's data contain and what they cannot
+support. The 22nd Assembly is in session, so its figures describe the state
+of the API on the collection date. The latest bill in the data was proposed on
+2026-09-23 and the latest recorded vote was taken on 2026-09-17. Column
+definitions are in [CODEBOOK.md](CODEBOOK.md), and corrections to earlier
+releases in [CORRECTIONS.md](CORRECTIONS.md).
 
----
+Most raw files were collected on 2026-09-25. The exceptions are listed below.
 
-## 총괄 현황
+| Raw data | Collected |
+|---|---|
+| Member-level votes of the 20th and 21st (`roll_calls_20`, `roll_calls_21`) | March 2026 |
+| BILLINFODETAIL records of the 18th and 20th | March 2026 |
+| TVBPMBILL11 links of the vetoed alternative 2209676, awaiting its re-vote | 2026-09-26 |
+| Official member records used as evidence for the party overrides (`data/raw/members/nprlapfmaufmqytet_17_21.parquet`) | 2026-09-26 |
 
-```
-           Phase 1 (Batch)                    Phase 2 (Per-Bill)
-         ┌─────────┬─────────┬──────┐   ┌────────────┬────────────┬────────────┐
-  대수    │ 의원발의  │ 표결     │처리의안│   │ BILLINFO   │위원회회의    │법사위회의   │
-         │ (BP.json)│(ncocpg) │(nzplt)│   │ DETAIL     │ JUDGECONF  │LWJUDGECONF │
-  ───────┼─────────┼─────────┼──────┤   ├────────────┼────────────┼────────────┤
-  17대   │ ✓ 5,728 │ ✗ 없음   │✓7,489│   │ ✓ 완료      │ ✓ 20,044   │ ✓ 1,624    │
-  18대   │ ✓11,191 │ ✗ 없음   │✓13,913│  │ ✓ 완료      │ ✓ 57,003   │ ✓ 2,797    │
-  19대   │ ✓15,444 │ ✗ 없음   │✓17,822│  │ ✓ 완료      │ ✓ 78,115   │ ✓ 3,296    │
-  20대   │ ✓21,594 │ ✓ 3,492 │✓24,141│  │ ✓ 완료      │ ✓107,933   │ ✓ 3,323    │
-  21대   │ ✓23,655 │ ✓ 3,272 │✓25,858│  │ ✓ 완료      │ ✓200,283   │ ✓ 3,203    │
-  22대   │ ✓16,142 │ ✓ 1,286 │✓ 4,421│  │ ✓ 완료      │ ✓108,749   │ ✓ 1,082    │
-  ───────┴─────────┴─────────┴──────┘   └────────────┴────────────┴────────────┘
-
-  공유 데이터 (전 대수 / 다세대):
-    BILLRCP     118,466 rows  (전 대수, 제헌~22대)
-    BILLJUDGE    35,165 rows  (17~22대)
-```
-
-## 대수별 상세
-
-### 22대 (2024.5 ~ 현재) - COMPLETE
-
-**상태**: Phase 1 + Phase 2 완료. 최종 마스터 DB 구축됨.
-
-| 데이터 | 건수 | 비고 |
-|--------|------|------|
-| master_bills_22.parquet | 17,205 bills, 54 cols | 전 생애주기 타임스탬프 포함 |
-| committee_meetings_22.parquet | 108,749 rows | 법안별 위원회 회의 기록 (1:N) |
-| judiciary_meetings_22.parquet | 1,082 rows | 법안별 법사위 회의 기록 (1:N) |
-
-**제약**: 진행 중인 국회이므로 72.5%가 계류 상태. 통과율/처리기간 통계는 완료된 법안만 반영.
+The March files were not collected again because the completed assemblies
+were found unchanged upstream. In September the official totals of their
+member-bill and processed-bill lists and the 20th and 21st plenary tallies
+matched the March files, and the member-level counts of every 20th and 21st
+vote equal the official tallies collected in September.
 
 ---
 
-### 21대 (2020.5 ~ 2024.5) - COMPLETE
+## Overview
 
-**상태**: Phase 1 + Phase 2 완료. 최종 마스터 DB 구축됨.
+Rows per assembly in each table. A dash means the source has no data for that
+assembly.
 
-| 데이터 | 건수 | 상태 |
-|--------|------|------|
-| master_bills_21.parquet | 26,711 bills, 55 cols | ✓ 구축됨 |
-| 표결 (ncocpgfiaoituanbr) | 3,272 | ✓ 수집됨 |
-| 처리의안 (nzpltgfqabtcpsmai) | 25,858 | ✓ 수집됨 |
-| committee_meetings_21.parquet | 200,283 rows | ✓ 구축됨 |
-| judiciary_meetings_21.parquet | 3,203 rows | ✓ 구축됨 |
+| | 17th | 18th | 19th | 20th | 21st | 22nd |
+|---|---|---|---|---|---|---|
+| Term | 2004-2008 | 2008-2012 | 2012-2016 | 2016-2020 | 2020-2024 | 2024- |
+| Bills in the master, all kinds | 8,368 | 14,762 | 18,735 | 24,996 | 26,707 | 21,581 |
+| Law bills (법률안) | 7,489 | 13,913 | 17,822 | 24,141 | 25,858 | 21,022 |
+| Enacted law bills | 1,913 | 2,353 | 2,793 | 3,195 | 2,959 | 1,644 |
+| Promulgated laws | 1,913 | 2,353 | 2,793 | 3,195 | 2,959 | 1,555 |
+| Pending bills (계류중) | 0 | 0 | 0 | 0 | 0 | 15,105 |
+| BILLRCP records (접수목록) | 8,368 | 14,762 | 18,735 | 24,996 | 26,707 | 21,581 |
+| Member law bills (의원발의법률안) | 5,728 | 11,191 | 15,444 | 21,594 | 23,655 | 19,651 |
+| Processed law bills (처리의안) | 7,489 | 13,913 | 17,822 | 24,141 | 25,858 | 6,088 |
+| BILLJUDGE records (심사정보) | 1,128 | 6,707 | 6,844 | 8,101 | 8,526 | 5,241 |
+| Master bills with a BILLINFODETAIL row | all | all | all | all | all | all |
+| Committee meeting rows | 24,156 | 105,229 | 150,192 | 202,335 | 199,384 | 137,152 |
+| Judiciary meeting rows | 1,628 | 2,810 | 3,304 | 3,325 | 3,217 | 1,574 |
+| Subcommittee review rows | 2,966 | 10,880 | 15,765 | 22,206 | 23,840 | 18,324 |
+| Alternative absorption links | 1,106 | 3,831 | 4,663 | 5,563 | 5,996 | 4,280 |
+| 대안반영폐기 bills linked to their alternative | 57.5% | 99.5% | 99.6% | 99.9% | 99.3% | 99.9% |
+| Cosponsorship edges | 121,125 | 222,630 | 210,725 | 269,823 | 300,045 | 255,415 |
+| Vetoed bills | 2 | 0 | 3 | 0 | 14 | 28 |
+| Plenary tallies | - | - | - | 3,492 | 3,272 | 1,847 |
+| Member-level roll-call rows | - | - | - | 1,036,384 | 976,127 | 545,107 |
+| Experimental 16th-19th vote rows | 24,901 | 14,210 | 1,247 | - | - | - |
+| Ideal points, legislator-terms | - | - | - | 317 | 318 | 305 |
+| Members | 322 | 331 | 332 | 320 | 322 | 321 |
+| Committee assignment spells | 2,402 | 2,466 | 2,506 | 2,367 | 2,016 | 1,763 |
+| Bill texts | - | - | - | 21,594 | 23,655 | 15,675 |
+| Hearing meetings | 3,244 | 2,839 | 2,708 | 2,334 | 2,315 | 573 |
+| Asset disclosure rows | - | - | 290 | 1,164 | 1,175 | 299 |
 
-**제약 없음**: 완료된 국회. 모든 법안이 최종 처리됨 (임기만료폐기 포함).
+The experimental vote file also has 923 rows for the 16th Assembly, and the
+hearing summary 2,816 meetings of the 16th. Committee assignment spells also
+exist for the 14th-16th, from the careers of members who served later.
 
----
+## What each assembly supports
 
-### 20대 (2016.5 ~ 2020.5) - COMPLETE
+| Analysis | 17th | 18th | 19th | 20th | 21st | 22nd |
+|---|---|---|---|---|---|---|
+| Bill outcomes and processing time | Yes | Yes | Yes | Yes | Yes | Yes, in session |
+| Stage timing: committee, 법사위, floor, promulgation | Yes | Yes | Yes | Yes | Yes | Yes, in session |
+| Presidential vetoes and re-votes | Yes | Yes | Yes | Yes | Yes | Yes, one re-vote pending |
+| Committee meetings per bill | Yes | Yes | Yes | Yes | Yes | Yes |
+| Subcommittee stages | Partial, 33.5% of bills | Yes | Yes | Yes | Yes | Yes |
+| Alternative absorption | Partial, 57.5% | Yes | Yes | Yes | Yes | Yes |
+| Cosponsorship networks, law bills | Yes | Yes | Yes | Yes | Yes | Yes |
+| Party at proposal in the edges | No | No | Partial | Yes | Yes | Yes |
+| Plenary tallies | No | No | No | Yes | Yes | Yes |
+| Member-level roll calls | No | No | No | Yes | Yes | Partial, 16 members missing |
+| Ideal points | No | No | No | Yes | Yes | Partial, 16 members missing |
+| Committee assignment histories | Yes | Yes | Yes | Yes | Yes | Yes |
+| Propose-reason texts | No | No | No | Yes | Yes | Partial, through 2026-02-27 |
+| Asset disclosures | No | No | Partial, 2015 only | Yes | Yes | Partial, 2024 only |
+| Hearing summaries | Yes | Yes | Yes | Yes | Yes | Partial, through 2025-07-21 |
 
-**상태**: Phase 1 + Phase 2 완료. 최종 마스터 DB 구축됨.
-
-| 데이터 | 건수 | 상태 |
-|--------|------|------|
-| master_bills_20.parquet | 24,996 bills, 55 cols | ✓ 구축됨 |
-| 표결 | 3,492 | ✓ 수집됨 |
-| 처리의안 | 24,141 | ✓ 수집됨 |
-| committee_meetings_20.parquet | 107,933 rows | ✓ 구축됨 |
-| judiciary_meetings_20.parquet | 3,323 rows | ✓ 구축됨 |
-
-**제약 없음**: 완료된 국회.
-
-**정치적 맥락**: 박근혜 탄핵 → 문재인 정부. 여소야대 → 여대야소 전환 (20대 전반 vs 후반).
-
----
-
-### 19대 (2012.5 ~ 2016.5) - COMPLETE
-
-**상태**: Phase 1 + Phase 2 완료. 최종 마스터 DB 구축됨.
-
-| 데이터 | 건수 | 상태 |
-|--------|------|------|
-| master_bills_19.parquet | 18,735 bills, 49 cols | ✓ 구축됨 |
-| 표결 | - | ✗ **API 데이터 없음** |
-| 처리의안 | 17,822 | ✓ 수집됨 |
-| committee_meetings_19.parquet | 78,115 rows | ✓ 구축됨 |
-| judiciary_meetings_19.parquet | 3,296 rows | ✓ 구축됨 |
-
-**제약**:
-- **표결 데이터 없음**: `ncocpgfiaoituanbr` API가 19대 이전 데이터를 제공하지 않음. 찬반 수 분석 불가.
-
----
-
-### 18대 (2008.5 ~ 2012.5) - COMPLETE
-
-**상태**: Phase 1 + Phase 2 완료. 최종 마스터 DB 구축됨.
-
-| 데이터 | 건수 | 상태 |
-|--------|------|------|
-| master_bills_18.parquet | 14,762 bills, 49 cols | ✓ 구축됨 |
-| 표결 | - | ✗ **API 데이터 없음** |
-| 처리의안 | 13,913 | ✓ 수집됨 |
-| committee_meetings_18.parquet | 57,003 rows | ✓ 구축됨 |
-| judiciary_meetings_18.parquet | 2,797 rows | ✓ 구축됨 |
-
-**제약**:
-- **표결 데이터 없음** (19대와 동일)
+The API has no member-level votes before the 20th Assembly. The 16th-19th
+rows in `roll_calls_16_19_experimental.parquet` were parsed from minutes and
+are not a roll-call matrix (CODEBOOK.md section 9).
 
 ---
 
-### 17대 (2004.5 ~ 2008.5) - COMPLETE
+## Known limitations
 
-**상태**: Phase 1 + Phase 2 완료. 최종 마스터 DB 구축됨.
+1. **22nd roll calls miss 16 members.** The live member-level vote API omits
+   16 members seated during 2026. They are 이소희, 김태규, 유의동, 윤용근,
+   이진숙, 김남국, 김남준, 김성범, 김의겸, 박지원 (H7X3372O), 송영길, 이광재,
+   임문영, 전은수, 한동훈 and 김형연. Votes from 2026-01-15 lack one member,
+   votes from 2026-06-11 lack 15 and votes from 2026-09-03 lack 16.
 
-| 데이터 | 건수 | 상태 |
-|--------|------|------|
-| master_bills_17.parquet | 8,369 bills, 49 cols | ✓ 구축됨 |
-| 표결 | - | ✗ **API 데이터 없음** |
-| 처리의안 | 7,489 | ✓ 수집됨 |
-| committee_meetings_17.parquet | 20,044 rows | ✓ 구축됨 |
-| judiciary_meetings_17.parquet | 1,624 rows | ✓ 구축됨 |
+   | Votes | Members missing | 22nd votes |
+   |---|---|---|
+   | 2024-07-04 to 2025-12-30 | 0 | 1,056 |
+   | 2026-01-15 to 2026-05-07 | 1 | 539 |
+   | 2026-06-11 to 2026-08-26 | 15 | 165 |
+   | 2026-09-03 to 2026-09-17 | 16 | 87 |
 
-**제약**:
-1. **표결 데이터 없음** (19대와 동일)
-2. **BILL_ID 포맷 혼재**: PRC_ (1,737건), ARC_ (13건), 숫자 (3,991건) 3가지 포맷 공존.
-   - BILLINFODETAIL: **3가지 포맷 모두 작동 확인** (테스트 완료 2026-03-21)
-   - BILLJUDGECONF: PRC_ 일부만 데이터 반환. ARC_/숫자 포맷은 데이터 없음 반환.
-   - → **위원회 회의 기록이 17대에서는 매우 희소할 가능성 높음** (디지털화 미비 추정)
-3. **BILLJUDGE 데이터 희소**: 1,128건 / 8,369건 = 13.5%만 위원회 심사 기록 보유.
+   As a result 791 of the 1,847 22nd votes have fewer member rows than the
+   tally's membership count, and on 476 of them the yea, nay and abstain
+   counts differ from the official tally. 475 of these differences are fully
+   explained by the missing members. The remaining one, bill 2215128 on
+   2026-01-29, also differs from the tally by one recorded vote. The 16
+   members have no 22nd roll calls and no 22nd ideal point.
+   `reports/rollcall_tally_check.csv` lists every vote.
+2. **17th alternative absorption covers 57.5%.** TVBPMBILL11 returns nothing
+   for most 17th alternatives with a numeric BILL_ID, so 1,099 of the 1,911
+   17th 대안반영폐기 bills are linked. The 18th-22nd link 99.3% to 99.9%.
+3. **Member-sponsored non-law items have no cosponsorship edges.** Resolutions,
+   disciplinary motions and other non-law member items, 263 to 396 per
+   assembly, have no proposer list in any API source.
+4. **Bill texts come from another dataset.** `bill_texts_linked.parquet` is
+   taken from the korean-assembly-bills dataset. It covers member law bills of
+   the 20th-22nd and none proposed after its snapshot, the latest being
+   2026-02-27, so 3,976 of the 22nd member law bills have no text.
+5. **Hearing data are provisional.** `hearing_meetings_summary.parquet` and the
+   speech links in `link_external.py` depend on version 9 of the
+   kr-hearings-data corpus, which is known to be defective and is being
+   rebuilt. The summary ends on 2025-07-21.
+6. **The funnel is cumulative.** `kna stats funnel` counts the bills that
+   reached a stage or any later stage, so that bills skipping a stage, such as
+   committee alternatives and the 법제사법위원회's own bills, still count.
+   Raw per-stage counts are not monotone.
+7. **Party is fixed per term.** `party` is the party at election, the party
+   whose list or ticket the member was elected on, or for a successor to a
+   proportional seat the list the seat came from. It comes from ALLNAMEMBER,
+   whose per-era party is usually the party at election, and six documented
+   exceptions are overridden (CODEBOOK.md section 11). Party switches within a
+   term are not observed. `party_api` in the roll calls is the API's current
+   label and changes between collections.
+8. **`rgs_rsln_dt` and `rgs_conf_rslt` are not floor-vote fields.** The API
+   fills them with the final disposition of every processed bill. Use
+   `plenary_decided` for floor decisions.
+9. **Some fields are missing or wrong upstream.** Three withdrawn 18th bills
+   have no processing date in any source. Per-bill dates are kept as the API
+   returns them, so the master holds a few that are impossible or fall outside
+   the bill's assembly. The only date set to null is 1006-11-30, the 소관위
+   처리일 of 17th bill 175025 in BILLINFODETAIL and the processed-bill list,
+   which the date type cannot hold. The meeting tables keep dates as the
+   strings the API returns.
+
+   | Bill | Proposed | Column | Date |
+   |---|---|---|---|
+   | 170993 | 2004-11-29 | `committee_dt`, `jrcmit_cmmt_dt` | 2000-11-30 |
+   | 171318 | 2005-02-01 | `committee_dt`, `jrcmit_cmmt_dt` | 2002-02-02 |
+   | 171320 | 2005-02-01 | `committee_dt`, `jrcmit_cmmt_dt` | 2002-02-02 |
+   | 177527 | 2007-10-02 | `cmt_proc_dt`, `jrcmit_proc_dt` | 2207-12-27 |
+   | 171175 | 2004-12-17 | `gvrn_trsf_dt` | 2004-04-30 |
+   | 1803593 | 2009-01-19 | `cmt_present_dt`, `jrcmit_prsnt_dt` | 2008-01-21 |
+   | 2207382 | 2025-01-09 | `jrcmit_cmmt_dt` | 2024-01-10 |
+
+   These are the dates before the start of the bill's assembly or after the
+   collection date. The first five bills are of the 17th Assembly.
+10. **Agenda items outside the bill lists are excluded.** 인사청문요청안 and
+    similar items that appear only in BILLJUDGE are not master bills. Their
+    committee meeting rows are the 42 and 24 rows of the 17th and 18th that
+    do not join to the master.
+11. **District strings are not normalized.** See CODEBOOK.md section 11.
+12. **`law_reflected` is not the official 법률반영 count.** It uses the four
+    result codes of the LIKMS statistic but keeps the 69 law bills absorbed
+    into six committee alternatives that the floor rejected without a veto.
+    It therefore exceeds the official figure by 44, 16, 7 and 2 bills in the
+    17th, 19th, 21st and 22nd, and equals it in the 18th and 20th. CODEBOOK.md
+    section 1.6 gives a rule that reproduces the official count.
 
 ---
 
-## 전 대수 공통 제약
+## API behavior
 
-### API 동작 불일치
+As observed in the September 2026 collection and audit.
 
-| API | AGE 파라미터 동작 | 대응 방법 |
-|-----|------------------|----------|
-| nzmimeepazxkubdpn | ✓ 정상 필터링 | 그대로 사용 |
-| BILLRCP | ✗ 전 대수 반환 | ERACO 컬럼으로 사후 필터링 |
-| BILLJUDGE | ✗ 17~22대 반환 | ERACO 컬럼으로 사후 필터링 |
-| ncocpgfiaoituanbr | ✓ 정상 필터링 | 17~19대는 데이터 없음 |
-| nzpltgfqabtcpsmai | ✓ 정상 필터링 | 그대로 사용 |
+| Endpoint | Content | Filter | Notes |
+|---|---|---|---|
+| nzmimeepazxkubdpn | 의원발의법률안, member law bills | `AGE` | Required parameter. |
+| BILLRCP | 접수목록, every received bill | `ERACO`, such as `제22대` | `AGE` is ignored. `ERACO` filters on the server. Pending bills are included. |
+| BILLJUDGE | 심사정보, committee review records | `ERACO` | Same as BILLRCP. |
+| ncocpgfiaoituanbr | 의안별표결현황, plenary tallies | `AGE` | No data before the 20th. |
+| nzpltgfqabtcpsmai | 처리의안, processed law bills | `AGE` | |
+| BILLINFODETAIL | 의안상세정보 | `BILL_ID` | One call per bill. |
+| BILLJUDGECONF | 위원회 회의정보 | `BILL_ID` | One call per bill. |
+| BILLLWJUDGECONF | 법제사법위원회 회의정보 | `BILL_ID` | One call per bill. |
+| nojepdqqaweusdfbi | 의원별 표결, member-level votes | `AGE` and `BILL_ID` | Both parameters are required. No data before the 20th. Omits some members seated during the term and fills in past votes later, so an ongoing assembly must be re-pulled in full. Its party label is the member's party at the time of the call. |
+| BILLINFOPPSR | proposers and supporters of a bill | `BILL_ID` | Paginates beyond 100 names. Party at proposal is empty for the 17th and 18th. |
+| TVBPMCONFINFO | 소위 심사정보, subcommittee stages | `AGE` | Opened in July 2026. |
+| TVBPMBILL11 | bills linked to an alternative | `AGE` and `BILL_ID_REF` | Returns nothing for most 17th alternatives with a numeric BILL_ID. A vetoed alternative awaiting its re-vote must be queried by its original `PRC_` ID, which no bill list returns. |
+| ALLNAMEMBER | all members ever | none | Party, district and committee as `/`-separated lists by era, which are sometimes misaligned. The per-era party is usually the party at election, with six known exceptions. The calendar code BIRDY_DIV_CD is the reverse of BTH_GBN_NM in the two endpoints below. |
+| npffdutiapkzbfyvr | 역대 국회의원 현황 | `UNIT_CD` `1000{age}` | District, election type and birth calendar of the term. Serving 22nd members are not in it. |
+| nwvrqwxyaytdsfvhu | current members | none | Current party, district and birth calendar. |
+| nqbeopthavwwfbekw | committee careers of former members | `PROFILE_UNIT_CD` | Dated spells. |
+| nyzrglyvagmrypezq | committee careers of current members | none | Dated spells, all assemblies. |
 
-### 대수별 불가능한 분석
+Two more endpoints are used only for checks. `collect_members.py` compares
+its seniority counts with ngdeoqgoablceakpp (역대 국회의원 재선 현황) after a
+collection, and not during a build. The per-assembly member records of
+nprlapfmaufmqytet are the evidence for three of the six party overrides, and
+a snapshot of the 17th-21st is kept in `data/raw/members/`. For the other
+three, members elected on the 더불어시민당 list, those records give
+더불어민주당, which absorbed 더불어시민당 in May 2020, and
+`party_overrides.csv` cites Korean Wikipedia instead.
 
-| 분석 | 17대 | 18대 | 19대 | 20대 | 21대 | 22대 |
-|------|------|------|------|------|------|------|
-| 통과율/처리결과 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓* |
-| 처리 소요기간 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓* |
-| 표결 찬반 분석 | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
-| 단계별 생존분석 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓* |
-| 위원회 회의 상세 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| 법사위 회의 상세 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| 공동발의 네트워크 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+**17th-Assembly bill IDs.** The 17th master has 2,633 `PRC_` IDs, 13 `ARC_`
+IDs and 5,722 six-digit numeric IDs. All three formats work on the per-bill
+endpoints BILLINFODETAIL, BILLJUDGECONF and BILLLWJUDGECONF.
 
-- ✓ = 가능
-- ✓* = 가능하나 진행 중 국회라 불완전
-- ✗ = API가 해당 대수 데이터를 제공하지 않아 불가
+| 17th ID format | Bills | With committee meeting rows | With judiciary meeting rows | With subcommittee rows |
+|---|---|---|---|---|
+| `PRC_` | 2,633 | 1,736 | 319 | 1,360 |
+| `ARC_` | 13 | 4 | 1 | 4 |
+| numeric | 5,722 | 3,163 | 992 | 1,438 |
 
-### 위원회 명칭 변경 이력
+**General behavior.**
 
-대수별 위원회 개편으로 이름이 바뀜. 시계열 분석 시 harmonization 필요.
-
-| 22대 위원회 | 이전 이름 | 비고 |
-|-------------|----------|------|
-| 기후에너지환경노동위원회 | 환경노동위원회 (21대) | 22대 신설 |
-| 재정경제기획위원회 | 기획재정위원회 (21대) | 22대 명칭 변경 |
-| 성평등가족위원회 | 여성가족위원회 (21대) | 22대 명칭 변경 |
-
-→ 위원회 harmonization 테이블은 통합 시 별도 구축 필요.
+- The page size is at most 1,000 rows.
+- Errors come back as HTTP 200 with a top-level `RESULT` object, outside the
+  endpoint envelope. INFO-200 means no data, and ERROR-337 is the traffic
+  limit.
+- Without a valid key the API answers INFO-000 with the true
+  `list_total_count` but returns only a five-row sample. The collectors
+  therefore refuse to run without `ASSEMBLY_API_KEY` and check that the rows
+  received equal `list_total_count`.
+- The portal rejects some default User-Agents. The collectors send a
+  browser-like one.
+- BILL_IDs are not permanently stable. Bill 2203215 was re-keyed when it was
+  withdrawn on 2026-05-14, and its old ID no longer resolves.
 
 ---
 
-## Phase 2 수집 현황
+## Committee names
 
-| 대수 | BILL_ID 수 | 상태 |
-|------|-----------|------|
-| 22대 | 17,256 | ✓ 완료 |
-| 21대 | 26,711 | ✓ 완료 |
-| 20대 | 24,997 | ✓ 완료 |
-| 19대 | 18,735 | ✓ 완료 |
-| 18대 | 14,794 | ✓ 완료 |
-| 17대 | 8,421 | ✓ 완료 |
+Committees are renamed and reorganized between and within assemblies, so
+time-series analysis by committee needs a harmonization table, which kna does
+not provide. In the 22nd master both the earlier and the later names appear.
 
-**전 대수 Phase 2 수집 완료** (2026-03-26).
+| Later name | Bills, 22nd | Earlier name | Bills, 22nd |
+|---|---|---|---|
+| 기후에너지환경노동위원회 | 1,892 | 환경노동위원회 | 170 |
+| 재정경제기획위원회 | 1,494 | 기획재정위원회 | 491 |
+| 성평등가족위원회 | 249 | 여성가족위원회 | 51 |

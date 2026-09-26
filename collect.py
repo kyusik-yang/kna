@@ -1,49 +1,52 @@
 """
 kna - Data Collection Pipeline
 =================================================
-열린국회정보 Open API 8개를 수집하여 법안 생애주기 마스터 DB 구축.
+열린국회정보 Open API를 수집하여 법안 생애주기 마스터 DB의 원자료(data/raw)를 만든다.
 
 Usage:
-    python collect.py phase1              # Batch collection (5 APIs)
-    python collect.py phase2              # Per-bill detail (3 APIs, ~2.2h)
-    python collect.py phase2 --resume     # Resume interrupted Phase 2
-    python collect.py validate            # Validate collected data
+    python collect.py phase1 --age 22           # Batch APIs for one assembly
+    python collect.py phase1 --ages 17-22       # Batch APIs for several
+    python collect.py phase2 --age 22           # Per-bill APIs, all bills
+    python collect.py phase2 --age 18 --endpoints BILLJUDGECONF --ids-file ids.txt
+    python collect.py validate --age 22         # Local raw counts vs live totals
+
+Phase 2 resumes automatically. Each per-bill answer is appended to
+data/raw/fetchlog/{ENDPOINT}_{age}.jsonl, so an interrupted run picks up where
+it stopped, and failed bills are retried on the next run. The parquet for an
+endpoint is rewritten only by merging: rows of the bills fetched in this run
+replace their old rows, and rows of all other bills are kept.
 """
 
 import argparse
 import json
 import logging
-import os
 import sys
 import time
 from pathlib import Path
 
 import pandas as pd
-import requests
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
+
+import kna_api
+from kna_api import fetch, fetch_many, rows_from_log, total_count, write_parquet_atomic
 
 # ── Configuration ──────────────────────────────────────────────────────────
 
-BASE_URL = "https://open.assembly.go.kr/portal/openapi"
-API_KEY = os.environ.get("ASSEMBLY_API_KEY", "")
 DATA_DIR = Path(__file__).parent / "data"
 RAW_DIR = DATA_DIR / "raw"
 PROCESSED_DIR = DATA_DIR / "processed"
+FETCHLOG_DIR = RAW_DIR / "fetchlog"
 
-RATE_LIMIT_SEC = 0.5   # 0.5s between requests
-PAGE_SIZE = 1000        # rows per page
 DEFAULT_AGE = 22        # 22대 국회
 
-HEADERS = {"User-Agent": "Mozilla/5.0"}
-
-# Batch APIs (Phase 1): endpoint -> (display name, AGE param name)
+# Batch APIs (Phase 1): endpoint -> (display name, filter builder)
+# BILLRCP and BILLJUDGE ignore AGE and return every era; ERACO filters them
+# server side. ncocpgfiaoituanbr has no data before the 20th assembly.
 BATCH_APIS = {
-    "nzmimeepazxkubdpn": ("의원발의법률안", "AGE"),
-    "BILLRCP":           ("접수목록",       "AGE"),
-    "BILLJUDGE":         ("심사정보",       "AGE"),
-    "ncocpgfiaoituanbr": ("의안별표결현황", "AGE"),
-    "nzpltgfqabtcpsmai": ("처리의안",       "AGE"),
+    "nzmimeepazxkubdpn": ("의원발의법률안", lambda age: {"AGE": str(age)}),
+    "BILLRCP":           ("접수목록",       lambda age: {"ERACO": f"제{age}대"}),
+    "BILLJUDGE":         ("심사정보",       lambda age: {"ERACO": f"제{age}대"}),
+    "ncocpgfiaoituanbr": ("의안별표결현황", lambda age: {"AGE": str(age)}),
+    "nzpltgfqabtcpsmai": ("처리의안",       lambda age: {"AGE": str(age)}),
 }
 
 # Per-bill APIs (Phase 2): endpoint -> display name
@@ -68,197 +71,53 @@ logging.basicConfig(
 )
 log = logging.getLogger(__name__)
 
-# ── HTTP Session ───────────────────────────────────────────────────────────
 
-def make_session() -> requests.Session:
-    """Create session with retry logic."""
-    session = requests.Session()
-    session.headers.update(HEADERS)
-    retry = Retry(
-        total=5,
-        backoff_factor=1.0,
-        status_forcelist=[429, 500, 502, 503, 504],
-        allowed_methods=["GET"],
-    )
-    adapter = HTTPAdapter(max_retries=retry)
-    session.mount("https://", adapter)
-    session.mount("http://", adapter)
-    return session
-
-
-# ── Core API Fetcher ───────────────────────────────────────────────────────
-
-def fetch_endpoint(session: requests.Session, endpoint: str,
-                   params: dict, page_size: int = PAGE_SIZE) -> list[dict]:
-    """
-    Fetch all pages from an endpoint. Returns list of row dicts.
-
-    The API response structure:
-    {
-      "ENDPOINT": [
-        {"head": [{"list_total_count": N}, {"RESULT": {"CODE": "...", "MESSAGE": "..."}}]},
-        {"row": [...]}
-      ]
-    }
-    """
-    all_rows = []
-    page = 1
-    total_count = None
-
-    while True:
-        query = {
-            "KEY": API_KEY,
-            "Type": "json",
-            "pIndex": page,
-            "pSize": page_size,
-            **params,
-        }
-        url = f"{BASE_URL}/{endpoint}"
-
-        try:
-            resp = session.get(url, params=query, timeout=30)
-            resp.raise_for_status()
-        except requests.RequestException as e:
-            log.error(f"  Request failed: {endpoint} page {page}: {e}")
-            # For batch APIs, break on persistent failure
-            break
-
-        try:
-            data = resp.json()
-        except json.JSONDecodeError:
-            log.error(f"  JSON decode failed: {endpoint} page {page}")
-            break
-
-        # Find the data key - it matches the endpoint name
-        data_key = None
-        for key in data:
-            if key.upper() == endpoint.upper() or key == endpoint:
-                data_key = key
-                break
-
-        if data_key is None:
-            # Try to find any key that has the expected structure
-            for key in data:
-                if isinstance(data[key], list) and len(data[key]) > 0:
-                    data_key = key
-                    break
-
-        if data_key is None:
-            log.error(f"  No data key found in response: {list(data.keys())}")
-            break
-
-        entries = data[data_key]
-
-        # Extract head info (total count)
-        head = None
-        rows = None
-        for entry in entries:
-            if isinstance(entry, dict):
-                if "head" in entry:
-                    head = entry["head"]
-                if "row" in entry:
-                    rows = entry["row"]
-
-        if head and total_count is None:
-            for h in head:
-                if isinstance(h, dict) and "list_total_count" in h:
-                    total_count = h["list_total_count"]
-                    break
-
-        # Check for API error
-        if head:
-            for h in head:
-                if isinstance(h, dict) and "RESULT" in h:
-                    result = h["RESULT"]
-                    if result.get("CODE") not in ("INFO-000", "INFO-200"):
-                        log.warning(f"  API result: {result.get('CODE')} - {result.get('MESSAGE')}")
-                        if result.get("CODE") == "INFO-200":
-                            # No data
-                            return all_rows
-                        if "ERROR" in result.get("CODE", ""):
-                            return all_rows
-
-        if rows is None:
-            # Possibly last page or no data
-            if page == 1:
-                log.warning(f"  No rows returned for {endpoint} page 1")
-            break
-
-        all_rows.extend(rows)
-
-        if page == 1 and total_count:
-            total_pages = (total_count + page_size - 1) // page_size
-            log.info(f"  Total: {total_count:,} rows, {total_pages} pages")
-
-        # Check if we've got all rows
-        if total_count and len(all_rows) >= total_count:
-            break
-
-        # Check if this was the last page (fewer rows than page_size)
-        if len(rows) < page_size:
-            break
-
-        page += 1
-        time.sleep(RATE_LIMIT_SEC)
-
-    return all_rows
-
-
-def fetch_single_bill(session: requests.Session, endpoint: str,
-                      bill_id: str) -> list[dict]:
-    """Fetch data for a single BILL_ID. Returns list of row dicts (may be multiple for 1:N APIs)."""
-    params = {"BILL_ID": bill_id}
-    # For single bill queries, use small page size
-    rows = fetch_endpoint(session, endpoint, params, page_size=100)
-    return rows
+def parse_ages(spec: str) -> list[int]:
+    if "-" in spec:
+        a, b = spec.split("-")
+        return list(range(int(a), int(b) + 1))
+    return [int(x) for x in spec.split(",")]
 
 
 # ── Phase 1: Batch Collection ─────────────────────────────────────────────
 
 def run_phase1(age: int = DEFAULT_AGE):
     """Collect all batch APIs for given assembly age."""
+    kna_api.get_key()
     log.info(f"{'='*60}")
     log.info(f"Phase 1: Batch Collection (AGE={age})")
     log.info(f"{'='*60}")
 
-    session = make_session()
     results = {}
-
-    for endpoint, (name, age_param) in BATCH_APIS.items():
-        log.info(f"\n[{name}] Fetching {endpoint}...")
+    for endpoint, (name, params_for) in BATCH_APIS.items():
+        params = params_for(age)
+        log.info(f"\n[{name}] Fetching {endpoint} {params}...")
         start = time.time()
+        rows = fetch(endpoint, params)
+        log.info(f"  Fetched {len(rows):,} rows in {time.time() - start:.1f}s")
 
-        params = {age_param: str(age)}
-        rows = fetch_endpoint(session, endpoint, params)
-
-        elapsed = time.time() - start
-        log.info(f"  Fetched {len(rows):,} rows in {elapsed:.1f}s")
-
+        outpath = RAW_DIR / f"{endpoint}_{age}.parquet"
         if rows:
             df = pd.DataFrame(rows)
-            outpath = RAW_DIR / f"{endpoint}_{age}.parquet"
-            df.to_parquet(outpath, index=False)
+            if "BILL_ID" in df.columns and endpoint != "ncocpgfiaoituanbr":
+                dup = df.duplicated().sum()
+                if dup:
+                    log.warning(f"  {dup} exact duplicate rows from the API, dropped")
+                    df = df.drop_duplicates()
+            write_parquet_atomic(df, outpath)
             log.info(f"  Saved: {outpath.name} ({len(df):,} rows, {len(df.columns)} cols)")
-            results[endpoint] = {
-                "name": name,
-                "rows": len(df),
-                "columns": list(df.columns),
-            }
         else:
-            log.warning(f"  No data collected for {endpoint}")
-            results[endpoint] = {"name": name, "rows": 0, "columns": []}
+            log.info(f"  No data for {endpoint} {params} (INFO-200)")
+        results[endpoint] = {"name": name, "params": params, "rows": len(rows),
+                             "columns": list(rows[0].keys()) if rows else []}
 
-        time.sleep(RATE_LIMIT_SEC)
-
-    # Save collection metadata
     meta = {
         "phase": 1,
         "age": age,
         "collected_at": time.strftime("%Y-%m-%d %H:%M:%S"),
         "endpoints": results,
     }
-    meta_path = RAW_DIR / f"phase1_meta_{age}.json"
-    with open(meta_path, "w", encoding="utf-8") as f:
+    with open(RAW_DIR / f"phase1_meta_{age}.json", "w", encoding="utf-8") as f:
         json.dump(meta, f, ensure_ascii=False, indent=2)
 
     log.info(f"\n{'='*60}")
@@ -266,240 +125,130 @@ def run_phase1(age: int = DEFAULT_AGE):
     for ep, info in results.items():
         log.info(f"  {info['name']:12s}: {info['rows']:>10,} rows")
     log.info(f"{'='*60}")
-
     return results
 
 
 # ── Phase 2: Per-Bill Detail Collection ────────────────────────────────────
 
 def get_unique_bill_ids(age: int = DEFAULT_AGE) -> list[str]:
-    """Extract unique BILL_IDs scoped to the target assembly.
-
-    Phase 1 discovery showed:
-      - nzmimeepazxkubdpn: correctly filtered to target assembly (AGE param works)
-      - BILLRCP, BILLJUDGE: AGE param does NOT filter; returns all assemblies.
-        Must filter via ERACO column (e.g., '제22대').
-      - ncocpgfiaoituanbr, nzpltgfqabtcpsmai: correctly filtered (AGE param works)
-
-    Strategy (Option B - 22대 전체):
-      1. All IDs from nzmimeepazxkubdpn (member-proposed, already 22대 only)
-      2. BILLRCP filtered to ERACO == '제{age}대' for 정부+위원장 bills
-      3. IDs from votes and processed (already 22대 only)
-    """
-    bill_ids = set()
-    era_label = f"제{age}대"
-
-    # APIs where AGE param works correctly - take all IDs
-    correct_age_apis = ["nzmimeepazxkubdpn", "ncocpgfiaoituanbr", "nzpltgfqabtcpsmai"]
-    for endpoint in correct_age_apis:
+    """All BILL_IDs of one assembly, from the Phase 1 files of that assembly."""
+    bill_ids: set[str] = set()
+    for endpoint in BATCH_APIS:
         path = RAW_DIR / f"{endpoint}_{age}.parquet"
-        if path.exists():
-            df = pd.read_parquet(path)
-            ids = df["BILL_ID"].dropna().unique()
-            bill_ids.update(ids)
-            log.info(f"  {endpoint}: {len(ids):,} BILL_IDs (AGE={age} native)")
-
-    # APIs where AGE param doesn't filter - must use ERACO
-    eraco_apis = ["BILLRCP", "BILLJUDGE"]
-    for endpoint in eraco_apis:
-        path = RAW_DIR / f"{endpoint}_{age}.parquet"
-        if path.exists():
-            df = pd.read_parquet(path)
-            if "ERACO" in df.columns:
-                filtered = df[df["ERACO"] == era_label]
-                ids = filtered["BILL_ID"].dropna().unique()
-                new_ids = set(ids) - bill_ids
-                bill_ids.update(ids)
-                log.info(f"  {endpoint}: {len(ids):,} BILL_IDs (ERACO={era_label}), "
-                         f"{len(new_ids):,} new")
-            else:
-                log.warning(f"  {endpoint}: no ERACO column, skipping")
-
+        if not path.exists():
+            continue
+        df = pd.read_parquet(path)
+        if "ERACO" in df.columns:
+            df = df[df["ERACO"] == f"제{age}대"]
+        ids = set(df["BILL_ID"].dropna().unique())
+        log.info(f"  {endpoint}: {len(ids):,} BILL_IDs ({len(ids - bill_ids):,} new)")
+        bill_ids |= ids
+    # A vetoed bill is listed only under its GOV_ reconsideration record while
+    # the re-vote is pending; its original record usually shares the suffix.
+    originals = {"PRC_" + b[4:] for b in bill_ids if b.startswith("GOV_")} - bill_ids
+    if originals:
+        log.info(f"  {len(originals):,} original records of vetoed bills (PRC_ + GOV_ suffix)")
+        bill_ids |= originals
     result = sorted(bill_ids)
     log.info(f"  Total unique BILL_IDs for {age}대: {len(result):,}")
     return result
 
 
-def load_checkpoint(age: int) -> dict:
-    """Load Phase 2 checkpoint (which bill_ids are already done)."""
-    ckpt_path = RAW_DIR / f"phase2_checkpoint_{age}.json"
-    if ckpt_path.exists():
-        with open(ckpt_path, "r") as f:
-            return json.load(f)
-    return {"completed": {}, "failed": []}
+def judiciary_bill_ids(age: int) -> list[str]:
+    """Bills referred to the Legislation and Judiciary Committee (법사위)."""
+    ids: set[str] = set()
+    detail = RAW_DIR / f"BILLINFODETAIL_{age}.parquet"
+    if detail.exists():
+        d = pd.read_parquet(detail, columns=["_BILL_ID", "LAW_CMMT_DT", "LAW_PRSNT_DT", "LAW_PROC_DT"])
+        has = d[["LAW_CMMT_DT", "LAW_PRSNT_DT", "LAW_PROC_DT"]].notna().any(axis=1)
+        ids |= set(d.loc[has, "_BILL_ID"])
+    existing = RAW_DIR / f"BILLLWJUDGECONF_{age}.parquet"
+    if existing.exists():
+        ids |= set(pd.read_parquet(existing, columns=["_BILL_ID"])["_BILL_ID"])
+    return sorted(ids)
 
 
-def save_checkpoint(age: int, checkpoint: dict):
-    """Save Phase 2 checkpoint."""
-    ckpt_path = RAW_DIR / f"phase2_checkpoint_{age}.json"
-    with open(ckpt_path, "w", encoding="utf-8") as f:
-        json.dump(checkpoint, f, ensure_ascii=False)
+def merge_into_raw(endpoint: str, age: int, done: dict[str, dict]):
+    """Replace the rows of every successfully fetched bill in {endpoint}_{age}.parquet."""
+    outpath = RAW_DIR / f"{endpoint}_{age}.parquet"
+    fetched_ok = {k for k, r in done.items() if r.get("status") == "ok"}
+    new = pd.DataFrame(rows_from_log(done))
+    if outpath.exists():
+        old = pd.read_parquet(outpath)
+        kept = old[~old["_BILL_ID"].isin(fetched_ok)]
+        merged = pd.concat([kept, new], ignore_index=True) if not new.empty else kept
+        log.info(f"  {endpoint}_{age}: kept {len(kept):,} rows of "
+                 f"{old['_BILL_ID'].nunique():,} bills, added {len(new):,} rows of "
+                 f"{new['_BILL_ID'].nunique() if not new.empty else 0:,} bills")
+    else:
+        merged = new
+    if merged.empty:
+        log.warning(f"  {endpoint}_{age}: nothing to write")
+        return
+    write_parquet_atomic(merged, outpath)
+    log.info(f"  Saved: {outpath.name} ({len(merged):,} rows, "
+             f"{merged['_BILL_ID'].nunique():,} bills)")
 
 
-def run_phase2(age: int = DEFAULT_AGE, resume: bool = False):
-    """Collect per-bill detail APIs for all BILL_IDs."""
+def run_phase2(age: int = DEFAULT_AGE, endpoints: list[str] | None = None,
+               ids_file: str | None = None, workers: int = 4):
+    """Collect per-bill detail APIs and merge them into data/raw."""
+    kna_api.get_key()
     log.info(f"{'='*60}")
     log.info(f"Phase 2: Per-Bill Detail Collection (AGE={age})")
     log.info(f"{'='*60}")
 
-    bill_ids = get_unique_bill_ids(age)
+    if ids_file:
+        bill_ids = [l.strip() for l in open(ids_file, encoding="utf-8") if l.strip()]
+        log.info(f"  {len(bill_ids):,} BILL_IDs from {ids_file}")
+    else:
+        bill_ids = get_unique_bill_ids(age)
     if not bill_ids:
         log.error("No BILL_IDs found. Run Phase 1 first.")
         return
 
-    # Load checkpoint
-    checkpoint = load_checkpoint(age) if resume else {"completed": {}, "failed": []}
-    done_ids = set(checkpoint["completed"].keys())
-
-    # On resume, load existing partial data into accumulators
-    accum = {ep: [] for ep in PERBILL_APIS}
-    if resume:
-        for ep in PERBILL_APIS:
-            partial = RAW_DIR / f"{ep}_{age}_partial.parquet"
-            if partial.exists():
-                df = pd.read_parquet(partial)
-                accum[ep] = df.to_dict("records")
-                log.info(f"  Loaded {len(accum[ep]):,} existing rows for {ep}")
-
-    if done_ids:
-        log.info(f"  Resuming: {len(done_ids):,} completed, "
-                 f"{len(bill_ids) - len(done_ids):,} remaining")
-
-    remaining = [bid for bid in bill_ids if bid not in done_ids]
-    total = len(remaining)
-
-    if total == 0:
-        log.info("  All BILL_IDs already collected!")
-        return
-
-    log.info(f"  Collecting {total:,} bills across {len(PERBILL_APIS)} endpoints")
-    estimated_time = total * RATE_LIMIT_SEC * len(PERBILL_APIS)
-    log.info(f"  Estimated time: {estimated_time/3600:.1f} hours")
-
-    session = make_session()
-    start_time = time.time()
-    save_interval = 200
-    error_count = 0
-
-    for i, bill_id in enumerate(remaining):
-        if (i + 1) % 100 == 0 or i == 0:
-            elapsed = time.time() - start_time
-            rate = (i + 1) / elapsed if elapsed > 0 else 0
-            eta = (total - i - 1) / rate / 60 if rate > 0 else 0
-            log.info(f"  Progress: {i+1:,}/{total:,} ({(i+1)/total*100:.1f}%) "
-                     f"| {rate:.1f} bills/s | ETA: {eta:.0f} min")
-
-        bill_results = {}
-        for endpoint, name in PERBILL_APIS.items():
-            try:
-                rows = fetch_single_bill(session, endpoint, bill_id)
-                if rows:
-                    for row in rows:
-                        row["_BILL_ID"] = bill_id
-                    accum[endpoint].extend(rows)
-                bill_results[endpoint] = len(rows)
-            except Exception as e:
-                log.error(f"  Exception fetching {endpoint} for {bill_id}: {e}")
-                bill_results[endpoint] = -1
-                error_count += 1
-            time.sleep(RATE_LIMIT_SEC)
-
-        checkpoint["completed"][bill_id] = bill_results
-
-        # Periodic save
-        if (i + 1) % save_interval == 0:
-            save_checkpoint(age, checkpoint)
-            for ep in PERBILL_APIS:
-                if accum[ep]:
-                    df = pd.DataFrame(accum[ep])
-                    outpath = RAW_DIR / f"{ep}_{age}_partial.parquet"
-                    df.to_parquet(outpath, index=False)
-            log.info(f"  Checkpoint saved at {i+1:,} bills "
-                     f"(errors so far: {error_count})")
-
-    # Final save
-    save_checkpoint(age, checkpoint)
-
-    for ep, name in PERBILL_APIS.items():
-        if accum[ep]:
-            df = pd.DataFrame(accum[ep])
-            outpath = RAW_DIR / f"{ep}_{age}.parquet"
-            df.to_parquet(outpath, index=False)
-            log.info(f"  Saved: {outpath.name} ({len(df):,} rows)")
-            partial = RAW_DIR / f"{ep}_{age}_partial.parquet"
-            if partial.exists():
-                partial.unlink()
-        else:
-            log.warning(f"  No data for {ep}")
-
-    elapsed = time.time() - start_time
-    log.info(f"\nPhase 2 completed in {elapsed/3600:.1f} hours")
-    log.info(f"  Bills processed: {len(checkpoint['completed']):,}")
-    log.info(f"  Errors: {error_count}")
+    for endpoint in endpoints or list(PERBILL_APIS):
+        keys = bill_ids
+        if endpoint == "BILLLWJUDGECONF" and not ids_file:
+            # Only bills that reached the judiciary committee can have its meetings
+            jud = set(judiciary_bill_ids(age))
+            keys = [b for b in bill_ids if b in jud]
+            log.info(f"  {endpoint}: {len(keys):,} bills referred to 법사위")
+        log_path = FETCHLOG_DIR / f"{endpoint}_{age}.jsonl"
+        done = fetch_many(endpoint, keys, lambda b: {"BILL_ID": b}, log_path,
+                          workers=workers, page_size=100)
+        failed = [k for k in keys if done.get(k, {}).get("status") != "ok"]
+        # Merge only the keys of this run, so an older log never re-adds stale rows
+        this_run = {k: done[k] for k in keys if k in done}
+        merge_into_raw(endpoint, age, this_run)
+        if failed:
+            log.error(f"  {endpoint}: {len(failed):,} bills failed; rerun to retry")
 
 
 # ── Validation ─────────────────────────────────────────────────────────────
 
 def validate(age: int = DEFAULT_AGE):
-    """Validate collected data against expected counts."""
-    log.info(f"{'='*60}")
-    log.info(f"Data Validation (AGE={age})")
-    log.info(f"{'='*60}")
-
-    expected = {
-        "nzmimeepazxkubdpn": 16_100,
-        "BILLRCP": 118_458,
-        "BILLJUDGE": 35_158,
-        "ncocpgfiaoituanbr": 1_286,
-        "nzpltgfqabtcpsmai": 4_413,
-    }
-
-    print(f"\n{'Endpoint':<25} {'Name':<15} {'Expected':>10} {'Actual':>10} {'Status':<8}")
-    print("-" * 75)
-
-    for endpoint in list(BATCH_APIS.keys()) + list(PERBILL_APIS.keys()):
-        name = BATCH_APIS.get(endpoint, (PERBILL_APIS.get(endpoint, "?"), None))
-        if isinstance(name, tuple):
-            name = name[0]
-
+    """Compare local raw row counts with the live list_total_count."""
+    kna_api.get_key()
+    print(f"\n{'Endpoint':<20} {'Local':>10} {'Live':>10} {'Status':<8}")
+    print("-" * 52)
+    for endpoint, (name, params_for) in BATCH_APIS.items():
         path = RAW_DIR / f"{endpoint}_{age}.parquet"
-        if path.exists():
-            df = pd.read_parquet(path)
-            actual = len(df)
-            exp = expected.get(endpoint, "N/A")
+        local = len(pd.read_parquet(path)) if path.exists() else 0
+        live = total_count(endpoint, params_for(age))
+        status = "OK" if local == live else "STALE" if local < live else "CHECK"
+        print(f"{endpoint:<20} {local:>10,} {live:>10,} {status:<8}")
 
-            if isinstance(exp, int):
-                diff_pct = abs(actual - exp) / exp * 100
-                status = "OK" if diff_pct < 10 else "CHECK"
-            else:
-                status = "OK"
-                exp = "-"
-
-            print(f"{endpoint:<25} {name:<15} {str(exp):>10} {actual:>10,} {status:<8}")
-
-            # Check for duplicates on BILL_ID
-            id_col = None
-            for col in df.columns:
-                if col.upper() == "BILL_ID":
-                    id_col = col
-                    break
-            if id_col:
-                n_unique = df[id_col].nunique()
-                n_null = df[id_col].isna().sum()
-                if n_null > 0:
-                    print(f"  {'':25} BILL_ID null: {n_null}")
-                if n_unique < len(df) and endpoint not in ("BILLJUDGECONF", "BILLLWJUDGECONF"):
-                    print(f"  {'':25} BILL_ID duplicates: {len(df) - n_unique}")
-
-            # Missing values summary
-            missing = df.isna().sum()
-            high_missing = missing[missing > len(df) * 0.05]
-            if len(high_missing) > 0:
-                for col, cnt in high_missing.items():
-                    print(f"  {'':25} Missing {col}: {cnt:,} ({cnt/len(df)*100:.1f}%)")
-        else:
-            print(f"{endpoint:<25} {name:<15} {'':>10} {'NOT FOUND':>10} {'MISSING':<8}")
-
+    universe = set(get_unique_bill_ids(age))
+    for endpoint in PERBILL_APIS:
+        path = RAW_DIR / f"{endpoint}_{age}.parquet"
+        if not path.exists():
+            print(f"{endpoint:<20} {'NOT FOUND':>10}")
+            continue
+        df = pd.read_parquet(path)
+        bills = set(df["_BILL_ID"])
+        print(f"{endpoint:<20} {len(df):>10,} rows, {len(bills):,} bills, "
+              f"{len(universe - bills):,} universe bills without rows")
     print()
 
 
@@ -511,20 +260,26 @@ def main():
                         help="Which phase to run")
     parser.add_argument("--age", type=int, default=DEFAULT_AGE,
                         help="Assembly age (default: 22)")
+    parser.add_argument("--ages", help="Several assemblies, e.g. 17-22 or 20,22")
+    parser.add_argument("--endpoints", nargs="+", choices=list(PERBILL_APIS),
+                        help="Phase 2 endpoints (default: all three)")
+    parser.add_argument("--ids-file", help="Phase 2: fetch only these BILL_IDs")
+    parser.add_argument("--workers", type=int, default=4)
     parser.add_argument("--resume", action="store_true",
-                        help="Resume Phase 2 from checkpoint")
+                        help="Kept for compatibility; Phase 2 always resumes")
 
     args = parser.parse_args()
-
     RAW_DIR.mkdir(parents=True, exist_ok=True)
     PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
+    ages = parse_ages(args.ages) if args.ages else [args.age]
 
-    if args.command == "phase1":
-        run_phase1(args.age)
-    elif args.command == "phase2":
-        run_phase2(args.age, resume=args.resume)
-    elif args.command == "validate":
-        validate(args.age)
+    for age in ages:
+        if args.command == "phase1":
+            run_phase1(age)
+        elif args.command == "phase2":
+            run_phase2(age, args.endpoints, args.ids_file, args.workers)
+        elif args.command == "validate":
+            validate(age)
 
 
 if __name__ == "__main__":
