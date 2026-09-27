@@ -2,9 +2,8 @@
 
 The v9 check rebuilds the table from the kr-hearings-data v9 speech corpus,
 read from KNA_HEARINGS_DIR (default ../kr-hearings-data/data), and skips
-when the corpus is missing. It reads 9.9 million speech rows and takes about
-a minute and a half. The v10 check runs on a small synthetic build in the
-v10 release layout.
+when the corpus is missing. It reads 9.9 million speech rows. The v10 check
+runs on a small synthetic build in the v10 release layout.
 """
 
 from __future__ import annotations
