@@ -76,3 +76,13 @@ def test_party_overrides_in_ideal_points(kdata, series):
     for _, row in ov.iterrows():
         got = ip.loc[(ip["term"] == int(row["age"])) & (ip["member_id"] == row["mona_cd"]), "party"]
         assert set(got) <= {row["party"]}, f"{series} {row['age']}th {row['member_name']}: {set(got)}"
+
+
+@pytest.mark.parametrize("age", AGES)
+def test_district_and_election_type_consistent(kdata, age):
+    mem = kdata.members(age)
+    district = mem["district"].fillna("").str.strip()
+    assert not (district == "").any(), f"{age}th: empty district"
+    bad = mem[(district == "비례대표") & (mem["election_type"] != "비례대표")]
+    assert bad.empty, f"{age}th: {list(bad['member_name'])} have district 비례대표 but another election type"
+    assert not district.str.contains("통합특별시").any(), f"{age}th: post-2026 district name"

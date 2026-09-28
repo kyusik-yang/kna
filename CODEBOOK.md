@@ -1061,9 +1061,15 @@ both, and no member of 0.7.0 is. Across the 1,948 member-terms,
 
 District strings are not normalized. The 17th uses full province names, such
 as 서울특별시, for 162 members and short names for the others. Three 17th
-proportional members have strings like `비례(한) 비례(한나라당)`. The 20th
-members 신용현 and 권미혁 have district 비례대표 with election type 지역구,
-as upstream, and the 22nd members 손솔 and 최혁진 have an empty district.
+proportional members have strings like `비례(한) 비례(한나라당)`. Since 0.7.1
+three consistency rules apply after parsing. A district recorded as 비례대표 is
+a proportional seat, so 신용현 and 권미혁 in the 20th, whom the official roster
+lists as 지역구, have election type 비례대표. A proportional member with no
+district string, 손솔 and 최혁진 in the 22nd, has district 비례대표. A 22nd
+district that the serving-member endpoint renamed with the 2026
+전남광주통합특별시 prefix is mapped back to the name used at election, taken
+from the rosters of earlier assemblies, so 박지원 (8BF5855P) has 전남
+해남군완도군진도군.
 
 Names shared by two members of the same assembly are 김선동 and 이영애 in the
 18th, 김영주, 권은희 and 이재영 in the 19th, 김성태 and 최경환 in the 20th,
