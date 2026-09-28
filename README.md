@@ -3,15 +3,20 @@
 [![PyPI](https://img.shields.io/pypi/v/kna)](https://pypi.org/project/kna/)
 
 
-> **Release 0.8.0, 2026-09-28.** This release adds the member-level roll
-> calls of the 17th-19th Assemblies from the plenary minutes, the 22nd votes of
+> **Release 0.8.1, 2026-09-28.** This release rebuilds
+> `hearing_meetings_summary.parquet` from kr-hearings-data v10.1, which
+> replaces the defective version 9. The table now has 26,261 meetings through
+> 2026-09-22 and two new columns, `conf_num` and `is_subcommittee`.
+> `meeting_id` is null for 187 meetings, so join on `conf_num`. Release 0.8.0
+> added the member-level roll calls of the 17th-19th Assemblies from the
+> plenary minutes, the 22nd votes of
 > 16 members that the vote API omits, a propose-reason text for almost every
 > law bill of the 17th-22nd and the asset disclosures of wealth_year 2025. The
 > added 22nd votes change the default ideal points of the 22nd and move the
 > pooled DW-NOMINATE series slightly in every assembly. The W-NOMINATE and
 > bridged series of the 20th and 21st are unchanged. The second dimension of
 > the 22nd two-dimensional W-NOMINATE fit, `wnom2d_dim2`, is unstable and
-> should not be used. Read the 2026-09-28 entry of
+> should not be used. Read the 2026-09-28 entries of
 > [CORRECTIONS.md](CORRECTIONS.md) before reusing results. Release 0.7.0
 > corrected ten defects in the data shipped up to 0.6.0, which the 2026-09-26
 > entry describes, and the notice of 2026-07-18 on ideal points mislabeled as
@@ -122,7 +127,7 @@ locations.
 
 ## Key Statistics
 
-Release 0.8.0. Most data were collected from the Open Assembly API on
+Release 0.8.1. Most data were collected from the Open Assembly API on
 2026-09-25, and DATA_AVAILABILITY.md lists the exceptions.
 
 | | |
@@ -315,7 +320,7 @@ Every shipped table, in `data/processed/`. CODEBOOK.md documents each column.
 | `committee_assignments.parquet` | committee spell | 13,616 | Dated committee assignments |
 | `legislator_id_mapping.parquet` | legislator | 1,156 | MONA_CD, terms and coverage flags across tables |
 | `bill_texts_linked.parquet` | bill | 109,829 | Propose-reason texts of the 17th-22nd law bills, from the LIKMS scrape or BPMBILLSUMMARY |
-| `hearing_meetings_summary.parquet` | meeting | 16,829 | Meeting-level summary of the kr-hearings-data speech corpus, provisional |
+| `hearing_meetings_summary.parquet` | meeting | 26,261 | Meeting-level summary of kr-hearings-data v10.1, 16th-22nd, joined on `conf_num` |
 | `assets_wealth_panel.parquet` | member-year | 3,215 | Asset disclosures, 19th-22nd, wealth_year 2015-2025 |
 | `reports/` | | | Nine validation reports written by the build (CODEBOOK.md section 17) |
 
@@ -361,7 +366,7 @@ kna is an offline master database for statistical analysis in Python and R. For 
 
 | Dataset | Description |
 |---------|-------------|
-| [kr-hearings-data](https://github.com/kyusik-yang/kr-hearings-data) | Speech-level records of committee and plenary meetings. kna's hearing summary and speech links use its version 9, which is being rebuilt |
+| [kr-hearings-data](https://github.com/kyusik-yang/kr-hearings-data) | Speech-level records of committee and plenary meetings. kna's hearing summary is built from its release v10.1 |
 | [korean-assembly-bills](https://github.com/kyusik-yang/korean-assembly-bills) | Source of the scraped propose-reason texts in `bill_texts_linked.parquet`, the rows with `source` = `likms_scrape` |
 | [open-assembly-mcp](https://github.com/kyusik-yang/open-assembly-mcp) | MCP server for real-time API queries via Claude |
 | [assembly-explorer](https://github.com/kyusik-yang/assembly-explorer) | Interactive Streamlit web app |
@@ -468,9 +473,13 @@ reports to `reports/` and makes no API calls. A few inputs come from outside
   `KNA_WITNESSES_DIR` for one coverage flag of the ID map. The variable has no
   default. `build_all.sh` runs this step with `--allow-missing`, so the flag is
   null when the variable is not set.
-- Speech links read `KNA_HEARINGS_DIR`, which defaults to
-  `../kr-hearings-data/data`. They are not rebuilt while kr-hearings-data is
-  being replaced.
+- The hearing summary reads kr-hearings-data v10 from `KNA_HEARINGS_V10_DIR`,
+  a v10 build directory or a directory of release assets such as the cache of
+  the kr-hearings-data package. `build_all.sh` rebuilds it only when the
+  variable is set and otherwise carries the shipped file over.
+  `python3 build_hearings_summary.py --source v10 --v10-package v10.1 --out DIR`
+  builds it through the package instead. CODEBOOK.md section 15 has the
+  details.
 - `build_structure.py` keeps the edges of the earlier edge file for the bills
   it had not truncated, `source` = `legacy_edges`, and reads them from
   `data/processed/cosponsorship_edges.parquet`. A rebuild from the shipped
@@ -482,8 +491,6 @@ reports to `reports/` and makes no API calls. A few inputs come from outside
 - The 16th experimental vote rows are copied from the previous release by
   `consolidate_votes.py`, because the name matching that produced their
   member IDs cannot be reproduced.
-- `hearing_meetings_summary.parquet` is not rebuilt. It is carried over
-  unchanged from 0.6.0.
 - `assets_wealth_panel.parquet` is rebuilt only when `KNA_ASSETS_DIR` is set,
   and is carried over from `data/processed/` otherwise.
 - `ideal_points_archive/` is produced by step 3. `v0.6.0_legacy/` is a copy

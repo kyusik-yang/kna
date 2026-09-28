@@ -66,11 +66,11 @@ assembly.
 | Members | 322 | 331 | 332 | 320 | 322 | 321 |
 | Committee assignment spells | 2,402 | 2,466 | 2,506 | 2,367 | 2,016 | 1,763 |
 | Law bills with a propose-reason text | 7,486 | 13,584 | 17,822 | 24,109 | 25,787 | 20,968 |
-| Hearing meetings | 3,244 | 2,839 | 2,708 | 2,334 | 2,315 | 573 |
+| Hearing meetings | 4,635 | 4,308 | 4,191 | 3,761 | 3,644 | 2,314 |
 | Asset disclosure rows | - | - | 290 | 1,164 | 1,175 | 586 |
 
 The experimental vote file has 923 rows for the 16th Assembly, and the
-hearing summary 2,816 meetings of the 16th. Committee assignment spells also
+hearing summary 3,408 meetings of the 16th. Committee assignment spells also
 exist for the 14th-16th, from the careers of members who served later.
 
 ## What each assembly supports
@@ -91,7 +91,7 @@ exist for the 14th-16th, from the careers of members who served later.
 | Committee assignment histories | Yes | Yes | Yes | Yes | Yes | Yes |
 | Propose-reason texts, law bills | Yes | Yes, except 329 bills | Yes | Yes | Yes | Yes |
 | Asset disclosures | No | No | Partial, 2015 only | Yes | Yes | Partial, 2024 and 2025 |
-| Hearing summaries | Yes | Yes | Yes | Yes | Yes | Partial, through 2025-07-21 |
+| Hearing summaries | Yes | Yes | Yes | Yes | Yes | Yes, through 2026-09-22 |
 
 The API has no member-level votes before the 20th Assembly. The 17th-19th
 roll calls come from the name lists printed in the plenary minutes
@@ -140,10 +140,11 @@ not a roll-call matrix (CODEBOOK.md section 9).
    text analyses should record `source`. For 489 law bills the API returns an
    empty text, and they have none. 328 of them are government bills of the
    18th. Bills of other kinds have no texts.
-5. **Hearing data are provisional.** `hearing_meetings_summary.parquet` and the
-   speech links in `link_external.py` depend on version 9 of the
-   kr-hearings-data corpus, which is known to be defective and is being
-   rebuilt. The summary ends on 2025-07-21.
+5. **Hearing data come from kr-hearings-data v10.1.**
+   `hearing_meetings_summary.parquet` is built from release v10.1 and ends on
+   2026-09-22. 187 of its meetings have no Open API CONF_ID and a null
+   `meeting_id`, so join on `conf_num`. The table of 0.6.0 to 0.8.0 came from
+   the defective version 9 (CODEBOOK.md section 15).
 6. **The funnel is cumulative.** `kna stats funnel` counts the bills that
    reached a stage or any later stage, so that bills skipping a stage, such as
    committee alternatives and the 법제사법위원회's own bills, still count.

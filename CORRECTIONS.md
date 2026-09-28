@@ -4,6 +4,63 @@ Errata for data released by this repository. Newest first.
 
 ---
 
+## 2026-09-28 - Release 0.8.1
+
+Release 0.8.1 rebuilds `hearing_meetings_summary.parquet` from
+kr-hearings-data release v10.1 (run 20260928T152902_453979). Releases 0.6.0
+to 0.8.0 shipped a table built from version 9, whose defects D1 to D12 are
+listed in docs/CHANGELOG.md of kr-hearings-data. Every other file is
+identical to 0.8.0. The figures were computed from the 0.8.0 table and the
+0.8.1 build.
+
+| File | 0.8.0 | 0.8.1 |
+|---|---|---|
+| `hearing_meetings_summary.parquet` | 16,829 meetings, 2000-06-01 to 2025-07-21, eight columns | 26,261 meetings, 2000-06-05 to 2026-09-22, columns `conf_num` and `is_subcommittee` added |
+
+The build reads the v10.1 build directory, the v10.1 release assets or the
+kr-hearings-data package, and the three give the same table.
+
+### What changed
+
+- **Key.** `meeting_id` is now the Open API CONF_ID, verbatim. The v9 ID
+  dropped the leading zero of five-digit CONF_IDs, so `meeting_id` differs in
+  14,321 of the matched meetings. 187 meetings have no CONF_ID, because no
+  Open API list returns them, and keep a null `meeting_id`. `conf_num`, the
+  record-viewer ID, is set and unique for every meeting and joins to
+  kr-hearings-data.
+- **Coverage.** 16,793 of the 16,829 v9 meetings are matched through the
+  `v9_meeting_id` of kr-hearings-data. 9,468 meetings are new, 6,873 of them
+  subcommittee meetings. The 36 v9 meetings without a match are 35
+  인사청문특별위원회 meetings and one 국정감사 meeting.
+  `crosswalk_meetings` of kr-hearings-data records where each v9 meeting
+  went.
+- **n_legislators** counts the distinct codes of legislator-role turns only.
+  The v9 table counted every code, including an empty one, which it counted
+  as a legislator in 2,119 meetings.
+- **parties** lists the labels of the legislator-role turns, each the
+  speaker's party on the speech date. No meeting has an empty label any more.
+
+Among the 16,793 matched meetings the other columns differ as follows.
+
+| Column | Matched meetings that differ |
+|---|---|
+| `term`, `date` | 0 |
+| `committee` | 821, all 국정감사. In 817 the v9 name carries an audit team (for example 통일외교통상위원회-구주반) and v10 has none. In 4 the team is spelled with a different separator. |
+| `hearing_type` | 3. conf_num 45567, 45569 and 52770 were 인사청문특별위원회 in v9 and are 상임위원회 in v10. |
+| `n_speeches` | 3,058 |
+| `n_legislators` | 2,967 |
+| `parties` | 12,350 |
+
+### Action for users
+
+- Join the table to kr-hearings-data on `conf_num`, not on `meeting_id`.
+- Code that joined on the v9 `meeting_id` should use the `v9_meeting_id` of
+  kr-hearings-data `meetings` to find the new rows.
+- Counts of meetings per assembly are higher, mainly because subcommittee
+  meetings are now included. Filter on `is_subcommittee` to leave them out.
+
+---
+
 ## 2026-09-28 - Release 0.8.0
 
 Release 0.8.0 extends the bill texts to every law bill of the 17th-22nd
