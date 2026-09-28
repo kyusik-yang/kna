@@ -145,6 +145,44 @@ def parse_for_assembly(allname: pd.DataFrame, age: int) -> pd.DataFrame:
     return pd.DataFrame(recs)
 
 
+def election_time_district_names() -> dict[str, str]:
+    """District suffix -> '광주 ...' or '전남 ...' as written at election, from every roster."""
+    names: dict[str, str] = {}
+    for p in sorted(RAW_MEMBERS.glob("npffdutiapkzbfyvr_*.parquet")):
+        for d in pd.read_parquet(p, columns=["ORIG_NM"])["ORIG_NM"].dropna():
+            d = d.strip()
+            for region in ("광주", "전남"):
+                if d.startswith(region + " "):
+                    names[d[len(region) + 1:]] = d
+    return names
+
+
+def harmonize_district(base: pd.DataFrame) -> pd.DataFrame:
+    """Make district and election_type consistent with each other and with election-time names.
+
+    - A district recorded as 비례대표 is a proportional seat, whatever the
+      election type says (the official roster lists two 20th members as 지역구).
+    - A proportional member with no district string (list successors in the
+      22nd) gets 비례대표.
+    - The serving-member endpoint renamed 광주/전남 districts to the
+      전남광주통합특별시 prefix in 2026. They are mapped back to the name used
+      at election, taken from the rosters of earlier assemblies.
+    """
+    district = base["district"].fillna("").str.strip()
+    base.loc[district == "비례대표", "election_type"] = "비례대표"
+    blank = district.eq("") & base["election_type"].eq("비례대표")
+    base.loc[blank, "district"] = "비례대표"
+    prefix = "전남광주통합특별시 "
+    renamed = base["district"].fillna("").str.startswith(prefix)
+    if renamed.any():
+        names = election_time_district_names()
+        mapped = base.loc[renamed, "district"].str[len(prefix):].map(names)
+        if mapped.isna().any():
+            raise SystemExit(f"no election-time name for {list(base.loc[renamed, 'district'][mapped.isna()])}")
+        base.loc[renamed, "district"] = mapped
+    return base
+
+
 def build_members(age: int, allname: pd.DataFrame, assignments: pd.DataFrame) -> pd.DataFrame:
     base = parse_for_assembly(allname, age)
     snap = allname["snapshot_date"].iloc[0]
@@ -195,6 +233,7 @@ def build_members(age: int, allname: pd.DataFrame, assignments: pd.DataFrame) ->
         base.loc[hit, "party"] = row["party"]
 
     base["seniority"] = base["term_number"].map(seniority_label)
+    base = harmonize_district(base)
     base["snapshot_date"] = snap
     base["district"] = base["district"].str.strip()
     base = base.drop(columns=[c for c in base.columns if c.startswith("_")])

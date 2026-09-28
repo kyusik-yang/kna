@@ -4,6 +4,30 @@ Errata for data released by this repository. Newest first.
 
 ---
 
+## 2026-09-27 - Release 0.7.1 corrects five member records
+
+A downstream check of `members_{age}.parquet` against the National Assembly's
+member records and Wikipedia found five member-terms whose district or
+election type was inconsistent. `collect_members.py` now applies three
+consistency rules after parsing, described in CODEBOOK.md section 11. No
+other file changes. Roll calls, ideal points and bills do not use these two
+columns.
+
+| Member | Assembly | Column | 0.7.0 | 0.7.1 |
+|---|---|---|---|---|
+| 신용현 (MTK2954E) | 20 | `election_type` | 지역구 | 비례대표 |
+| 권미혁 (RH454994) | 20 | `election_type` | 지역구 | 비례대표 |
+| 손솔 (2KM3589W) | 22 | `district` | empty | 비례대표 |
+| 최혁진 (CC78321E) | 22 | `district` | empty | 비례대표 |
+| 박지원 (8BF5855P) | 22 | `district` | 전남광주통합특별시 해남군완도군진도군 | 전남 해남군완도군진도군 |
+
+The first two rows repeat an inconsistency in the official roster, which
+lists both members' district as 비례대표 and their election type as 지역구.
+The last row reverses a 2026 renaming in the serving-member endpoint, so the
+district reads as it did at the 2024 election.
+
+---
+
 ## 2026-09-26 - Release 0.7.0 corrects ten defects in the bill, vote, member and ideal-point data
 
 Release 0.7.0 rebuilds most of its tables from raw data collected from the Open
