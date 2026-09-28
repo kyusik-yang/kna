@@ -335,7 +335,6 @@ The raw inputs in `data/raw/` are needed only to rebuild the tables.
 | `TVBPMCONFINFO_{age}`, `alt_absorption_{age}`, `BILLINFOPPSR_{age}` | Subcommittee stages, alternative links and proposer lists | `collect_structure.py` |
 | `BPMBILLSUMMARY_{age}` | Texts of the law bills without a scraped text | `collect_structure.py summaries` |
 | `members/` | Member rosters and committee careers, a snapshot of the official member records of the 17th-21st (`nprlapfmaufmqytet_17_21`) and the documented party corrections (`party_overrides.csv`) | `collect_members.py`, except the snapshot and the corrections |
-| `appendix_votes_{17..19}`, `plenary_votes_16`, `plenary_votes_17`, `plenary_votes_16_19` | Output of the earlier parsers behind the experimental vote rows, not read by the build | `extract_appendix_votes.py`, `parse_plenary_votes.py` |
 
 `{age}` runs over 17-22, and every file without an extension is a parquet
 file. The per-request fetch logs in `data/raw/fetchlog/` and the minutes PDFs
@@ -471,9 +470,7 @@ reports to `reports/` and makes no API calls. A few inputs come from outside
   null when the variable is not set.
 - Speech links read `KNA_HEARINGS_DIR`, which defaults to
   `../kr-hearings-data/data`. They are not rebuilt while kr-hearings-data is
-  being replaced. `parse_plenary_votes.py` and `extract_appendix_votes.py`,
-  the earlier parsers behind the experimental vote rows, read the speech
-  corpus from the same variable, with the same default.
+  being replaced.
 - `build_structure.py` keeps the edges of the earlier edge file for the bills
   it had not truncated, `source` = `legacy_edges`, and reads them from
   `data/processed/cosponsorship_edges.parquet`. A rebuild from the shipped
