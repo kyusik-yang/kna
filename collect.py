@@ -191,7 +191,7 @@ def merge_into_raw(endpoint: str, age: int, done: dict[str, dict]):
 
 
 def run_phase2(age: int = DEFAULT_AGE, endpoints: list[str] | None = None,
-               ids_file: str | None = None, workers: int = 4):
+               ids_file: str | None = None, workers: int = 4, refresh: bool = False):
     """Collect per-bill detail APIs and merge them into data/raw."""
     kna_api.get_key()
     log.info(f"{'='*60}")
@@ -215,6 +215,9 @@ def run_phase2(age: int = DEFAULT_AGE, endpoints: list[str] | None = None,
             keys = [b for b in bill_ids if b in jud]
             log.info(f"  {endpoint}: {len(keys):,} bills referred to 법사위")
         log_path = FETCHLOG_DIR / f"{endpoint}_{age}.jsonl"
+        if refresh and log_path.exists():
+            # Re-fetch every bill: bills of an ongoing assembly keep changing
+            log_path.rename(log_path.with_suffix(".jsonl.prev"))
         done = fetch_many(endpoint, keys, lambda b: {"BILL_ID": b}, log_path,
                           workers=workers, page_size=100)
         failed = [k for k in keys if done.get(k, {}).get("status") != "ok"]
@@ -265,6 +268,8 @@ def main():
                         help="Phase 2 endpoints (default: all three)")
     parser.add_argument("--ids-file", help="Phase 2: fetch only these BILL_IDs")
     parser.add_argument("--workers", type=int, default=4)
+    parser.add_argument("--refresh", action="store_true",
+                        help="Phase 2: re-fetch every bill instead of resuming")
     parser.add_argument("--resume", action="store_true",
                         help="Kept for compatibility; Phase 2 always resumes")
 
@@ -277,7 +282,7 @@ def main():
         if args.command == "phase1":
             run_phase1(age)
         elif args.command == "phase2":
-            run_phase2(age, args.endpoints, args.ids_file, args.workers)
+            run_phase2(age, args.endpoints, args.ids_file, args.workers, args.refresh)
         elif args.command == "validate":
             validate(age)
 

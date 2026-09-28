@@ -110,7 +110,8 @@ cat(sprintf("Loading roll call data from %s...\n", INPUT))
 rc <- read_parquet(INPUT)
 
 api_all <- rc %>%
-  filter(source == "api", term %in% TERMS) %>%
+  # api rows plus the LIKMS supplement for members the member-level API omits
+  filter(source %in% c("api", "likms", "likms_absent"), term %in% TERMS) %>%
   mutate(term = as.integer(term))
 if (!is.na(CUTOFF)) {
   n_before <- nrow(api_all)

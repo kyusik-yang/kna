@@ -11,6 +11,9 @@
 #   python3 collect_roll_calls.py --age 22 --refresh
 #   python3 collect_members.py
 #   python3 collect_structure.py all --ages 17-22
+#   python3 collect_structure.py summaries --ages 17-22   (BPMBILLSUMMARY texts, not in "all")
+#   python3 collect_minutes_votes.py all --ages 17-19   (17th-19th roll calls from the minutes
+#     PDFs. integrate.py and consolidate_votes.py read the data/raw tables it writes.)
 set -euo pipefail
 cd "$(dirname "$0")"
 OUT="${1:-data/processed}"
@@ -23,9 +26,23 @@ Rscript build_ideal_points.R --input "$OUT/roll_calls_all.parquet" \
   --members-dir "$OUT" --out "$OUT"
 python3 build_structure.py all --out "$OUT" --members-dir "$OUT" \
   --master-dir "$OUT" --report-dir "$OUT/reports"
-# Bill texts come from the korean-assembly-bills repo (KNA_ASSEMBLY_BILLS_DIR).
+# Bill texts: the LIKMS scrape of the korean-assembly-bills repo (KNA_ASSEMBLY_BILLS_DIR)
+# plus data/raw/BPMBILLSUMMARY_{age}. Reports go to $OUT/reports/bill_texts_*.csv.
 # Speech links are not rebuilt: kr-hearings-data v9 is being replaced.
-python3 link_external.py texts --out "$OUT" --in-dir "$OUT"
+python3 link_external.py texts --out "$OUT" --in-dir "$OUT" --report-dir "$OUT/reports"
 # KNA_WITNESSES_DIR (member-metadata flag) is optional; without it the flag is skipped.
 python3 link_external.py idmap --out "$OUT" --in-dir "$OUT" --members-dir "$OUT" --allow-missing
+# Asset panel: rebuilt only when KNA_ASSETS_DIR points to the OpenWatch files and
+# the 국회공보 PDFs (build_assets.py fetch) and pdfplumber is installed. Otherwise
+# the shipped panel is carried over unchanged.
+if [[ -n "${KNA_ASSETS_DIR:-}" ]]; then
+  python3 build_assets.py build --out "$OUT" --members-dir "$OUT" --compare data/processed
+elif [[ "$OUT" != "data/processed" ]]; then
+  cp data/processed/assets_wealth_panel.parquet "$OUT/" && echo "build_all: asset panel carried over (KNA_ASSETS_DIR not set)"
+fi
+# hearing_meetings_summary.parquet is rebuilt only when kr-hearings-data v10 is
+# released (build_hearings_summary.py). Until then the shipped file is carried over.
+if [[ "$OUT" != "data/processed" && -f data/processed/hearing_meetings_summary.parquet ]]; then
+  cp data/processed/hearing_meetings_summary.parquet "$OUT/"
+fi
 echo "build_all: done -> $OUT"

@@ -7,6 +7,7 @@ Usage:
     python3 collect_structure.py subcommittee --ages 17-22
     python3 collect_structure.py alternatives --ages 17-22
     python3 collect_structure.py proposers --ages 17-22
+    python3 collect_structure.py summaries --ages 17-22
     python3 collect_structure.py all --ages 17-22
 
 subcommittee  TVBPMCONFINFO (소위 심사정보, opened 2026-07-07), bulk per AGE.
@@ -19,6 +20,15 @@ proposers     BILLINFOPPSR (proposer list with role and party at proposal),
               trusted: code count differs from the proposer text, the list was
               truncated at 100 in the old edge file, or the bill is newer than
               the old edge file. -> data/raw/BILLINFOPPSR_{age}.parquet
+summaries     BPMBILLSUMMARY (법률안 제안이유 및 주요내용), one call per BILL_NO,
+              for every 법률안 of the raw bill lists (BILLRCP, member and
+              processed law bills; --master-dir reads a master instead) that
+              has no scraped text in data/processed/bill_texts_linked.parquet
+              (--all-laws queries every 법률안). The answer lists every record
+              that shares the BILL_NO, GOV_ reconsideration records included,
+              so the builder matches on BILL_ID.
+              -> data/raw/BPMBILLSUMMARY_{age}.parquet
+              Not part of "all".
 
 Per-call answers are logged to data/raw/fetchlog/*.jsonl, so reruns resume.
 """
@@ -145,11 +155,80 @@ def collect_proposers(age: int, workers: int):
     log.info(f"  BILLINFOPPSR_{age}: {len(df):,} rows for {df['_BILL_ID'].nunique() if not df.empty else 0:,} bills, {failed} failed")
 
 
+def raw_law_bills(age: int) -> dict[str, str]:
+    """BILL_ID -> BILL_NO of every 법률안 in the raw bill lists of one assembly.
+
+    BILLRCP (접수목록, pending bills included) filtered on BILL_KIND, plus the
+    member and processed law-bill lists. Together they hold the law bills of
+    the master, and they are current as soon as collect.py phase1 has run.
+    """
+    out: dict[str, str] = {}
+    for name, kind_col in [("BILLRCP", "BILL_KIND"), ("nzmimeepazxkubdpn", None),
+                           ("nzpltgfqabtcpsmai", None)]:
+        p = RAW_DIR / f"{name}_{age}.parquet"
+        if not p.exists():
+            continue
+        d = pd.read_parquet(p, columns=["BILL_ID", "BILL_NO"] + ([kind_col] if kind_col else []))
+        if kind_col:
+            d = d[d[kind_col] == "법률안"]
+        out.update(zip(d["BILL_ID"], d["BILL_NO"].astype(str)))
+    return out
+
+
+def summary_target_nos(age: int, all_laws: bool, master_dir: "Path | None" = None) -> list[str]:
+    """BILL_NOs of the 법률안 of one assembly that lack a scraped text.
+
+    The law bills come from the raw bill lists, or from master_bills_{age} in
+    master_dir when it is given.
+    """
+    if master_dir is None:
+        law = raw_law_bills(age)
+    else:
+        m = pd.read_parquet(Path(master_dir) / f"master_bills_{age}.parquet",
+                            columns=["bill_id", "bill_no", "bill_kind"])
+        m = m[m["bill_kind"] == "법률안"]
+        law = dict(zip(m["bill_id"], m["bill_no"].astype(str)))
+    scraped_nos: set[str] = set()
+    texts_path = PROCESSED_DIR / "bill_texts_linked.parquet"
+    if not all_laws and texts_path.exists():
+        t = pd.read_parquet(texts_path)
+        scraped = t["propose_reason"].fillna("").str.strip() != ""
+        if "source" in t.columns:          # a build that already merged the API texts
+            scraped &= t["source"] == "likms_scrape"
+        scraped_nos = {law[b] for b in t.loc[scraped, "BILL_ID"] if b in law}
+    return sorted(set(law.values()) - scraped_nos)
+
+
+def collect_summaries(age: int, workers: int, all_laws: bool, master_dir: "str | None"):
+    nos = summary_target_nos(age, all_laws, master_dir)
+    log.info(f"  {age}대: {len(nos):,} 법률안 need BPMBILLSUMMARY")
+    log_path = FETCHLOG_DIR / f"BPMBILLSUMMARY_{age}.jsonl"
+    done = fetch_many("BPMBILLSUMMARY", nos, lambda n: {"BILL_NO": n},
+                      log_path, workers=workers, page_size=100)
+    # Every BILL_NO ever logged for this assembly is kept, so a later run with
+    # a smaller target list never drops rows collected earlier.
+    rows = rows_from_log(done, tag_col="_BILL_NO")
+    df = pd.DataFrame(rows)
+    failed = sum(1 for k in nos if done.get(k, {}).get("status") != "ok")
+    empty = sum(1 for k in nos if done.get(k, {}).get("status") == "ok" and not done[k]["rows"])
+    if not df.empty:
+        write_parquet_atomic(df, RAW_DIR / f"BPMBILLSUMMARY_{age}.parquet")
+    log.info(f"  BPMBILLSUMMARY_{age}: {len(df):,} rows for "
+             f"{df['_BILL_NO'].nunique() if not df.empty else 0:,} bill numbers; "
+             f"{empty} answered with no rows, {failed} failed")
+
+
 def main():
     parser = argparse.ArgumentParser(description="Collect structural bill data")
-    parser.add_argument("command", choices=["subcommittee", "alternatives", "proposers", "all"])
+    parser.add_argument("command", choices=["subcommittee", "alternatives", "proposers",
+                                            "summaries", "all"])
     parser.add_argument("--ages", default="17-22")
     parser.add_argument("--workers", type=int, default=3)
+    parser.add_argument("--all-laws", action="store_true",
+                        help="summaries: query every 법률안, not only those without a scraped text")
+    parser.add_argument("--master-dir", default=None,
+                        help="summaries: take the law bills from master_bills_{age}.parquet in "
+                             "this directory instead of the raw bill lists in data/raw")
     args = parser.parse_args()
     kna_api.get_key()
     for age in parse_ages(args.ages):
@@ -160,6 +239,8 @@ def main():
             collect_alternatives(age, args.workers)
         if args.command in ("proposers", "all"):
             collect_proposers(age, args.workers)
+        if args.command == "summaries":
+            collect_summaries(age, args.workers, args.all_laws, args.master_dir)
 
 
 if __name__ == "__main__":

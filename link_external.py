@@ -1,7 +1,8 @@
 """
 Link external datasets to the bill lifecycle master DB.
 =========================================================
-1. assembly-bills: bill proposal texts (발의 이유)
+1. bill texts: 제안이유 및 주요내용 of the 17th-22nd law bills, from the
+   LIKMS scrape of korean-assembly-bills and BPMBILLSUMMARY (data/raw)
 2. kr-hearings-data: committee meeting speeches
 3. ID mapping table across all projects
 
@@ -9,7 +10,7 @@ Cosponsorship edges are no longer copied from korean-assembly-bills. They
 are built in this repository by build_structure.py.
 
 Usage:
-    python3 link_external.py texts      # Link bill texts
+    python3 link_external.py texts      # Bill texts (writes reports/bill_texts_*.csv)
     python3 link_external.py speeches   # Link committee speeches
     python3 link_external.py idmap      # Build ID mapping table
     python3 link_external.py all        # All of the above
@@ -18,6 +19,7 @@ Usage:
     --in-dir DIR       kna inputs: masters, roll calls, ideal points,
                        committee meetings (default data/processed)
     --members-dir DIR  members_{17..22}.parquet (default data/processed)
+    --report-dir DIR   texts coverage reports (default OUT/reports)
     --allow-missing    skip a missing external source instead of stopping
 
 External dataset locations (environment variables, defaults in brackets):
@@ -28,6 +30,7 @@ External dataset locations (environment variables, defaults in brackets):
 """
 
 import argparse
+import json
 import os
 import re
 import sys
@@ -36,6 +39,8 @@ from pathlib import Path
 import pandas as pd
 
 PROCESSED = Path(__file__).parent / "data" / "processed"
+RAW_DIR = Path(__file__).parent / "data" / "raw"
+FETCHLOG_DIR = RAW_DIR / "fetchlog"
 SIBLINGS = Path(__file__).resolve().parent.parent
 AB_PATH = Path(os.environ.get("KNA_ASSEMBLY_BILLS_DIR", SIBLINGS / "korean-assembly-bills" / "data"))
 KR_PATH = Path(os.environ.get("KNA_HEARINGS_DIR", SIBLINGS / "kr-hearings-data" / "data"))
@@ -55,29 +60,163 @@ def require(path: Path, env_name: str, allow_missing: bool) -> bool:
     return False
 
 
-def link_bill_texts(out: Path, in_dir: Path, allow_missing: bool):
-    """Link assembly-bills proposal texts to master DB."""
-    print("="*60)
-    print("1. Linking bill proposal texts (assembly-bills)")
-    print("="*60)
+def _text_or_null(s: pd.Series) -> pd.Series:
+    """Keep texts as returned, but store an empty or whitespace-only text as null."""
+    s = s.astype("object")
+    return s.where(s.fillna("").astype(str).str.strip() != "", None)
+
+
+def _summary_fetch_status(age: int) -> "dict[str, str] | None":
+    """BILL_NO -> 'rows', 'no_rows' or 'error' from the collector's fetch log.
+
+    The logs are git-ignored, so a fresh clone has none and the report then
+    cannot tell a bill the API answered with no rows from one never queried.
+    """
+    path = FETCHLOG_DIR / f"BPMBILLSUMMARY_{age}.jsonl"
+    if not path.exists():
+        return None
+    status: dict[str, str] = {}
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            try:
+                rec = json.loads(line)
+            except json.JSONDecodeError:
+                continue          # a half-written last line while collection runs
+            if rec.get("status") != "ok":
+                status.setdefault(rec["key"], "error")
+            else:
+                status[rec["key"]] = "rows" if rec.get("rows") else "no_rows"
+    return status
+
+
+def link_bill_texts(out: Path, in_dir: Path, allow_missing: bool, report_dir: Path):
+    """Propose-reason texts of the 17th-22nd law bills, one row per bill.
+
+    Two sources, the scraped one first:
+      likms_scrape    korean-assembly-bills/data/bill_texts.parquet, the 제안이유
+                      of 20th-22nd member law bills scraped from LIKMS. Every
+                      row of it is kept with its text and scrape_status.
+      BPMBILLSUMMARY  data/raw/BPMBILLSUMMARY_{age}, collected by
+                      collect_structure.py summaries for the law bills without a
+                      scraped text. It fills scrape rows that have no text and
+                      adds a row for every other law bill with a text.
+    age and bill_no come from master_bills_{age} in --in-dir. The one scrape
+    row whose BILL_ID is in no master (a re-keyed bill) keeps them null.
+    """
+    print("=" * 60)
+    print("1. Linking bill proposal texts (LIKMS scrape + BPMBILLSUMMARY)")
+    print("=" * 60)
 
     texts_file = AB_PATH / "bill_texts.parquet"
     if not require(texts_file, "KNA_ASSEMBLY_BILLS_DIR", allow_missing):
         return
-    texts = pd.read_parquet(texts_file)
+    summary_paths = {age: RAW_DIR / f"BPMBILLSUMMARY_{age}.parquet" for age in ASSEMBLIES}
+    missing = [p.name for p in summary_paths.values() if not p.exists()]
+    if missing:
+        if not allow_missing:
+            raise SystemExit(f"ERROR: missing raw input(s): {', '.join(missing)}. Run "
+                             f"collect_structure.py summaries, or pass --allow-missing.")
+        print(f"  WARNING: built without {', '.join(missing)} (--allow-missing)")
 
-    print(f"  Bill texts: {len(texts):,} bills, {texts['propose_reason'].notna().sum():,} with text")
+    scrape = pd.read_parquet(texts_file)
+    scrape = scrape[["BILL_ID", "propose_reason", "scrape_status"]].copy()
+    if scrape["BILL_ID"].duplicated().any():
+        raise SystemExit("ERROR: the scraped texts repeat a BILL_ID")
+    scrape["propose_reason"] = _text_or_null(scrape["propose_reason"])
+    scrape["source"] = "likms_scrape"
 
-    # Save linked versions
+    masters = pd.concat(
+        [pd.read_parquet(in_dir / f"master_bills_{age}.parquet",
+                         columns=["bill_id", "bill_no", "bill_kind", "ppsr_kind", "bill_nm"]).assign(age=age)
+         for age in ASSEMBLIES], ignore_index=True)
+    laws = masters[masters["bill_kind"] == "법률안"]
+
+    # API texts, matched on BILL_ID: an answer lists every record that shares
+    # the BILL_NO, GOV_ reconsideration records included
+    api_frames = []
+    for age, p in summary_paths.items():
+        if not p.exists():
+            continue
+        raw = pd.read_parquet(p, columns=["BILL_ID", "BILL_NO", "SUMMARY"])
+        raw = raw.merge(laws.loc[laws["age"] == age, ["bill_id", "bill_no"]],
+                        left_on=["BILL_ID", "BILL_NO"], right_on=["bill_id", "bill_no"])
+        api_frames.append(raw.assign(text=_text_or_null(raw["SUMMARY"]))[["bill_id", "text"]])
+    api = pd.concat(api_frames, ignore_index=True) if api_frames else pd.DataFrame(columns=["bill_id", "text"])
+    api_n_texts = api.dropna(subset=["text"]).groupby("bill_id")["text"].nunique()
+    conflicts = api_n_texts[api_n_texts > 1]
+    if len(conflicts):
+        print(f"  NOTE: {len(conflicts)} bills have two or more different API texts; the first is kept")
+    api_text = api.dropna(subset=["text"]).drop_duplicates("bill_id").set_index("bill_id")["text"]
+
+    fill = scrape["propose_reason"].isna() & scrape["BILL_ID"].isin(api_text.index)
+    scrape.loc[fill, "propose_reason"] = scrape.loc[fill, "BILL_ID"].map(api_text)
+    scrape.loc[fill, "source"] = "BPMBILLSUMMARY"
+    add = api_text[~api_text.index.isin(scrape["BILL_ID"])]
+    added = pd.DataFrame({"BILL_ID": add.index, "propose_reason": add.values,
+                          "scrape_status": None, "source": "BPMBILLSUMMARY"})
+    texts = pd.concat([scrape, added], ignore_index=True)
+
+    key = masters.drop_duplicates("bill_id").set_index("bill_id")
+    texts["age"] = texts["BILL_ID"].map(key["age"]).astype("Int64")
+    texts["bill_no"] = texts["BILL_ID"].map(key["bill_no"])
+    texts = (texts.sort_values(["age", "bill_no", "BILL_ID"], na_position="last", kind="mergesort")
+             [["BILL_ID", "propose_reason", "scrape_status", "age", "bill_no", "source"]]
+             .reset_index(drop=True))
+    print(f"  Scraped rows: {len(scrape):,}, of which {int(fill.sum()):,} without a scraped "
+          f"text filled from BPMBILLSUMMARY")
+    print(f"  Rows added from BPMBILLSUMMARY: {len(added):,}")
+    print(f"  Rows not in any master: {int(texts['age'].isna().sum())}")
+
     outpath = out / "bill_texts_linked.parquet"
     texts.to_parquet(outpath, index=False)
-    print(f"  Saved: {outpath.name}")
+    print(f"  Saved: {outpath.name} ({len(texts):,} rows, "
+          f"{texts['propose_reason'].notna().sum():,} with text)")
 
-    # Summary
-    for age in [20, 21, 22]:
-        master = pd.read_parquet(in_dir / f"master_bills_{age}.parquet")
-        matched = master["bill_id"].isin(texts["BILL_ID"]).sum()
-        print(f"  {age}대: {matched:,}/{len(master):,} bills have proposal text ({matched/len(master)*100:.1f}%)")
+    # Coverage of law bills, by assembly and proposer kind
+    has_text = set(texts.loc[texts["propose_reason"].notna(), "BILL_ID"])
+    scraped = set(texts.loc[texts["source"] == "likms_scrape", "BILL_ID"]) & has_text
+    lw = laws.assign(text=laws["bill_id"].isin(has_text), scraped=laws["bill_id"].isin(scraped))
+    lw["api"] = lw["text"] & ~lw["scraped"]
+    cov = (lw.groupby(["age", "ppsr_kind"])
+           .agg(law_bills=("bill_id", "size"), with_text=("text", "sum"),
+                likms_scrape=("scraped", "sum"), bpmbillsummary=("api", "sum"))
+           .reset_index())
+    tot = (lw.groupby("age").agg(law_bills=("bill_id", "size"), with_text=("text", "sum"),
+                                 likms_scrape=("scraped", "sum"), bpmbillsummary=("api", "sum"))
+           .reset_index().assign(ppsr_kind="all"))
+    cov = pd.concat([cov, tot], ignore_index=True).sort_values(["age", "ppsr_kind"], kind="mergesort")
+    cov["share_with_text"] = (cov["with_text"] / cov["law_bills"]).round(4)
+    print(cov.to_string(index=False))
+
+    # Law bills without a text, with the reason
+    status = {age: _summary_fetch_status(age) for age in ASSEMBLIES}
+    api_ids: set = set()
+    for age, p in summary_paths.items():
+        if p.exists():
+            api_ids |= set(pd.read_parquet(p, columns=["BILL_ID"])["BILL_ID"])
+    no_text = lw[~lw["text"]].copy()
+
+    def reason(r) -> str:
+        if r["bill_id"] in api_ids:
+            return "api_text_empty"
+        if not summary_paths[r["age"]].exists():
+            return "raw_file_missing"
+        st = status.get(r["age"])
+        if st is None:
+            return "no_api_row"
+        return {"rows": "api_no_row_for_bill_id", "no_rows": "api_no_rows",
+                "error": "api_error"}.get(st.get(r["bill_no"]), "not_queried")
+
+    no_text["reason"] = no_text.apply(reason, axis=1) if len(no_text) else pd.Series(dtype=str)
+    no_text = no_text[["age", "bill_id", "bill_no", "ppsr_kind", "bill_nm", "reason"]]
+    print(f"  Law bills without a text: {len(no_text):,}")
+    if len(no_text):
+        print(no_text.groupby(["age", "reason"]).size().to_string())
+
+    report_dir.mkdir(parents=True, exist_ok=True)
+    cov.to_csv(report_dir / "bill_texts_coverage.csv", index=False)
+    no_text.to_csv(report_dir / "bill_texts_missing.csv", index=False)
+    print(f"  Reports: {report_dir / 'bill_texts_coverage.csv'}, {report_dir / 'bill_texts_missing.csv'}")
 
 
 def link_speeches(out: Path, in_dir: Path, allow_missing: bool):
@@ -238,6 +377,8 @@ def main():
     parser.add_argument("--out", default=str(PROCESSED))
     parser.add_argument("--in-dir", default=str(PROCESSED))
     parser.add_argument("--members-dir", default=str(PROCESSED))
+    parser.add_argument("--report-dir", default=None,
+                        help="texts coverage reports (default OUT/reports)")
     parser.add_argument("--allow-missing", action="store_true",
                         help="skip a missing external source instead of stopping")
     args = parser.parse_args()
@@ -246,7 +387,8 @@ def main():
     out.mkdir(parents=True, exist_ok=True)
 
     if args.command in ("texts", "all"):
-        link_bill_texts(out, in_dir, args.allow_missing)
+        report_dir = Path(args.report_dir) if args.report_dir else out / "reports"
+        link_bill_texts(out, in_dir, args.allow_missing, report_dir)
     if args.command in ("speeches", "all"):
         link_speeches(out, in_dir, args.allow_missing)
     if args.command in ("idmap", "all"):
