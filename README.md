@@ -4,7 +4,7 @@
 
 
 > **Release 0.8.1, 2026-09-28.** This release rebuilds
-> `hearing_meetings_summary.parquet` from kr-hearings-data v10.1, which
+> `hearing_meetings_summary.parquet` from kr-hearings-data v10.2, which
 > replaces the defective version 9. The table now has 26,261 meetings through
 > 2026-09-22 and two new columns, `conf_num` and `is_subcommittee`.
 > `meeting_id` is null for 187 meetings, so join on `conf_num`. Release 0.8.0
@@ -320,7 +320,7 @@ Every shipped table, in `data/processed/`. CODEBOOK.md documents each column.
 | `committee_assignments.parquet` | committee spell | 13,616 | Dated committee assignments |
 | `legislator_id_mapping.parquet` | legislator | 1,156 | MONA_CD, terms and coverage flags across tables |
 | `bill_texts_linked.parquet` | bill | 109,829 | Propose-reason texts of the 17th-22nd law bills, from the LIKMS scrape or BPMBILLSUMMARY |
-| `hearing_meetings_summary.parquet` | meeting | 26,261 | Meeting-level summary of kr-hearings-data v10.1, 16th-22nd, joined on `conf_num` |
+| `hearing_meetings_summary.parquet` | meeting | 26,261 | Meeting-level summary of kr-hearings-data v10.2, 16th-22nd, joined on `conf_num` |
 | `assets_wealth_panel.parquet` | member-year | 3,215 | Asset disclosures, 19th-22nd, wealth_year 2015-2025 |
 | `reports/` | | | Nine validation reports written by the build (CODEBOOK.md section 17) |
 
@@ -366,7 +366,7 @@ kna is an offline master database for statistical analysis in Python and R. For 
 
 | Dataset | Description |
 |---------|-------------|
-| [kr-hearings-data](https://github.com/kyusik-yang/kr-hearings-data) | Speech-level records of committee and plenary meetings. kna's hearing summary is built from its release v10.1 |
+| [kr-hearings-data](https://github.com/kyusik-yang/kr-hearings-data) | Speech-level records of committee and plenary meetings. kna's hearing summary is built from its release v10.2 |
 | [korean-assembly-bills](https://github.com/kyusik-yang/korean-assembly-bills) | Source of the scraped propose-reason texts in `bill_texts_linked.parquet`, the rows with `source` = `likms_scrape` |
 | [open-assembly-mcp](https://github.com/kyusik-yang/open-assembly-mcp) | MCP server for real-time API queries via Claude |
 | [assembly-explorer](https://github.com/kyusik-yang/assembly-explorer) | Interactive Streamlit web app |
@@ -477,7 +477,7 @@ reports to `reports/` and makes no API calls. A few inputs come from outside
   a v10 build directory or a directory of release assets such as the cache of
   the kr-hearings-data package. `build_all.sh` rebuilds it only when the
   variable is set and otherwise carries the shipped file over.
-  `python3 build_hearings_summary.py --source v10 --v10-package v10.1 --out DIR`
+  `python3 build_hearings_summary.py --source v10 --v10-package v10.2 --out DIR`
   builds it through the package instead. CODEBOOK.md section 15 has the
   details.
 - `build_structure.py` keeps the edges of the earlier edge file for the bills

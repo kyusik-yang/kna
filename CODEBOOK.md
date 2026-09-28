@@ -1335,7 +1335,7 @@ BILL_ID of bill 2203215, which was re-keyed upstream, and keeps `age` and
 | | |
 |---|---|
 | File | `hearing_meetings_summary.parquet`, built by `build_hearings_summary.py` |
-| Source | kr-hearings-data version 10.1 (release v10.1, run 20260928T152902_453979) |
+| Source | kr-hearings-data release v10.2 (run 20260928T175652_175976) |
 | Unit | one committee, plenary, audit or hearing meeting |
 
 | Column | Definition |
@@ -1352,7 +1352,7 @@ BILL_ID of bill 2203215, which was re-keyed upstream, and keeps `age` and
 | `is_subcommittee` | True for a subcommittee meeting, as in kr-hearings-data. |
 
 The table has 26,261 meetings dated from 2000-06-05 to 2026-09-22, 7,268 of
-them subcommittee meetings, with 15,114,183 turns. kr-hearings-data v10.1 has
+them subcommittee meetings, with 15,114,183 turns. kr-hearings-data v10.2 has
 26,264 meetings. The three it holds without turns are left out, which are two
 identical duplicate copies (`duplicate_of`) and one meeting without turns.
 Use `conf_num` to join the table to kr-hearings-data, because `meeting_id` is
@@ -1378,11 +1378,11 @@ reads the v10 files in one of three forms:
 - a build directory with `meetings.parquet` and `turns/tNN/part-*.parquet`,
   given by `--v10-dir` or `KNA_HEARINGS_V10_DIR` (default
   `../kr-hearings-data/v10/build/release`);
-- a directory of release assets, `meetings_v10.1.parquet` and
-  `turns_t16_v10.1.parquet` to `turns_t22_v10.1.parquet`, such as the cache
+- a directory of release assets, `meetings_v10.2.parquet` and
+  `turns_t16_v10.2.parquet` to `turns_t22_v10.2.parquet`, such as the cache
   of the kr-hearings-data package, given the same way (with `--v10-version`
   when it holds more than one version);
-- the kr-hearings-data package, `--v10-package v10.1`, which downloads what
+- the kr-hearings-data package, `--v10-package v10.2`, which downloads what
   it needs.
 
 `link_external.py speeches` writes the same table. `build_all.sh` rebuilds

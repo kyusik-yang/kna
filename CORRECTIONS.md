@@ -7,7 +7,7 @@ Errata for data released by this repository. Newest first.
 ## 2026-09-28 - Release 0.8.1
 
 Release 0.8.1 rebuilds `hearing_meetings_summary.parquet` from
-kr-hearings-data release v10.1 (run 20260928T152902_453979). Releases 0.6.0
+kr-hearings-data release v10.2 (run 20260928T175652_175976). Releases 0.6.0
 to 0.8.0 shipped a table built from version 9, whose defects D1 to D12 are
 listed in docs/CHANGELOG.md of kr-hearings-data. Every other file is
 identical to 0.8.0. The figures were computed from the 0.8.0 table and the
@@ -17,7 +17,7 @@ identical to 0.8.0. The figures were computed from the 0.8.0 table and the
 |---|---|---|
 | `hearing_meetings_summary.parquet` | 16,829 meetings, 2000-06-01 to 2025-07-21, eight columns | 26,261 meetings, 2000-06-05 to 2026-09-22, columns `conf_num` and `is_subcommittee` added |
 
-The build reads the v10.1 build directory, the v10.1 release assets or the
+The build reads the v10.2 build directory, the v10.2 release assets or the
 kr-hearings-data package, and the three give the same table.
 
 ### What changed
@@ -45,7 +45,7 @@ Among the 16,793 matched meetings the other columns differ as follows.
 | Column | Matched meetings that differ |
 |---|---|
 | `term`, `date` | 0 |
-| `committee` | 821, all 국정감사. In 817 the v9 name carries an audit team (for example 통일외교통상위원회-구주반) and v10 has none. In 4 the team is spelled with a different separator. |
+| `committee` | 202, all 국정감사. In 164 (16th 2, 17th 162) the v9 name carries an audit team (for example 통일외교통상위원회-구주반) and v10 has none. kr-hearings-data finds no team in the 17th source. In 34 of the 22nd v10 carries a team and v9 has none. In 4 the team is spelled with a different separator. |
 | `hearing_type` | 3. conf_num 45567, 45569 and 52770 were 인사청문특별위원회 in v9 and are 상임위원회 in v10. |
 | `n_speeches` | 3,058 |
 | `n_legislators` | 2,967 |

@@ -140,8 +140,8 @@ not a roll-call matrix (CODEBOOK.md section 9).
    text analyses should record `source`. For 489 law bills the API returns an
    empty text, and they have none. 328 of them are government bills of the
    18th. Bills of other kinds have no texts.
-5. **Hearing data come from kr-hearings-data v10.1.**
-   `hearing_meetings_summary.parquet` is built from release v10.1 and ends on
+5. **Hearing data come from kr-hearings-data v10.2.**
+   `hearing_meetings_summary.parquet` is built from release v10.2 and ends on
    2026-09-22. 187 of its meetings have no Open API CONF_ID and a null
    `meeting_id`, so join on `conf_num`. The table of 0.6.0 to 0.8.0 came from
    the defective version 9 (CODEBOOK.md section 15).

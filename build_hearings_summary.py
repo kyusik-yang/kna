@@ -8,11 +8,11 @@ Usage:
     python3 build_hearings_summary.py --source v10 --out data/_build \
         --compare data/processed/hearing_meetings_summary.parquet
     python3 build_hearings_summary.py --source v10 --out data/_build \
-        --v10-dir ~/.cache/kr-hearings-data/v10.1
-    python3 build_hearings_summary.py --source v10 --out data/_build --v10-package v10.1
+        --v10-dir ~/.cache/kr-hearings-data/v10.2
+    python3 build_hearings_summary.py --source v10 --out data/_build --v10-package v10.2
     python3 build_hearings_summary.py --source v9 --out data/_build
 
---source v10  reads kr-hearings-data version 10 (v10 or v10.1) in one of
+--source v10  reads kr-hearings-data version 10 (v10, v10.1 or v10.2) in one of
               three forms:
               - a build directory with meetings.parquet and
                 turns/tNN/part-*.parquet (--v10-dir, KNA_HEARINGS_V10_DIR, or
@@ -325,9 +325,9 @@ def main():
                              "release assets (meetings_{v}.parquet, turns_t{NN}_{v}.parquet) "
                              "(env KNA_HEARINGS_V10_DIR)")
     parser.add_argument("--v10-version", default=None,
-                        help="release version to read from an asset directory, e.g. v10.1")
+                        help="release version to read from an asset directory, e.g. v10.2")
     parser.add_argument("--v10-package", default=None, metavar="VERSION",
-                        help="read through the kr-hearings-data package instead, e.g. v10.1")
+                        help="read through the kr-hearings-data package instead, e.g. v10.2")
     parser.add_argument("--compare", default=None,
                         help="reference summary to compare with, e.g. "
                              "data/processed/hearing_meetings_summary.parquet")
