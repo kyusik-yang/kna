@@ -32,9 +32,9 @@ def cli():
     """kna - Korean National Assembly CLI.
 
     Comprehensive query tool for 110K+ bills across the 17th-22nd
-    Korean National Assembly: full lifecycle timestamps, 2.5M roll call
-    votes (20th-22nd), cross-assembly ideal points, and bill
-    propose-reason texts.
+    Korean National Assembly: full lifecycle timestamps, 4.1M roll call
+    votes (17th-22nd), cross-assembly ideal points (20th-22nd), and
+    propose-reason texts of law bills.
     """
 
 
@@ -168,13 +168,14 @@ def legislator(ctx, name, age, mona):
 
 @cli.command()
 @click.argument("keyword")
-@click.option("--assembly", "age", type=ASSEMBLY, default=None, help="Assembly number (20-22)")
+@click.option("--assembly", "age", type=ASSEMBLY, default=None, help="Assembly number (17-22)")
 @click.option("-n", "--limit", type=int, default=20, help="Max results (default 20)")
 def text(keyword, age, limit):
     """Search within bill propose-reason texts.
 
     \b
-    Full-text search across 60K+ propose-reason texts (20-22nd Assembly).
+    Full-text search across 109K+ propose-reason texts of law bills
+    (17th-22nd Assembly).
 
     \b
     Examples:
@@ -189,7 +190,7 @@ def text(keyword, age, limit):
     if total == 0:
         console.print(f"  No results for \"{keyword}\" in propose-reason texts")
         if age is not None and age < 20:
-            console.print("  Propose-reason texts cover the 20th-22nd assemblies only")
+            console.print("  Data files built before 0.8.0 have texts for the 20th-22nd assemblies only")
         return
     console.print(f"  {dim('(searching propose-reason texts)')}")
     print_search_results(results, keyword, age, total)

@@ -1,22 +1,22 @@
 {
   "vintage": "v20260917",
   "cutoff": null,
-  "created": "2026-09-26T09:06:06-0400",
+  "created": "2026-09-28T14:41:58-0400",
   "script": {
     "path": "build_ideal_points.R",
-    "sha256": "c7888acae568b8f0f334bfffbd4c622a26c649d258f254547ecc39b362393691",
-    "git_head": "3d8d55dcaed687d7cdf3c94bc89cd1b60581b44c"
+    "sha256": "ab61cfc9d283afe39337d5514b79d16a69137e5a9a90287b1297df1851952359",
+    "git_head": "2b40444d9fe53965bc87c21e8b2248c3ae6d1fd9"
   },
   "input": {
     "path": "data/processed/roll_calls_all.parquet",
-    "sha256": "e060775a7a07b3412265d1cd93f97ea2407f08b1b2b9619b08ebc36bff7b6c6b",
-    "api_rows_after_cutoff": 2557618,
-    "scaled_rows": 1828927
+    "sha256": "453be77b419483e28fc21f72b8d952f64c06b75cd621f3ef99ae9832aa6a78d9",
+    "api_rows_after_cutoff": 2562024,
+    "scaled_rows": 1832222
   },
   "members": [
     {
       "path": "data/processed/members_20.parquet",
-      "sha256": "abc6a7ad7d1ee3efbe54f8cc059cc70605ef30f49f45a194cf1e862ce338d42e"
+      "sha256": "0cdf7d061fdfe346929b9222d3286e704611269c8f4c02511718fd8a801f3847"
     },
     {
       "path": "data/processed/members_21.parquet",
@@ -24,7 +24,7 @@
     },
     {
       "path": "data/processed/members_22.parquet",
-      "sha256": "f8b0718599aa9eb372b7434d05fe7861d548cbe43e71a92f7da54e734c040851"
+      "sha256": "ca5bd74864d3a8372a962fe740fd206c929ff450bc9ac9cc767fd9774a9a28d8"
     }
   ],
   "settings": {
@@ -75,12 +75,12 @@
       "first_vote_date": "20240704",
       "last_vote_date": "20260917",
       "recorded_votes": 1847,
-      "legislators": 305,
-      "contested_votes": 223,
+      "legislators": 320,
+      "contested_votes": 226,
       "polarity_anchor": "G152611B",
       "party_fallback_members": 0,
-      "apre_1d": 0.84868049621582,
-      "apre_2d": 0.873598396778107
+      "apre_1d": 0.847316384315491,
+      "apre_2d": 0.87698632478714
     }
   ],
   "bridging": [
@@ -96,14 +96,14 @@
     {
       "term": 22,
       "reference_term": 21,
-      "n_bridging": 151,
-      "slope": 0.706518446390103,
-      "intercept": -0.0307367591962772,
-      "r_squared": 0.950183554341173,
+      "n_bridging": 156,
+      "slope": 0.766088275155279,
+      "intercept": -0.052547321604566,
+      "r_squared": 0.950542893310114,
       "vintage": "v20260917"
     }
   ],
-  "dwnominate_seconds": 540.747567892075,
+  "dwnominate_seconds": 117.426859855652,
   "r_version": "R version 4.4.1 (2024-06-14)",
   "packages": {
     "arrow": "23.0.1.1",
@@ -117,11 +117,11 @@
   },
   "dwnominate_remote_sha": "fd39e6a85ada1ba491030ac14a1b0f3c1fefb736",
   "outputs": {
-    "ideal_points_wnominate.csv": "cb15f2da0ea3d73e30d85c514e522538cd6c984df382b4a14d45ae983fbcdc68",
-    "ideal_points_bridged.csv": "ff55108db188f436149ac9cc7da385b16e497a3944b51e2abc3947e1607a71a9",
-    "ideal_points_bridging_params.csv": "c4736e8dfad2a412ffbeb7e604190ced6df91baa2c038a8b9ecae3c55139f487",
-    "ideal_points_dwnominate.csv": "5de6946c8806cd91b616c526cbb7e1d6d04b0a57ca4bf4f496b4b56ff7ea3808",
-    "dwnominate_fit.rds": "569c24146b2d182824d6cf0c4e1afcb903c258223599adb5f65767a602fec8c9",
+    "ideal_points_wnominate.csv": "d1e53824b0ecfe561e66d2ca5fb3f92f46f83804fc8e274716d93a1c9305e938",
+    "ideal_points_bridged.csv": "6ef131f791b2c4fcaec3ab0274390406e415ec0eba3598e3ffaf6f741180699f",
+    "ideal_points_bridging_params.csv": "7bc6fc7cb8c566334a7fda2da8c555911c1efb2c5962c438fade67a92231de2d",
+    "ideal_points_dwnominate.csv": "8381f0f7e2465fd36ff56b43729784f72399686b8ba6c87176c3a7223d47a027",
+    "dwnominate_fit.rds": "bbb36df2da65a90687ebe84b65a93418f4970156dbec9bbf0b3d4dc68a0f087b",
     "ideal_points_sessioninfo.txt": "8aa1173f227883d39933d190a2f7eefa786ff4a8bf535a127d3c1fbb55dd667f"
   }
 }

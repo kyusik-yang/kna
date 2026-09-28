@@ -1,0 +1,490 @@
+age,bill_id,bill_no,ppsr_kind,bill_nm,reason
+17,ARC_K0J8E0W1B1O8S1N5S3H2K5U8F2F3K0,178084,정부,농어촌정비법 일부개정법률안,api_text_empty
+17,ARC_R0L8J0Z1M0F4M1L5C4B9L2N8N9O4A9,178065,정부,상법 일부개정법률안,api_text_empty
+17,PRC_H0D7W0J7R3A0X0P9H2E6I5L2A5Z2P0,177268,의원,탄약창 주변지역 지원에 관한 법률안,api_text_empty
+18,ARC_B1B0A0C5P2A7K1G1I2I3F1D0Z7P3R8,1808511,정부,개발이익환수에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_B1B1J1Y2A3X0R1A3J1Z3S4T4P8V3F8,1814444,정부,자동차관리법 일부개정법률안,api_text_empty
+18,ARC_B1F1S0X7O1E4A1I9Q1V2M5Z4I2S3O1,1812633,정부,형사소송법 일부개정법률안,api_text_empty
+18,ARC_A0D8J1V1R1E2N1E5S4Y6T1P8L4I8S6,1801904,정부,원자력손해배상법 전부개정법률안,api_text_empty
+18,ARC_A0F8B1R1T2O8F1X5U3E0Z1X9P9T3D3,1802334,정부,한국수출입은행법 일부개정법률안,api_text_empty
+18,ARC_A0H9R0R7P2O9Q1V6H3N9J1T9A0B2A0,1805591,정부,국군조직법 일부개정법률안,api_text_empty
+18,ARC_A0L9M0U6J1O1J1E5D4H8O3T9S6F7C1,1805093,정부,소방시설공사업법 일부개정법률안,api_text_empty
+18,ARC_A0M9H0J4T1D3V1D6H2P2V5S4M4O8V3,1804541,정부,광업법 일부개정법률안,api_text_empty
+18,ARC_A0M9L1E2O3M1I1B1R3A6D0V9X2W4A3,1807291,정부,부패방지 및 국민권익위원회의 설치와 운영에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_A0Q9N1N2H2A9V1C5P3O3B0D5J5G7F1,1807208,정부,정부출연연구기관 등의 설립·운영 및 육성에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_A0Q9V1H2L0X7V1K0T5R3V3G6H2Z8L7,1806863,정부,군용비행장등 소음방지 및 소음대책지역 지원에 관한 법률안,api_text_empty
+18,ARC_A0S8S1A0V0P2Y1B7F4L1G1Q4S1V5B7,1801104,정부,농어촌특별세법 폐지법률안,api_text_empty
+18,ARC_A0T8L1L1N1H2N2X0Y3Y9C5W1T5Q5Q3,1801959,정부,교육기본법 일부개정법률안,api_text_empty
+18,ARC_A0X8N1T1X1B2F2B1V2N0S5G2L2Y3W9,1802002,정부,농림어업인 삶의 질 향상 및 농산어촌지역 개발촉진에 관한 특별법 일부개정법률안,api_text_empty
+18,ARC_A0Y9Q0J5X2B7N1D6S4P1Q4L6D3Q5O2,1804959,정부,건축물의 분양에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_A0Z8J1Q0C0J2B1I7D0E7Q0J2F0W4E5,1801100,정부,조세특례제한법 일부개정법률안,api_text_empty
+18,ARC_A0Z8R0Q9L0P4F1O3E5V3D5F5K3I6F2,1800835,정부,여신전문금융업법 일부개정법률안,api_text_empty
+18,ARC_A1B0X1N2N3G0X1T7R5W5Y5K4B3W4E5,1810488,정부,지방재정법 일부개정법률안,api_text_empty
+18,ARC_A1I1N0R5Z1P7M1E6R0W9S4C3X4W5I8,1811840,정부,국방·군사시설 사업에 관한 법률 전부개정법률안,api_text_empty
+18,ARC_A1Y0N0H7Y3C0K1V7O5D7K0Y5I7M7V8,1809012,정부,산업기술단지 지원에 관한 특례법 일부개정법률안,api_text_empty
+18,ARC_A1Z2I0L1Q0W5C1L5U4N1M2X3H5R8C1,1814502,정부,철도안전법 일부개정법률안,api_text_empty
+18,ARC_B0Q9L1Q2S2N9T1Q5J0H6U1I7V9I5I2,1807194,정부,경범죄처벌법 일부개정법률안,api_text_empty
+18,ARC_B0R8O1S1P2K8I2D0E2V3W4E6T4P5D0,1802354,정부,발명진흥법 일부개정법률안,api_text_empty
+18,ARC_B0W8S1A1J2X8X1N6A4R1J4T0T3P2F2,1802352,정부,국립대학치과병원 설치법 일부개정법률안,api_text_empty
+18,ARC_F0K8G1M0Z1G3L1K6T1C4E3W5I3T9U4,1801519,정부,의료법 일부개정법률안,api_text_empty
+18,ARC_F0K9R1I1F2K5U1M1H4O2Y0T5Q1V5C8,1806694,정부,내수면어업법 일부개정법률안,api_text_empty
+18,ARC_F0M8R1M1M1C2F2H1V0I2K5N2D8S3F4,1801984,정부,산림자원의 조성 및 관리에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_F0P8S1P2N2N9W1T7I1X3G1D0U1U1V2,1803322,정부,과학기술기본법 일부개정법률안,api_text_empty
+18,ARC_F0S8M1N0H1B0R1K5D4C7W4R4I4M3X7,1801505,정부,범죄수익은닉의 규제 및 처벌 등에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_F0V8A1A0W1Z3M1H6D1R3J4N1Z8Z4L5,1801518,정부,상표법 일부개정법률안,api_text_empty
+18,ARC_C1T0E0Z7W3W0Y1L7W1U6T0I5I9M9V6,1808994,정부,군사기밀보호법 일부개정법률안,api_text_empty
+18,ARC_F0X8Z1S0M1P0A1Q4K4Y8D4S9O6K7U7,1801500,정부,특허법 일부개정법률안,api_text_empty
+18,ARC_F0Y9U0W5H2D7A1F6C3Z7N5R3V0H3O2,1804962,정부,중소기업은행법 일부개정법률안,api_text_empty
+18,ARC_F1A0A0Y1U1U5R1A7E4Y9D0G3D9J1L2,1807424,정부,지방자치단체 통합 및 지원 특례법안,api_text_empty
+18,ARC_G1R0R0H6T3Z0Z1B3U4L7D2T3G4L3V2,1808714,정부,검찰청법 일부개정법률안,api_text_empty
+18,ARC_C1W1C0V7A1M4O1V7L0N6T2A9I5Y6O7,1812629,정부,형법 일부개정법률안,api_text_empty
+18,ARC_F1G0J1Q0K0M1E1L4H1D4Q3F4B1C9U8,1809495,정부,국유재산법 일부개정법률안,api_text_empty
+18,ARC_F1H0U0J3M1W9O1G0M5I1P1R9W4E8I7,1807900,정부,고엽제후유의증 환자지원 등에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_B1M0U0Y4K2Q1A1M7K4F7K1A2Q8V7M9,1808230,정부,해양환경관리법 일부개정법률안,api_text_empty
+18,ARC_E0K9Z0X5N2P2N1Z6Q4M1C0B6Q1H4W8,1804923,정부,공공기관의 운영에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_E0N8M0D9N1N0H1L4A0M5F2G6Q5W3D6,1800892,정부,감사원법 일부개정법률안,api_text_empty
+18,ARC_E0O8R1E2A3Y1H1D7N3C9H1T2I6L9D6,1803382,정부,상법 일부개정법률안,api_text_empty
+18,ARC_E0O8V1F1M2Z8Z1O9Q4H8X3I3O1P8N5,1802419,정부,전자정부법 전부개정법률안,api_text_empty
+18,ARC_E0U9R0W7X2Y9I1N6U3Q7S5U3Z2N8G1,1805595,정부,지뢰등특정재래식무기사용및이전의규제에관한법률 일부개정법률안,api_text_empty
+18,ARC_B1S0L0C6A3T0P1Q5L0C2U0K1J7A4W1,1808721,정부,도시공원 및 녹지 등에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_B1Z1P1B2Z0K7M1Z4Q0A6V3K6W6Y2L7,1814031,정부,고등교육법 일부개정법률안,api_text_empty
+18,ARC_B1Z1Z1G0K1D1X1A1U3N1E1R6E1C4R6,1813389,정부,자유무역협정 체결에 따른 무역조정 지원에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_D0A8O1P0T1L5J0O9Z2S9Q4Q0W0Y3G0,1801539,정부,주민투표법 일부개정법률안,api_text_empty
+18,ARC_F1R0N0T7Y3B0K1A7D1P7Q1G1A6Z5C7,1808996,정부,군용전기통신법 일부개정법률안,api_text_empty
+18,ARC_D0C8Z1G2Z3L0I1M6F2D9G4U5W4C6A7,1803345,정부,교통체계효율화법 전부개정법률안,api_text_empty
+18,ARC_D0D8I1B1N2B8F1V8J3I8H2E9D1L6H3,1802385,정부,철도사업법 일부개정법률안,api_text_empty
+18,ARC_D0G8X0G9U2I4I1T6F5I2G0R6Q6Y5T6,1801007,정부,특별법의제에관한법률 폐지법률안,api_text_empty
+18,ARC_D0N8Q1H2M2B9C1V7M1G1P5V6U7O5J6,1803318,정부,남북협력기금법 일부개정법률안,api_text_empty
+18,ARC_D0O9F0H5L0O7N1J3T3Q6A3E1E4B3D5,1804798,정부,환경정책기본법 전부개정법률안,api_text_empty
+18,ARC_F1U0C0R6P3R0B1H6C5Q8N2F6M3X2E6,1808744,정부,법관징계법 일부개정법률안,api_text_empty
+18,ARC_D0R8S1F2Q2V9X1M5Y5D4S5M6B0E8Z4,1803290,정부,낙농진흥법 일부개정법률안,api_text_empty
+18,ARC_D0V8C1V2U2U9O1F6Q1Q2I3H7Z7L4N7,1803300,정부,농어업재해대책법 일부개정법률안,api_text_empty
+18,ARC_D0W8B1M1K2D8Z1L5E3J5D4C9V3E5Y3,1802333,정부,도로교통법 일부개정법률안,api_text_empty
+18,ARC_D0Z8Q0G9H2V4D1N7L2G7P3M8B2W2N9,1801015,정부,공소유지담당변호사보수법 폐지법률안,api_text_empty
+18,ARC_E1N1N0L9A0U5M1V5Q4L8A4P9M5Y9Q8,1813122,정부,마약류관리에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_C0E8L1J1Y0M7D1F5W3L1H0P8C6K0R9,1801809,정부,표시·광고의 공정화에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_C0F9B1Z2K2F9H1P5R3R1T3C1O0F7L7,1807204,정부,대통령직인수에관한법률 일부개정법률안,api_text_empty
+18,ARC_C0H8W1N1X1M2I2X1H3U3H0J7K3N4J7,1802009,정부,한국농촌공사 및 농지관리기금법 일부개정법률안,api_text_empty
+18,ARC_C0L8V1K0I1F0I1U5U4G3J5D4N0Z4X7,1801504,정부,행정절차법 일부개정법률안,api_text_empty
+18,ARC_C0L9L0E3B3I0W1H6J4I5M3C9N1V1P3,1804309,정부,국가공무원법 일부개정법률안,api_text_empty
+18,ARC_C0L9P1J2U1T4A1K7B2H0Z2S1E8L5Z9,1806989,정부,해상교통안전법 전부개정법률안,api_text_empty
+18,ARC_C0O8I1G1S2A8A1I9R4P9L5G6W6Y6V1,1802422,정부,주한미군 공여구역주변지역 등 지원 특별법 일부개정법률안,api_text_empty
+18,ARC_C0O9T1N2D2W9X1A5W3O1P5O1Q9P6L7,1807205,정부,대한민국재향경우회법 일부개정법률안,api_text_empty
+18,ARC_C0Q8C1S1K1R2X1Y9C1P1G4V6E1Q8X8,1801942,정부,원자력시설등의방호및방사능방재대책법 일부개정법률안,api_text_empty
+18,ARC_C0R9F0A2O1U0N1R7J3F8M0X8F3Z6J7,1803759,정부,한국주택금융공사법 일부개정법률안,api_text_empty
+18,ARC_C0W9F1K2V2G9O1B2N3L5F1Z8Q9D2B1,1807174,정부,특정 금융거래정보의 보고 및 이용 등에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_E1Z1U0P5N1O1D1U6V2D8Y4C3L0Z7E9,1811771,정부,주택법 일부개정법률안,api_text_empty
+18,ARC_G0A9U0U6K1P6K1M7M2J4K3Q0D9G1W2,1805146,정부,무인도서의 보전 및 관리에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_C1D1M0J9Q2Q1G1G6Y5W9X1D8B6T4S6,1813259,정부,중소기업 사업전환 촉진에 관한 특별법 일부개정법률안,api_text_empty
+18,ARC_D1O0I0Z5C2H7V1G5E0Q6X1Y0R9H4O1,1808529,정부,사회복지사업법 일부개정법률안,api_text_empty
+18,ARC_G0F9S1P2X2K9L1V5K3V2M1Q2F3M0N3,1807207,정부,바르게살기운동조직육성법 일부개정법률안,api_text_empty
+18,ARC_G0J9N1Z2P2K9S1B5V3I1Y3M6W2N5T4,1807198,정부,경찰직무응원법 일부개정법률안,api_text_empty
+18,ARC_G0O9T0F2F2T3X1Y5Y5W9V0S8N4O7Y0,1803901,정부,재외공관공증법 일부개정법률안,api_text_empty
+18,ARC_G0T9T1B1L1Z3W1N4M1P4R4X1O6Y2Q4,1806564,정부,부동산개발업의 관리 및 육성에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_C1I0N0A6M3E0X1A6K5Z2X2S8N4I2Q0,1808748,정부,민원사무처리에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_G1D0C0U4L3N0E1B4Z4B5Z5Z8K4S0I3,1808362,정부,표시·광고의 공정화에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_D1V0D0B7F3J0V1M7V1V7T1K0E9O3C3,1808997,정부,사관학교설치법 일부개정법률안,api_text_empty
+18,ARC_F0B9X1V1V2S7D1Y4K1P9X3K5T5X5A4,1806736,정부,종자산업법 일부개정법률안,api_text_empty
+18,ARC_J0I8I1N1G1C2H1X6I3T4M1Y7P9L7I6,1801907,정부,뇌연구촉진법 일부개정법률안,api_text_empty
+18,ARC_J0N8T0J9D2A4L1U3U2M0A2N1S3W6S1,1800997,정부,군인보수법 일부개정법률안,api_text_empty
+18,ARC_J0N9V0C2I0H4V1B7S0K2E4G6N1R0X7,1803717,정부,농업협동조합법 일부개정법률안,api_text_empty
+18,ARC_J0R8H1A1R1I2Z2C1D1I5J5I4J8P5S5,1801998,정부,원양산업발전법 일부개정법률안,api_text_empty
+18,ARC_J0X8N1R0B0P8P1W4J2I5Q3V9Q7L6D5,1801131,정부,통일교육지원법 일부개정법률안,api_text_empty
+18,ARC_J0Y9W1W2P2N9L1P5W3P0W4D0F1F0Z9,1807197,정부,경찰대학설치법 일부개정법률안,api_text_empty
+18,ARC_K1Q0I1Z2E3V0G1A7B4C0E0V6V0S8N2,1810472,정부,농수산물유통 및 가격안정에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_J1F1K1H1O0F1P1U7J2H4B0A8L6A1E6,1813717,정부,연구개발서비스업 진흥법안,api_text_empty
+18,ARC_I0F8F1I0M1J0W1W6N1B8E2M8V2U4M3,1801507,정부,도선법 일부개정법률안,api_text_empty
+18,ARC_J1I1B0G6A0Q1J1X7V1L0S2U9F0E4X9,1812106,정부,관광진흥법 일부개정법률안,api_text_empty
+18,ARC_I0L9R0Q9H2O8B1V8A2B3G0B0K7H9W5,1806168,정부,부가가치세법 일부개정법률안,api_text_empty
+18,ARC_I0Q8F1S2O2G9C1M6L0P4K4J5R9I0M7,1803295,정부,동학농민혁명 참여자 등의 명예회복에 관한 특별법 일부개정법률안,api_text_empty
+18,ARC_I0Q8U1S0H0X8N1U4K2A4J0F7W3J7L4,1801130,정부,영산강·섬진강수계물관리및주민지원등에관한법률 일부개정법률안,api_text_empty
+18,ARC_I0V9A0S7L1A5G1U7O4U8K3A0F8D1W0,1805475,정부,사회서비스이용권 관리법안,api_text_empty
+18,ARC_I0W8J1P0Q1O0H1S4R3Z8N0S9V1M5H3,1801499,정부,부정경쟁방지 및 영업비밀보호에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_H0B8K0V9Q2C9O1W7I2V4B3D3Z5V9K5,1801059,정부,유아교육법 일부개정법률안,api_text_empty
+18,ARC_I1B1K1I0C0E7X1G3V1X0J0P5I2I6D2,1813359,정부,음악산업진흥에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_H0D8N1R1F1L2O1B6W3Z3Q5U7H4V8I7,1801909,정부,하도급거래 공정화에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_H0O8I1D1O2C8G1Y6H2G1A2Y4N4J4W9,1802348,정부,서울대학교병원설치법 일부개정법률안,api_text_empty
+18,ARC_H0Q8Y1R0J0B2L1Y7H0P8Z3C2K3A4I5,1801098,정부,주세법 일부개정법률안,api_text_empty
+18,ARC_H0W8M1R1F1B0P1B4M5L4R0K2A0B7K8,1801853,정부,경제자유구역의 지정 및 운영에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_H0Y8T1B2M2Z9X1S7M1O3I5K3Y1P4Z4,1803320,정부,한국국제교류재단법 일부개정법률안,api_text_empty
+18,ARC_H0Z8Q1Y1X2V8Q1V4G2W9U0L2A9Q3U3,1802312,정부,공직자윤리법 일부개정법률안,api_text_empty
+18,ARC_H1A1O0S6Z0L1F1F7N0K7U2W8A0G0X7,1812105,정부,부품·소재전문기업 등의 육성에 관한 특별조치법 일부개정법률안,api_text_empty
+18,ARC_I1F1T1M0Y2B4L1W6C2E5P5M2V0M7Q1,1813580,정부,소방시설설치유지 및 안전관리에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_I1I0Y0E6U3S0I1T6A5Y1T4G9O9W6Q6,1808745,정부,도로명주소법 일부개정법률안,api_text_empty
+18,ARC_L0D8P1J2L2F9O1X7N1H3X3D1L1F1J6,1803321,정부,수입인지에관한법률 일부개정법률안,api_text_empty
+18,ARC_H1C0S1Y2X3R0J1L7Z4G4D2M1F9O1M7,1810475,정부,전통 소싸움경기에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_I1J1U1G1Q1V0R1K5B4T4S4U9L7F0J7,1813808,정부,대덕연구개발특구 등의 육성에 관한 특별법 일부개정법률안,api_text_empty
+18,ARC_I1L1G0Z3Y2S9C1F7K2T4P1Z2O9R1X2,1811346,정부,유비쿼터스도시의 건설 등에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_L0P8B1W1I2M8T2K0P2J2J5G6P8V7B2,1802365,정부,자원봉사활동 기본법 일부개정법률안,api_text_empty
+18,ARC_L0S8V1V0N2B7N1U5H1S5B1T2Q1W0M7,1801585,정부,고엽제후유의증 환자지원 등에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_L0S9S1V0E3J0V1Z0P4C5B5Y0U3V0A9,1806397,정부,공연법 일부개정법률안,api_text_empty
+18,ARC_L0Y9J0C8I1I1B1D6Q5Y9V1V7N0P2F8,1805690,정부,교통안전법 일부개정법률안,api_text_empty
+18,ARC_L0Z8T1M0X1V5K1H7H4G4M4N6X8E0K6,1801545,정부,한국연구재단법안,api_text_empty
+18,ARC_L1D0O1S2V3T0Y1V7C4N1U3T6V5M4N6,1810474,정부,지방의료원의 설립 및 운영에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_L1G0R1V2E2M9W1J7Y1S5C5C4J5R9S6,1810432,정부,식물방역법 일부개정법률안,api_text_empty
+18,ARC_H1K0L0B3H2L3I1T8M1D0Z5I4M4O7P9,1807950,정부,조세특례제한법 일부개정법률안,api_text_empty
+18,ARC_K0A8C1G1Y1I2Y2X0I4G7S4I5H0O1V6,1801966,정부,연구실 안전환경 조성에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_K0C8M1K1P2P8R1W5H0U2Q3U4A6U1G3,1802321,정부,사립학교교직원 연금법 일부개정법률안,api_text_empty
+18,ARC_L1J0Q0T4P3S0T1D4O4K4Y2H1H3J9J4,1808356,정부,전기공사공제조합법 일부개정법률안,api_text_empty
+18,ARC_K0I9O1N2H1D7U1F5Y5L8S5U1S1A8Z5,1807040,정부,주택법 일부개정법률안,api_text_empty
+18,ARC_K0J8G1O0D1X0Q1M4K2E4S5E3A5W7H5,1801497,정부,실용신안법 일부개정법률안,api_text_empty
+18,ARC_K0T8A1A0G0N8M1M1K5C5N5R3W4H7C9,1801126,정부,낙동강수계물관리및주민지원등에관한법률 일부개정법률안,api_text_empty
+18,ARC_K0T8O1N1Y2A8Y1S6E2J7Q5J8P8I4F6,1802349,정부,서울대학교치과병원설치법 일부개정법률안,api_text_empty
+18,ARC_K0T8X0L9N1J0P1L4V2S4Q4W7H3O4X4,1800901,정부,농어촌도로정비법 일부개정법률안,api_text_empty
+18,ARC_K0V9K0F6T2X9X1R6M3E0W1F7Y8H4X3,1805313,정부,국가공무원법 일부개정법률안,api_text_empty
+18,ARC_K0Y8B1M1X0N7I1R3U2Q0R4W0L8A0S2,1801804,정부,국가회계법 일부개정법률안,api_text_empty
+18,ARC_K0V8V1F0Y2B1C1Y8M0P3M2E1P7L5P7,1801565,정부,상업등기법 일부개정법률안,api_text_empty
+18,ARC_H1U0U0X6M3S0F1C6S3I7O1K9I7B4D7,1808731,정부,새마을운동조직육성법 일부개정법률안,api_text_empty
+18,ARC_H1X0R0V8I1R0G1I6P1Q6B4F6Q4Y1I5,1809062,정부,다중이용시설 등의 실내공기질관리법 일부개정법률안,api_text_empty
+18,ARC_K1D0A0T7G1P3B1G7K2Z5J2Q6Q0U3V9,1808845,정부,체육시설의 설치·이용에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_L1U0P0W7R3E0G1P7J5V9V3L2M6F2N8,1809010,정부,중소기업인력지원 특별법 일부개정법률안,api_text_empty
+18,ARC_L1V0X0W6W3L0P1H6K5U2T1G0B6D7D6,1808747,정부,독도의 지속가능한 이용에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_L1X1N1K1J1V5T1B8L0H2T5J5J7N9C4,1813870,정부,국가정보화 기본법 일부개정법률안,api_text_empty
+18,ARC_H1Y0D0S7X2I3V1L5X4H6F4C0V3U9Y4,1808940,정부,시설물의 안전관리에 관한 특별법 일부개정법률안,api_text_empty
+18,ARC_H1Y1N0X7S1V5Q1Z5X5B1H4F8U3S4O9,1812639,정부,골재채취법 일부개정법률안,api_text_empty
+18,ARC_H1Z1J0E3R1C4X1Z5P4E6T4V2D8R3K5,1811153,정부,산지관리법 일부개정법률안,api_text_empty
+18,ARC_J0B8Z0I8K2B7J1V3J4Q9K3D9K3N6J5,1800781,정부,대한무역투자진흥공사법 일부개정법률안,api_text_empty
+18,ARC_J0D8P0K9T0S2B1E7Q0R1L0K8Y8L9P9,1800819,정부,비밀의 보호 및 관리에 관한 법률안,api_text_empty
+18,ARC_J0E8G1I0T2J1U1B8C1X0N1F3H7R9G4,1801566,정부,상법 일부개정법률안,api_text_empty
+18,ARC_J0E8J1W0Z2G7A1S9E4K6F2Q4A1G7Y7,1801600,정부,측량·수로조사 및 지적에 관한 법률안,api_text_empty
+18,ARC_N0F9Q1K2R0C3V1F7N3Q9H3T7N3S1O3,1806835,정부,유해화학물질 관리법 일부개정법률안,api_text_empty
+18,ARC_N0G9V0F2G2R5S1Y4X2X9Y1B4M5F9X8,1803923,정부,지방재정법 일부개정법률안,api_text_empty
+18,ARC_N0I9Y0R7B2X9H1H6R3K9V4T8J1T7J6,1805589,정부,검사징계법 일부개정법률안,api_text_empty
+18,ARC_N0J9V0Z9M3W0T1H7Y4Y4X2J2O5U5P6,1806213,정부,물류시설의 개발 및 운영에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_N0K9U1E1O1I6J1O4R2R1K5J0F7P6S3,1806584,정부,축산물가공처리법 일부개정법률안,api_text_empty
+18,ARC_P1X1Q1P1V3Z0H1V1N0H6U4E0Z0R8N2,1813968,정부,대부업 등의 등록 및 금융이용자 보호에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_R0B9Z0N2G0T9H1B7W3X7U0G4N4P9W6,1803744,정부,한국투자공사법 일부개정법률안,api_text_empty
+18,ARC_R0D8O0G9A2W4U1O6B5O0S2J5X4D8C6,1801005,정부,임야소유권이전등기등에관한특별조치법 폐지법률안,api_text_empty
+18,ARC_R0E8P1O0K0G8U1I1A5J6P0K4D2S8U0,1801127,정부,한강수계 상수원수질개선 및 주민지원 등에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_R0E8Z1V0Z2T7A1J5M2C6K2B6I5M3F6,1801588,정부,한국공항공사법 일부개정법률안,api_text_empty
+18,ARC_R0I8O1T0S2P7J1D5K2V5B5J3H7M6W5,1801589,정부,인천국제공항공사법 일부개정법률안,api_text_empty
+18,ARC_R0J9W0L7Q2R9Y1J6B3Q4V4E7F0C9H7,1805603,정부,민주화운동기념사업회법 일부개정법률안,api_text_empty
+18,ARC_N0P8V1M1Q2M8A2Q0C2O4P4S0J8L8E1,1802368,정부,한국자유총연맹육성에관한법률 일부개정법률안,api_text_empty
+18,ARC_N0W9C0Y7E0V6Y1F5K5K0M3Q7G9H8T7,1805382,정부,방문판매 등에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_N0Y9H0G4Q0N1H1L7V3Y9X4X0M6U2Y0,1804372,정부,소득세법 일부개정법률안,api_text_empty
+18,ARC_N0Z9D0I5K2L7Q1U6U4L1B5P8G5K6P8,1804960,정부,근로자의날제정에관한법률 전부개정법률안,api_text_empty
+18,ARC_O1R1Y1G0M1K4D1Z6M1V3L3O7K6S9O0,1813452,정부,지방공기업법 일부개정법률안,api_text_empty
+18,ARC_O1S1J0E6A3W0D1U2I5P4Z3T3K6F3N2,1812496,정부,본인서명사실 확인 등에 관한 법률안,api_text_empty
+18,ARC_R0M8N1U2M3Q1L1I6B2D2L2N1C5Z9O9,1803371,정부,검찰청법 일부개정법률안,api_text_empty
+18,ARC_N1D0S1H1S2E2B1X6P0H2T0A0R4H4C7,1809981,정부,국제수형자이송법 일부개정법률안,api_text_empty
+18,ARC_N1H1U1L0V1X1V1H6H4V8Z4S1U4I3W6,1813395,정부,중소기업진흥에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_N1I0J0W9Y1K6I1S6C0L0Y4N5S3I4H5,1809390,정부,산업발전법 일부개정법률안,api_text_empty
+18,ARC_N1I1P1W2J1Q2R1S3O1P8B1D2Z3K0F0,1814156,정부,식물신품종 보호법안,api_text_empty
+18,ARC_O1Z0W0L6Z3D0I1J6W4K5U2K9I0B3P8,1808735,정부,상훈법 일부개정법률안,api_text_empty
+18,ARC_M0A8I1O0F1E0N1N6N5T1F2X9S6Z3O5,1801510,정부,자유무역협정 체결에 따른 농어업인 등의 지원에 관한 특별법 일부개정법률안,api_text_empty
+18,ARC_Q0A9X0C4T0X1D1J6I5M1L0L5X8L6C6,1804367,정부,금융산업의 구조개선에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_Q0B9H0K9H3N0D1D7R3R2C2D0A9S4O7,1806211,정부,항만운송사업법 일부개정법률안,api_text_empty
+18,ARC_M0G8N1V0D2V7V1P9T4R6M1Q2H4D1X0,1801599,정부,도로명주소 등 표기에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_M0I8L1C1M2E8M1X6F5L5M1Y0F9D0Q1,1802380,정부,생활주변방사선 안전관리법안,api_text_empty
+18,ARC_M0I9R0P9Y3R0P1G0R2Q0Q5K1V2M7X0,1806189,정부,조세범처벌법 전부개정법률안,api_text_empty
+18,ARC_M0L8Q1J2M1M2N1E6L2Z4Z3P0X3D4O0,1803026,정부,신항만·신공항 개발 촉진법안,api_text_empty
+18,ARC_M0M8X1C0M0O2F1V7C0J9B1P0B6K4M0,1801103,정부,증권거래세법 일부개정법률안,api_text_empty
+18,ARC_Q0L8A1R1H1E2A1L5U1G8N0O8H2W8E4,1801933,정부,공무원임시등록법 폐지법률안,api_text_empty
+18,ARC_Q0N9U0F5X2W7O1Q8M1A2K3R8S2D6N2,1804970,정부,북한이탈주민의 보호 및 정착지원에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_Q0S8K1S2C2T9V1A5S4U2P1E6O7S7S9,1803287,정부,청원경찰법 일부개정법률안,api_text_empty
+18,ARC_Q0V8E1K0D0H1R1Q6B1X1K3T2C1E2K0,1801080,정부,중소기업창업 지원법 일부개정법률안,api_text_empty
+18,ARC_M0Z8Y0Q9A2U2D1F5O3I3D4U7Z9U9H7,1800981,정부,과학기술인공제회법 일부개정법률안,api_text_empty
+18,ARC_M1D0W0M4D3N0L1J4Q4V3C5N5T9F4W6,1808355,정부,제조물책임법 일부개정법률안,api_text_empty
+18,ARC_N1S1C1D2R2B9J1M7B1E6A0M4Q2X5W4,1814372,정부,자연재해대책법 일부개정법률안,api_text_empty
+18,ARC_Q0Z8H1S1F1L2R1Q5R1I8V5E2N5M1B6,1801906,정부,대통령특별선언에따른헌법개정안의공고등에관한특례법 폐지법률안,api_text_empty
+18,ARC_Q1A1H1Y2Q1U2Y1M3D1E5A4R0C3T3G8,1814155,정부,종자산업법 전부개정법률안,api_text_empty
+18,ARC_Q1B0L0L7M3U0K1M7J5T6R5X3J1W6S7,1809011,정부,상공회의소법 일부개정법률안,api_text_empty
+18,ARC_Q1C0V0K4S3B0P1B4Z4F5S0R8Q6N6E6,1808358,정부,공중보건장학을위한특례법 일부개정법률안,api_text_empty
+18,ARC_N1U0L0K9Q1E6R1E7Z3E7J2K8N5K1Q8,1809393,정부,자연재해대책법 일부개정법률안,api_text_empty
+18,ARC_P0L8A1F0R0Y8Y1Z4Y2M2B3U7J0Z5H9,1801129,정부,금강수계물관리및주민지원등에관한법률 일부개정법률안,api_text_empty
+18,ARC_P0R8X1G1W0O7A1H1V4A4X1K8S6S7I8,1801797,정부,경제교육지원법안,api_text_empty
+18,ARC_Q1E0M0K7T3B0P1W7R1Q6J5M6B3G1X3,1808999,정부,전쟁기념사업회법 일부개정법률안,api_text_empty
+18,ARC_N1Y0I0Z6D3U0I1S7D0G4H5C9W0S9I9,1808755,정부,통신비밀보호법 일부개정법률안,api_text_empty
+18,ARC_Q1G0P1C0V2F9E1H1B0G1O0N9U1Q2P7,1809707,정부,정보통신공사업법 일부개정법률안,api_text_empty
+18,ARC_M1M0C1M2S3U0Z1C7L3M5U2I9D9D7C3,1810471,정부,어촌·어항법 일부개정법률안,api_text_empty
+18,ARC_Q1I2X0T1Q0F3H1S4U0K1W5T4K6F1F1,1814500,정부,전자금융거래법 일부개정법률안,api_text_empty
+18,ARC_M1R0G0K6H3N0S1F6C4N2U2Z8U1Z3L9,1808733,정부,산업입지 및 개발에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_P1G1W0P5L1I7P1U6H0S9W5R9Z2H6Q6,1811841,정부,고용보험 및 산업재해보상보험의 보험료징수 등에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_Q1P1K0D5X2G4L1P5G1X9M5Z1A2J7P3,1811895,정부,국제회의산업 육성에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_O0A9I1J0S2K9P1K6Y5G7Y1M4I1Q6H4,1806388,정부,행정사법 전부개정법률안,api_text_empty
+18,ARC_O0D9M0W6N2B2U1L5E4K2O0B5G7F4D6,1805229,정부,학원의 설립·운영 및 과외교습에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_O0H8C1F0G2N8K1F5X2E1W5O4G3Y8P7,1801606,정부,국제선박등록법 일부개정법률안,api_text_empty
+18,ARC_O0I8V1C0I0I2D1H7U0I7I5U7E7L2I6,1801099,정부,개별소비세법 일부개정법률안,api_text_empty
+18,ARC_O0K8S1L0K1D0A1H4X1P2O3F1O5B9I4,1801496,정부,임업 및 산촌 진흥촉진에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_P1K1Z0P9R2A1O1X6D5T0M0D8Y5R5C9,1813258,정부,폐광지역 개발 지원에 관한 특별법 일부개정법률안,api_text_empty
+18,ARC_O0N9M1F2X0H3N1D4C5L8K4C9Q2U2I9,1806824,정부,대외무역법 일부개정법률안,api_text_empty
+18,ARC_O0Q8S1A1M2U8B1T6G3D6Q1T1L8X5G4,1802351,정부,국립대학병원 설치법 일부개정법률안,api_text_empty
+18,ARC_O0X9E0T7E2G9P1E6Y1B6R0H4L3S6C6,1805597,정부,한국국방연구원법 일부개정법률안,api_text_empty
+18,ARC_O1A0X0F3H2I3U1B8V1G0E0P3N4W0W7,1807948,정부,산업입지 및 개발에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_P1N1B0X3T0B3W1I6K4M6B0X3I7B8B4,1810985,정부,상법 일부개정법률안,api_text_empty
+18,ARC_Q1Y0Y0E6Z3B0G1Z6V0X6I5A4N2B5P7,1808724,정부,배타적경제수역법 일부개정법률안,api_text_empty
+18,ARC_Q1Y1M1Q0Z2A0Y1L5N3I1W0D5L2Y9F5,1813534,정부,축산법 일부개정법률안,api_text_empty
+18,ARC_O1B1L1G2Q0Q6Z1I7R1R2S4C2A0Z8Y0,1814024,정부,원자력시설 등의 방호 및 방사능 방재 대책법 일부개정법률안,api_text_empty
+18,ARC_O1E1O0Y4Z2S9C1G2C2L8N1B7I4T0R8,1811681,정부,환경분야 시험·검사 등에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_O1E2N0T1E2J0Q1M1Z2I0A0G5Q8L6G4,1814552,정부,과학기술분야 정부출연연구기관 등의 설립·운영 및 육성에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_O1F1U1L2H2G7A1O5B5E0W5W2D0U6E7,1814257,정부,기간제 및 단시간근로자 보호 등에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_P1V0I1J2G3P0G1C7X5C1O4I8Q7Y0D7,1810482,정부,행정절차법 일부개정법률안,api_text_empty
+18,ARC_P1V1A1A0Q1O8G1A3L3Q1L1P2Q7B1H2,1813495,정부,하수도법 일부개정법률안,api_text_empty
+18,ARC_O1J1Q1K1B0D2Z1O6N4O8B5O1F5R2I6,1813721,정부,지방세특례제한법 일부개정법률안,api_text_empty
+18,ARC_W0W9N1S2E2X9U1T8N0K6N1W6G0Y5Q4,1807221,정부,사립학교법 일부개정법률안,api_text_empty
+18,ARC_W1C1R1E0Z2I5R1E4X2R4W3R9Y5X7M0,1813603,정부,재외공관용 재산의 취득·관리 등에 관한 특례법 전부개정법률안,api_text_empty
+18,ARC_S1H0F1B0V0O1V1P6D3N5B4Z7K0Y1A1,1809505,정부,증권거래세법 일부개정법률안,api_text_empty
+18,ARC_T1O0F0X6A3C0Q1H6B0F2Y2H2E9D2Y9,1808722,정부,방사선 및 방사성동위원소 이용진흥법 일부개정법률안,api_text_empty
+18,ARC_W1D0U0S9Q3N0S1Z8A1K8U0F2T2I1V6,1809488,정부,산업융합촉진법안,api_text_empty
+18,ARC_W1E0H0L7O2A7S1Q4M3O4E3Q9W4F4J5,1808953,정부,국고금관리법 일부개정법률안,api_text_empty
+18,ARC_S1H0X0K5F2D7G1C3Q5K2D1H6O4H0J7,1808512,정부,선박안전법 일부개정법률안,api_text_empty
+18,ARC_T1R1U0P5T1P8M1Q4C2D3N0Z4J2Y5M7,1811849,정부,산업집적활성화 및 공장설립에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_R0Y8L0R9R2E2R1S6V3W0R1J5X3P1C6,1800983,정부,해양수산발전기본법 일부개정법률안,api_text_empty
+18,ARC_R0Z8A1K1U2S8Z2H0D2I3Z2J5T7O1O2,1802355,정부,디자인보호법 일부개정법률안,api_text_empty
+18,ARC_R0Z8C1F0D0W2I1J7X0M5L4C1K0C7V7,1801101,정부,법인세법 일부개정법률안,api_text_empty
+18,ARC_T1X0Z0R8J1J0I2H1B4Q4Y1S2U9N1B5,1809064,정부,야생동·식물보호법 일부개정법률안,api_text_empty
+18,ARC_V0G8O1T1O2F8U1Q1L3C8H2H7X5X4R0,1802305,정부,유아교육법 일부개정법률안,api_text_empty
+18,ARC_V0J9G0E7C2S9R1X6K3T5U0Y4S9P0D2,1805609,정부,징발법 일부개정법률안,api_text_empty
+18,ARC_V0K8S1X2V0Q5S1I7B5T1E3E5D4X6D2,1802890,정부,산업재해보상보험법 일부개정법률안,api_text_empty
+18,ARC_R1C1P0M1W2K7J1C6M0Y1C2G5O7I7G6,1810692,정부,마약류관리에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_V0N8Z1Q1U2S8N2H0T2A5I0G8R3N7M6,1802367,정부,민방위기본법 일부개정법률안,api_text_empty
+18,ARC_V0O9N0L7M2C9C1B6I3Q6U1D4R1H7M5,1805598,정부,공무원교육훈련법 일부개정법률안,api_text_empty
+18,ARC_V0P8C1H1Y1G2W1S6Z3K4V3O3F6J3F4,1801908,정부,한국과학기술원법 일부개정법률안,api_text_empty
+18,ARC_V0U8G0D9X1B0B1G4I1D7M1C4Y2X9Q5,1800896,정부,국가를당사자로하는소송에관한법률 일부개정법률안,api_text_empty
+18,ARC_R1G0Y0V7R3S0H1I7T1B2U3U7A0T8W2,1808993,정부,계엄법 일부개정법률안,api_text_empty
+18,ARC_S1P1X0Z7M2C0A1N6C3R0U3A4C6N6A7,1812671,정부,다중이용업소의 안전관리에 관한 특별법 일부개정법률안,api_text_empty
+18,ARC_S1S0R0Z6Z3L0G1F6K5I5L1P0Q7U2O9,1808739,정부,보건범죄단속에 관한 특별조치법 일부개정법률안,api_text_empty
+18,ARC_R1J1O1S1A1T8L1T8G3H9C4W5T5R1T9,1813905,정부,국가기술자격법 일부개정법률안,api_text_empty
+18,ARC_S1T0U1F2L3Z0X1C7C4D1Y5I9O4J4U7,1810473,정부,입양촉진 및 절차에 관한 특례법 일부개정법률안,api_text_empty
+18,ARC_S1V0U1H1P2S9O1P5K5O5I3D2N0U6H5,1810060,정부,환경보건법 일부개정법률안,api_text_empty
+18,ARC_S1X1Q1S2M0U2R1O6S4S6G0J5X1O7P5,1814000,정부,공인노무사법 일부개정법률안,api_text_empty
+18,ARC_U0E8R1D0C0B2P1U7M1S1B4M8L8B4F0,1801102,정부,교통·에너지·환경세법 폐지법률안,api_text_empty
+18,ARC_U0F8T1I1G2X8G1S5F0C6W3C5C6V4E2,1802320,정부,군형법 일부개정법률안,api_text_empty
+18,ARC_U0K8Q1B1D1J2L1D9Y4H9J2K5S1Z6K6,1801944,정부,비파괴검사기술의 진흥 및 관리에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_U0S8J1A1W2M8O1O6T3P1G5Q5J4G4Q6,1802350,정부,한국학중앙연구원육성법 일부개정법률안,api_text_empty
+18,ARC_U0T8I1G1X1C2O1Q9Q5Q3O4K0E1P0H6,1801945,정부,직업교육훈련촉진법 일부개정법률안,api_text_empty
+18,ARC_U0V9S0C7X2I9E1P6D3W5J0B1Z8J7C9,1805601,정부,대한소방공제회법 일부개정법률안,api_text_empty
+18,ARC_U0X8R1L0T2W0I1R5S1O6W4P2W8Z7O7,1801559,정부,변호사시험법안,api_text_empty
+18,ARC_U1A1Q1X2M1E2E1Y5O5Z6H5W3Z6N3D4,1814159,정부,한국지방자치단체국제화재단 육성법 폐지법률안,api_text_empty
+18,ARC_V1T1X0Z1H2H7W1H6J0T1F4Z8O3V2R8,1810691,정부,의료기기법 일부개정법률안,api_text_empty
+18,ARC_R1U0A1K0T2T8Y1X7J2B6M3Z1J3H0P2,1809701,정부,저작권법 일부개정법률안,api_text_empty
+18,ARC_V1W0W0O4L3Z0E1O6A0D9H0B3M3I3D4,1808363,정부,국민건강증진법 일부개정법률안,api_text_empty
+18,ARC_T0A9T0Y7I3K1L1S4D1G8L2Z2L0Y8Z3,1805633,정부,공익수의사에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_T0C8A1B2Y3D0K1V7D3W5K1V8U5F0U3,1803353,정부,직업안정법 일부개정법률안,api_text_empty
+18,ARC_T0C8Z1K0F3C1A1A6Q0B1N3P5D5L8V3,1801657,정부,우주개발진흥법 일부개정법률안,api_text_empty
+18,ARC_T0D8U1L1D1W2B2K2E0N6T0O4F6T0E6,1802016,정부,수산업협동조합법 일부개정법률안,api_text_empty
+18,ARC_T0H8S1B2F0J5A1E5B5H8F3R1N5R1W4,1802882,정부,도시와 농어촌 간의 교류촉진에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_T0R9I1E2A2K9G1I5X3N0C0D3W3I8M4,1807195,정부,경비업법 일부개정법률안,api_text_empty
+18,ARC_T0U9V0Y9Z2T8L1Z8E1R9V3E3J8T0R5,1806169,정부,법인세법 일부개정법률안,api_text_empty
+18,ARC_U1M0M1G1X2G2X1D6E0I2Q5X4Q6M9T8,1809982,정부,범죄수익은닉의 규제 및 처벌 등에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_V1Z0F0I6K3Z0D1Q7H0C6J1E1V5H3V8,1808749,정부,화재로 인한 재해보상과 보험가입에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_T0Z8V1A1G1M2D1Z5P1K9Y1J5L7P3T5,1801929,정부,지방교부세법 일부개정법률안,api_text_empty
+18,ARC_T1B0B0I2O1F8C1K6B1V3I4T7H1J3F7,1807639,정부,교원의 노동조합 설립 및 운영 등에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_T1B0J1Z2H3Z0G1Q7K4E8J1M4C6D8Z0,1810477,정부,한국지방재정공제회법 일부개정법률안,api_text_empty
+18,ARC_S0C9G0K9J3B0T1F7N3R1D3V4I0D7N5,1806212,정부,신항만건설촉진법 일부개정법률안,api_text_empty
+18,ARC_T1G0W0H4R3J0O1A4E4X4E4D7H2G8Y3,1808357,정부,한의약육성법 일부개정법률안,api_text_empty
+18,ARC_S0G8E1D2H3H1Z1Q6Q2S2P3L6X0V7W6,1803370,정부,검역법 전부개정법률안,api_text_empty
+18,ARC_S0L8J1G1L1W2X1C5D1T8G3H0Z0F0A6,1801905,정부,국가재건최고회의법 폐지법률안,api_text_empty
+18,ARC_S0P8V1V1T2E8G1T4B5J2B0O4U7A3X3,1802319,정부,집행정지중의군법회의판결의효력상실에관한법률 폐지법률안,api_text_empty
+18,ARC_S0T8J1W1I1S2U1Y9C5Q6B4W6Y4F2V1,1801946,정부,산업교육진흥 및 산학협력촉진에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_S0Z8K1C1F1N2X1L5E1H7O4Y4X5N5L2,1801934,정부,의문사진상규명에관한특별법 폐지법률안,api_text_empty
+18,ARC_W0A8L1K1N0M5V1M3B3R5P5X6M6I8A5,1801738,정부,집단에너지사업법 일부개정법률안,api_text_empty
+18,ARC_W0F9K0F9P3D0C1E5Z5Z9F0I2I4V0W6,1806206,정부,하도급거래 공정화에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_W0H8F1O2A3I0P1X7Z3J1C0V6D5N5Z5,1803352,정부,택지개발촉진법 일부개정법률안,api_text_empty
+18,ARC_W0K9N0M5L2D7H1M6Y4S0E3I6Z5T8W2,1804961,정부,교원의 노동조합 설립 및 운영 등에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_W0N9R0J1V2K3Q1H5L1H2E4N1S9M2N0,1803632,정부,방송법 일부개정법률안,api_text_empty
+18,ARC_W0Q8H1R1K1W2K2U0U0V2V1K9C4I3R6,1801951,정부,사료의 수집·편찬 및 한국사의 보급 등에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_W1G2X0U1D3B1J1W5Z3H3D3S0D9E9H1,1814585,정부,노인장기요양보험법 일부개정법률안,api_text_empty
+18,ARC_Z0A8N1T2Y2S9H1G6T0F0V1C6L8C4S6,1803291,정부,화염병사용등의처벌에관한법률 일부개정법률안,api_text_empty
+18,ARC_Z0K8I1H0A1B0L1M7U5N0T1T0W6Y6F6,1801514,정부,공인회계사법 일부개정법률안,api_text_empty
+18,ARC_Z0M9N0Y2Y1O1W1Z4O0Z5K1B7T9F8X3,1803780,정부,지방세법 일부개정법률안,api_text_empty
+18,ARC_W1L1U1M2B2G9B1H4W3P1N4F2K1X4W0,1814363,정부,전기·전자제품 및 자동차의 자원순환에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_Z0O9Z1P2B2W9D1Q5V3Y0K0X4W0Y3U4,1807196,정부,경찰공무원법 일부개정법률안,api_text_empty
+18,ARC_Z0U8D1A1C2Q8A1L3I2K5C4H2E5Y6K7,1802311,정부,병역법 일부개정법률안,api_text_empty
+18,ARC_Z0V8Z1T1T1E2E2Y2R0A0C3J0B1U8V6,1802015,정부,축산법 일부개정법률안,api_text_empty
+18,ARC_W1P0K0U7G2T3C1X5R4G7A2U5I2N4R3,1808941,정부,건설기술관리법 일부개정법률안,api_text_empty
+18,ARC_Z1D0T0F6N3V0A1U6X4S9B5N8N8L1I8,1808737,정부,대중교통의 육성 및 이용촉진에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_Z1E0U0T5P1R9N1Q5G5M5G5G6H8I1Z3,1808498,정부,보건의료기술 진흥법 일부개정법률안,api_text_empty
+18,ARC_W1S0W0U5F2H6W1W6P2F2J0V7B6T4E1,1808509,정부,철도사업법 일부개정법률안,api_text_empty
+18,ARC_Z1H1H0H4F2D8N1V5Y2D3C4W1X6E2X5,1811636,정부,주한미군 공여구역주변지역 등 지원 특별법 일부개정법률안,api_text_empty
+18,ARC_W1U1W0T8R0G2R1I3G5L0S4H3M5R0M3,1812776,정부,산림보호법 일부개정법률안,api_text_empty
+18,ARC_W1V0E0F8J2X6D1C5G4D9Q2P6Q2M4F0,1809180,정부,저작권법 일부개정법률안,api_text_empty
+18,ARC_Y0J9L1V2E2E9X1Z5C3O6V0U9B8D6F3,1807209,정부,민법 일부개정법률안,api_text_empty
+18,ARC_Y0K8L1N1V0P7N1Q6E3P3Y4H1R7J7T1,1801810,정부,해상교통안전법 일부개정법률안,api_text_empty
+18,ARC_Y0M8X0E9Q2F4B1J7A2K7K2N5T8L3C6,1801016,정부,부동산등기에관한특별조치법 폐지법률안,api_text_empty
+18,ARC_Y0M9C0N6N1D0E1O7N4O3K5P4A8Q4C8,1805084,정부,금융지주회사법 일부개정법률안,api_text_empty
+18,ARC_Y0N8I1I0V1V3I1G6I3X7P4Y3J6T8V5,1801522,정부,국세기본법 일부개정법률안,api_text_empty
+18,ARC_W1Y1P0P9O3E0G1Y6S3M3V3W2R1A4R8,1813302,정부,경찰공무원법 일부개정법률안,api_text_empty
+18,ARC_Y0T8Q1R1G1Z2J1V9H5N9O4E1G4J4J4,1801948,정부,과학교육진흥법 일부개정법률안,api_text_empty
+18,ARC_Y0W9T0Y9Y1C5U1Z7D1I8E3U5S8D7O5,1806034,정부,성폭력범죄의 처벌 및 피해자보호 등에 관한 법률 전부개정법률안,api_text_empty
+18,ARC_Y0Y9A1R2H1I6G1I7V2A5X0P3D0R6L5,1807020,정부,농업협동조합법 일부개정법률안,api_text_empty
+18,ARC_Y1A1N0Y7L1X4Q1I7A0Y2L3N6G1K3H8,1812626,정부,지방공무원법 일부개정법률안,api_text_empty
+18,ARC_Z1L1V0X4L2A5X1Z8H1Q5B1C5K7G6W5,1811585,정부,소하천정비법 일부개정법률안,api_text_empty
+18,ARC_Y1F1R0H6J0Q2N1Y6U5F4X4Y4V9V5Q3,1812125,정부,통계법 일부개정법률안,api_text_empty
+18,ARC_Z1S0O0S8X0H9D1Q5V4K3R1G7B8R4M6,1809058,정부,문화예술진흥법 일부개정법률안,api_text_empty
+18,ARC_Y1H0G1G2A3R0B1S7O3K2L4L8R6V5B1,1810470,정부,비료관리법 일부개정법률안,api_text_empty
+18,ARC_Y1J0D1M1N3Z0P1L3E5U7W5X3U7V1C2,1810069,정부,과학기술기본법 일부개정법률안,api_text_empty
+18,ARC_Y1J0P0B7H3W0T1J7A5R6N0E9L5V9I8,1809013,정부,농촌진흥법 일부개정법률안,api_text_empty
+18,ARC_X0D8F0Q9R1O0E1T4D0O4U3F3S0P1A1,1800897,정부,대한민국과아메리카합중국간의상호방위조약제4조에의한시설과구역및대한민국에서의합중국군대의지위에관한협정의시행에관한민사특별법 일부개정법률안,api_text_empty
+18,ARC_X0F8X1D2N1A8F1I7M3Q8A4T1S7S9F4,1803109,정부,보험업법 일부개정법률안,api_text_empty
+18,ARC_Y1K1T1O2E0E2U1M8X0Q2G0E1R7Q9B4,1814005,정부,신문 등의 진흥에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_X0K8H1L0F0Q2I1J7C0R4X1E5M4J5R3,1801094,정부,소득세법 일부개정법률안,api_text_empty
+18,ARC_X0P8L1C0O1E0V1V4F3G9T0W8Y8B2S5,1801498,정부,디자인보호법 일부개정법률안,api_text_empty
+18,ARC_X0Q9X0Y1B1H2X1Q6A4H9M0D8X1I6N1,1803491,정부,가정폭력방지 및 피해자보호 등에 관한 법률 일부개정법률안,api_text_empty
+18,ARC_X0S8A0L9U1S0X1N4P1Q3U2L5O0O2B6,1800894,정부,개항질서법 일부개정법률안,api_text_empty
+18,ARC_X0S8J0H9O1I0O1Z4Q2U1Q4I3P7H5D7,1800907,정부,국가정보대학원설치법 일부개정법률안,api_text_empty
+18,ARC_Y1P0Y0B7M3X0W1G6W5T1G2H9Q0R5I5,1808978,정부,한국해운조합법 일부개정법률안,api_text_empty
+18,ARC_X0T8M1M1U0Q7J1J3Y3L2U5T8Z1J0O7,1801806,정부,국가재정법 일부개정법률안,api_text_empty
+18,ARC_X0T9S0W5D2H9D1Z3O2T4S4G6B8P3T8,1804982,정부,조세특례제한법 일부개정법률안,api_text_empty
+18,ARC_Y1V0K0X6D3U0H1Y6V5K0L3O0O1G4R9,1808740,정부,대한민국과아메리카합중국간의상호방위조약제4조에의한시설과구역및대한민국에서의합중국군대의지위에관한협정의시행에관한형사특별법 일부개정법률안,api_text_empty
+18,ARC_Y1W0U1T2G3P0G1G7N2S9D3B4I5Y9F7,1810466,정부,산림조합법 일부개정법률안,api_text_empty
+18,ARC_X1H0M0W2Y2V5U1U6R4N7B4S2P7Y3G4,1807707,정부,토양환경보전법 일부개정법률안,api_text_empty
+18,ARC_Y1Z0K0E6X3R0Q1O6P5B1Q2G7V5E6F0,1808741,정부,대한민국학술원법 일부개정법률안,api_text_empty
+18,PRC_N1H0H0L5M2S7U1S7T4A6C1R0K9O3U6,1808513,의원,국가연구개발사업 등의 성과평가 및 성과관리에 관한 법률 일부개정법률안,api_text_empty
+20,PRC_X2X0E0G3I0O4G1B3N2V3X5N3P6W3T2,2024884,위원장,공익신고자 보호법 일부개정법률안(대안),api_text_empty
+20,PRC_X1P9O1F1D2J8J1V3B0K8X4Z4E4J6D9,2024958,위원장,법률용어 정비를 위한 기획재정위원회 소관 33개 법률 일부개정을 위한 법률안,api_text_empty
+20,PRC_A1C9O1E2T1G2H1S8C3X7L4Q1N8I8D6,2024729,위원장,미세먼지 저감 및 관리에 관한 특별법 일부개정법률안(대안),api_text_empty
+20,PRC_A2I0P0H4R2P9X1Z5G2Q0Y0L0Y9A7J0,2024895,위원장,조세특례제한법 일부개정법률안(대안),api_text_empty
+20,PRC_B1L9V0K9P2L3B1Q9B4P3X5D8H0Q8W8,2024994,위원장,법률용어 정비를 위한 정보위원회 소관 2개 법률 일부개정을 위한 법률안,api_text_empty
+20,PRC_B2D0E0L3E0G3E1E5B4U5D1Y9F0J3E6,2024898,위원장,외식산업 진흥법 일부개정법률안(대안),api_text_empty
+20,PRC_B2E0Q0P5K1J4V1V8O1Q1J5Y2C1E5W0,2024992,위원장,"화재예방, 소방시설 설치·유지 및 안전관리에 관한 법률 일부개정법률안(대안)",api_text_empty
+20,PRC_B2O0N0B3U0G3F1N5E5T9Y1J9B7L1A9,2024896,위원장,수상레저안전법 일부개정법률안(대안),api_text_empty
+20,PRC_C2L0D0D4A2R9H1S8S0P7T5W5Q1K6B5,2024883,위원장,성폭력범죄의 처벌 등에 관한 특례법 일부개정법률안(대안),api_text_empty
+20,PRC_C2J0R0W3B0B3K1N5U4Q1S3I7C7S7L3,2024902,위원장,방조제 관리법 일부개정법률안(대안),api_text_empty
+20,PRC_C2Y0Z0Y5N1D4D1S8F1A9B2D8N7F0M8,2024987,위원장,부마민주항쟁 관련자의 명예회복 및 보상 등에 관한 법률 일부개정법률안(대안),api_text_empty
+20,PRC_D2E0K0I5F1H9X1C3I3A3Y2I7W8O9X2,2024993,위원장,진실·화해를 위한 과거사정리 기본법 일부개정법률안(대안),api_text_empty
+20,PRC_D2N0W0Q5V1Q4J1P8U1E7U4S6A1Y1Y5,2024988,위원장,지방재정법 일부개정법률안(대안),api_text_empty
+20,PRC_E2I0R0G5R1O4A1U8X1O6P5Y0M8R5J6,2024989,위원장,자전거 이용 활성화에 관한 법률 일부개정법률안(대안),api_text_empty
+20,PRC_G2R0I0Y3G0S4J1G1T0V0S5M4Q3U6D3,2024891,위원장,독점규제 및 공정거래에 관한 법률 일부개정법률안,api_text_empty
+20,PRC_J2H0O0L5E1Y4P1G5J5V8P4Z4N5E9L3,2024982,위원장,도로교통법 일부개정법률안(대안),api_text_empty
+20,PRC_J2N0I0X5I1Y4H1C8B1K6H0E7E1X7Z8,2024990,위원장,재난 및 안전관리 기본법 일부개정법률안(대안),api_text_empty
+20,PRC_K2Y0P0A3K0Z3U1M5L5J5B1K8S6S7X1,2024900,위원장,산림기술 진흥 및 관리에 관한 법률 일부개정법률안(대안),api_text_empty
+20,PRC_L2B0M0H3T0F4T1L1T0K4O3U7D5Y2R1,2024887,위원장,전자금융거래법 일부개정법률안(대안),api_text_empty
+20,PRC_L2W0U0R4M0H9O1X6H0I4K0R9D8B1Y6,2024839,의원,성폭력범죄의 처벌 등에 관한 특례법 일부개정법률안,api_text_empty
+20,PRC_M2G0Q0X3M0X3D1N5A5F2P5B3F5X7O6,2024907,위원장,기능성 양잠산업 육성 및 지원에 관한 법률 일부개정법률안(대안),api_text_empty
+20,PRC_N2C0M0Y5V1C4R1P8Q1D3W4E8Z9O8E4,2024981,위원장,소규모 공공시설 안전관리 등에 관한 법률 일부개정법률안(대안),api_text_empty
+20,PRC_O2G0P0C3X0O3K1I5A4I0B2Q7N1D9C7,2024904,위원장,농촌진흥법 일부개정법률안(대안),api_text_empty
+20,PRC_Q2J0Z0Y3X0X3H1N5S5W7Z3C1B2A8L3,2024901,위원장,백두대간 보호에 관한 법률 일부개정법률안(대안),api_text_empty
+20,PRC_S2S0I0Q4V2L8J0V9C0T5E5F1J7Z1Q1,2024892,위원장,인터넷전문은행 설립 및 운영에 관한 특례법 일부개정법률안,api_text_empty
+20,PRC_S2R0K0D3V0D4J1H7H3A6G2W4X1L5X6,2024915,위원장,도로교통법 일부개정법률안(대안),api_text_empty
+20,PRC_S2Y0I0M5E1O4Y1W6X0K4O2W0H1V5J0,2024985,위원장,소방시설공사업법 일부개정법률안(대안),api_text_empty
+20,PRC_T2M0D0A5G1H4E1F6A0M3X2D0X1Q1O8,2024983,위원장,다중이용업소의 안전관리에 관한 특별법 일부개정법률안(대안),api_text_empty
+20,PRC_Z2A0H0G3L0F3F1M5F5S6J4D6F5I8I8,2024899,위원장,산지관리법 일부개정법률안(대안),api_text_empty
+20,PRC_Z2L0T0H4A2R8O1G6W4M9Y4B9U2T4V6,2024914,위원장,지역사랑상품권 이용 활성화에 관한 법률안(대안),api_text_empty
+20,PRC_Y2D0I0I3S0L4M1B7O3K9B2F0R3W5F9,2024986,위원장,집회 및 시위에 관한 법률 일부개정법률안(대안),api_text_empty
+20,PRC_Y2G0C0C4X2O9P1X8D1A1L4C5E1V7E5,2024881,위원장,범죄수익은닉의 규제 및 처벌 등에 관한 법률 일부개정법률안,api_text_empty
+21,ARC_G2O0F1T2V2H8E1Q7C2H3H0J8D7K7J8,2106963,정부,국가공무원법 일부개정법률안,api_text_empty
+21,ARC_K2S0V0U8X1R1D1X4H2U4I1W7R5J5T9,2102872,정부,피후견인 결격조항 정비를 위한 건설폐기물의 재활용촉진에 관한 법률 등 25개 법률의 일부개정에 관한 법률안,api_text_empty
+21,ARC_I2Z1G1L0Z0O7Y1V8R2W8A4P3L1M8R8,2112805,정부,지방세기본법 일부개정법률안,api_text_empty
+21,ARC_U2W3K0F5U3N1Y1A7N3F2Z5D1V5S7X5,2122415,정부,경제 형벌규정 개선을 위한 산업집적활성화 및 공장설립에 관한 법률 등 3개 법률의 일부개정에 관한 법률안,api_text_empty
+21,ARC_Y2U0J1F1W1X9W1Q4T0A5M1S8W3D8O4,2105540,정부,방송법 일부개정법률안,api_text_empty
+21,ARC_X2K3J0G7K2B6W1P8H0E1F0X0V2R5N2,2123469,정부,주타이베이 대한민국 대표부와 주한국 타이베이 대표부 간의 소득에 관한 조세의 이중과세 방지와 탈세 예방을 위한 약정의 이행에 관한 법률안,api_text_empty
+21,PRC_A2U0G0X9T0O2Y1H8L5D5L1X5L5X2M8,2103463,의원,남녀고용평등과 일·가정 양립 지원에 관한 법률 일부개정법률안,api_text_empty
+21,PRC_B2B4W0D3M1Y2R1Y0C1Y6U5A3U2W0I5,2126613,의원,순직 해병 사망사건 수사 외압 의혹 이종섭 전 국방부 장관의 도피성 출국 과정 위법행위 진상규명을 위한 특별검사 임명 등에 관한 법률안,api_text_empty
+21,PRC_B2R1V0A4U2P1D1M3K4I7H5P0E5W3M4,2109635,의원,주취자 범죄의 예방 및 처벌 등에 관한 법률안,api_text_empty
+21,PRC_C2V1E0B2B1T8T1R5I4G6V3Y2N1C3T3,2108341,위원장,지방대학 및 지역균형인재 육성에 관한 법률 일부개정법률안(대안),api_text_empty
+21,PRC_D2C4U0R1Q2N3L1K5K4Q0O3Z7T0S4R2,2126409,의원,방어해면법 일부개정법률안,api_text_empty
+21,PRC_E2D3B0C7A2A1J1J7H1I7H2F3F3N6O2,2123525,의원,도로교통법 일부개정법률안,api_text_empty
+21,PRC_E2T0O1K1V2L5K1G1Q1B5M5Q6K7F3B7,2106054,위원장,학교용지 확보 등에 관한 특례법 일부개정법률안(대안),api_text_empty
+21,PRC_E2L0Z1Y2I0L1U0I0V0T1Z0X7V7X5J1,2105944,위원장,소득세법 일부개정법률안(대안),api_text_empty
+21,PRC_E2T1E0I8E1J8L1K4Y1K6W2J7M6X8G2,2112202,위원장,국회법 일부개정법률안(대안),api_text_empty
+21,PRC_E2M4L0K1J1S7P1P3O5W5W5S5O0O0N9,2126319,의원,양육비 이행확보 및 지원에 관한 법률 일부개정법률안,api_text_empty
+21,PRC_F2K2M1J1B3R0X1H1G1N4Z0P0K6N4J3,2119185,위원장,고용보험 및 산업재해보상보험의 보험료징수 등에 관한 법률 일부개정법률안(대안),api_text_empty
+21,PRC_F2G1L0O2S1A9B1B1S3B8M5A7P0L1R7,2108394,위원장,혈액관리법 일부개정법률안(대안),api_text_empty
+21,PRC_G2A3Z1Y0F1H9H1D2M5L3I0R2Q9P4V4,2125230,의원,지방세특례제한법 일부개정법률안,api_text_empty
+21,PRC_G2B2Z0N9M2D1O1Z5F4X9M4B3D4Y7D1,2120226,위원장,부정경쟁방지 및 영업비밀보호에 관한 법률 일부개정법률안(대안),api_text_empty
+21,PRC_G2F3M0N9L1M4K1L0J2F1F4E0F9D3D2,2125773,의원,도로교통법 일부개정법률안,api_text_empty
+21,PRC_G2U1U0D7D1P9T1J4N2P5S3C3O6E9N7,2111564,의원,식물방역법 일부개정법률안,api_text_empty
+21,PRC_G2Y1Q0I2O1J9E1A3X1H0T0A0Q5J1L6,2108396,위원장,공공보건의료에 관한 법률 일부개정법률안(대안),api_text_empty
+21,PRC_H2B0R0J6Q2H3H1Z4N3J6V0F8Q4A1C7,2100889,의원,기초연금법 일부개정법률안,api_text_empty
+21,PRC_H2I0F0B8P1Q4L1U1P2F9J5N7L7H5S6,2102971,의원,기부금품의 모집 및 사용에 관한 법률 일부개정법률안,api_text_empty
+21,PRC_H2I3P0Q5P1P1N0O9M4U1V4T6U5S9T6,2122038,의원,청원경찰법 일부개정법률안,api_text_empty
+21,PRC_H2P0I0D8W1D3H1G7G3E0R2H9D9L7I0,2102957,의원,근로기준법 일부개정법률안,api_text_empty
+21,PRC_I2A0S1X2K0A1G0V8X5I6O2T4C3S4G2,2105945,위원장,주류 면허 등에 관한 법률안(대안),api_text_empty
+21,PRC_I2A1R0Y2B1X9W1A5K4T1J4B3N4W5T7,2108397,위원장,감염병의 예방 및 관리에 관한 법률 일부개정법률안(대안),api_text_empty
+21,PRC_I2V0J1J1O0F3J1A1D1P3G1O4C0F4P2,2104876,의원,파견근로자 보호 등에 관한 법률 일부개정법률안,api_text_empty
+21,PRC_I2S0F1S2W1K7M1R6R2X1A5U2J9N8X9,2106673,의원,지방재정법 일부개정법률안,api_text_empty
+21,PRC_J2T0K1E2D0J8O1U6S0O0J2K3V1E4D5,2106279,위원장,고용보험 및 산업재해보상보험의 보험료징수 등에 관한 법률 일부개정법률안(대안),api_text_empty
+21,PRC_K2J3I0Q2P2N3S0Q9Z0A9Y2X6V5E9C9,2120495,의원,전자상거래 등에서의 소비자보호에 관한 법률 일부개정법률안,api_text_empty
+21,PRC_K2V0S0W6L2C6I1S6F3A4H1U4C4S9H7,2101081,정부,기상산업진흥법 일부개정법률안,api_text_empty
+21,PRC_L2E4N0E2V2X2R1D8R1T7Q5Q4S1W4Y3,2126577,위원장,공공기관의 운영에 관한 법률 일부개정법률안(대안),api_text_empty
+21,PRC_L2P0E1W1H0H6I1Q8V0H8D2W5O5H8I0,2105087,의원,고용보험법 일부개정법률안,api_text_empty
+21,PRC_L2U0Z1B2Z0L9C0J2K1G3S3H9N1D9J4,2106282,위원장,공무원의 노동조합 설립 및 운영 등에 관한 법률 일부개정법률안(대안),api_text_empty
+21,PRC_M2J0I0H7I2J3P1N8S1G9P4Q0Q7G3W7,2102336,의원,국민체육진흥법 일부개정법률안,api_text_empty
+21,PRC_O2Z1X1Z2P3W0K2B1R2T8O3H6R0L6I7,2114349,위원장,건축물관리법 일부개정법률안(대안),api_text_empty
+21,PRC_Q2D2W1D0P3Y1Y1Z4B1A5R1S6W8P7E2,2119692,의원,진로교육법 일부개정법률안,api_text_empty
+21,PRC_Q2E2S1S1Y1S7Q1V6O5Z1R2I8C4K0Z8,2118430,위원장,예비군법 일부개정법률안(대안),api_text_empty
+21,PRC_Q2A0W0H7N0P3A1R0B0Y8G5E4H1M1C3,2101367,의원,기초연구진흥 및 기술개발지원에 관한 법률 일부개정법률안,api_text_empty
+21,PRC_R2K1P0Q2J1Q9L1I5Q4L5R5V1P3H8O0,2108393,위원장,응급의료에 관한 법률 일부개정법률안(대안),api_text_empty
+21,PRC_R2W0P1E2A0Q7H2S1T0U5W0F4U3D6N0,2106280,위원장,고용보험법 일부개정법률안(대안),api_text_empty
+21,PRC_R2S3C0A5Z0Y3U1S6R2S9R5Z9X4W1V5,2122392,의원,양육비 이행확보 및 지원에 관한 법률 일부개정법률안,api_text_empty
+21,PRC_R2V0H1Z1S2W5A1V1A1X6L3G2F9L5W8,2106065,위원장,정신건강증진 및 정신질환자 복지서비스 지원에 관한 법률 일부개정법률안(대안),api_text_empty
+21,PRC_S2D1W0U3K3U0Z1G6V0R0D0F6D9Z3L3,2109211,의원,국가경찰과 자치경찰의 조직 및 운영에 관한 법률 일부개정법률안,api_text_empty
+21,PRC_S2Q3Z0Y3Y0X2V1D7E1D4B3A3B0X2L7,2121609,의원,사법경찰관리의 직무를 수행할 자와 그 직무범위에 관한 법률 일부개정법률안,api_text_empty
+21,PRC_S2Z3Y0X4V2W5E0D9C4A1B0J2I8G8F1,2121713,의원,특정경제범죄 가중처벌 등에 관한 법률 일부개정법률안,api_text_empty
+21,PRC_T2R3R0Q8O1P8W1X7W5W3U3V5U3B7C9,2124010,의원,급경사지 재해예방에 관한 법률 일부개정법률안,api_text_empty
+21,PRC_T2R4Q0Y4Z1Y5X1V8D1E6D1B2A6I3H1,2126639,의원,영유아보육법 일부개정법률안,api_text_empty
+21,PRC_T2P0M0Q8W2Y4O1C1L2X4Z5G6W3O8Y6,2103181,의원,사회적경제기업제품 구매촉진 및 판로지원에 관한 특별법안,api_text_empty
+21,PRC_T2U3X0Q4P2G4L1K7P3H2F4A5F3W7Y4,2123477,위원장,주민조례발안에 관한 법률 일부개정법률안(대안),api_text_empty
+21,PRC_U2J1N0Z2W1R8D2K0D5Y5K2R7P3Q9U0,2108389,위원장,의료기기법 일부개정법률안(대안),api_text_empty
+21,PRC_U2S3S0R6P0Q2Y1Y1W1X8V0W8U8V0C6,2122596,의원,상가건물 임대차보호법 일부개정법률안,api_text_empty
+21,PRC_V2B0M0M7F1X6Q1X4T3B2T5U8Y2C6M0,2102034,의원,의료기기법 일부개정법률안,api_text_empty
+21,PRC_V2C1S0G2F1L8F1A4O3E9L0J1N7W4C7,2108342,위원장,교원의 지위 향상 및 교육활동 보호를 위한 특별법 일부개정법률안(대안),api_text_empty
+21,PRC_V2K0A1O2Q0V8N2M3D0C3P4H4A9H4U0,2106284,위원장,근로기준법 일부개정법률안(대안),api_text_empty
+21,PRC_X2S1P0R2Z2D3L1C9H5D9L1F1T3N0E3,2108890,위원장,대기관리권역의 대기환경개선에 관한 특별법 일부개정법률안(대안),api_text_empty
+21,PRC_X2O1L0R2G1F8K1K7D3C8H0O6H1A9W4,2108344,위원장,고등교육법 일부개정법률안(대안),api_text_empty
+21,PRC_X2P0Q1P1T0C2E1T6E0B3Y2Z3F0O4R4,2104831,의원,지방세특례제한법 일부개정법률안,api_text_empty
+21,PRC_W2U0Q0G9Z0T7Q1D0T1G1R2B7A8O5A6,2103524,의원,고등교육법 일부개정법률안,api_text_empty
+21,PRC_W2S3T0R8R1Q7O1P8X1X4V0W3U0V2U7,2123933,의원,변호사시험법 일부개정법률안,api_text_empty
+21,PRC_Z2X3X0W6W1V3V1R8P1Q5O0P4N0O7W0,2122775,의원,공공외교법 일부개정법률안,api_text_empty
+21,PRC_Z2G0G1Q2K0X9K0M0N4L9E3L9W8D0P0,2106288,위원장,노동조합 및 노동관계조정법 일부개정법률안(대안),api_text_empty
+21,PRC_Z2X3Y1X0V3D0C1B4B0A3I2H7G7F3A0,2125288,의원,서민의 금융생활 지원에 관한 법률 일부개정법률안,api_text_empty
+21,PRC_Z2J2G1I2G0Z5I0V9T5V1P3A1N2A4J2,2120062,위원장,공공외교법 일부개정법률안(대안),api_text_empty
+21,PRC_Z2H0E0X8L2D0S1K1T4D9V0U7Z8B4E4,2103084,의원,노인일자리 창출 및 지원에 관한 법률안,api_text_empty
+21,PRC_Z2H0F0H9K0C7I1E4I4X4M1W6T6Z3T6,2103553,의원,고용정책 기본법 일부개정법률안,api_text_empty
+21,PRC_Y2V4U0C1B1B9H1G4C2Z2Y5H3F5F1D0,2126328,의원,북한이탈주민의 보호 및 정착지원에 관한 법률 일부개정법률안,api_text_empty
+21,PRC_Y2O0J0R7M1A6G1V4R3D8G0W8D9F5Z0,2102037,의원,국민건강증진법 일부개정법률안,api_text_empty
+22,PRC_X2W5W0V7C2D1B1C5A5B1Z4H1I7G7H5,2213733,의원,가정폭력범죄의 처벌 등에 관한 특례법 일부개정법률안,api_text_empty
+22,ARC_P2F5H0L3B1U9E1Z4C1W0V3O2R5J5U6,2209099,정부,아동복지법 일부개정법률안,api_text_empty
+22,ARC_R2T6K0S9Y0Y3H1F1T1F3F2D6S8A5J1,2221057,정부,영유아특별회계법 일부개정법률안,api_text_empty
+22,ARC_W2E5P1G2L2N4K0J9Y3M6D2L6G0N1L3,2215564,정부,개발이익 환수에 관한 법률 일부개정법률안,api_text_empty
+22,ARC_Z2Q5L1L2K1T7C1K0X3C5E3D2W5P3I5,2215320,정부,혁신도시 조성 및 발전에 관한 특별법 일부개정법률안,api_text_empty
+22,PRC_C2A4C1X2Y2W3W1V3T3U8C0C2B9B1Z7,2207175,의원,노인복지법 일부개정법률안,api_text_empty
+22,PRC_C2C5B1Z2A0Y3Y1H1H0F5E5F4D1D5L2,2214953,의원,재난 및 안전관리 기본법 일부개정법률안,api_text_empty
+22,PRC_C2M5I0G4Q1A6Q1P5N0V1J2Z9Z2L4O2,2210293,위원장,디자인보호법 일부개정법률안(대안),api_text_empty
+22,PRC_D2B6C0B3Z2H3G1P1N2M3L2T0T5S9R9,2217984,의원,집단수용시설등 인권침해 피해자의 명예회복 및 보상 등에 관한 특별법안,api_text_empty
+22,PRC_D2D6L0J8K2I8J1H3I4Q3Q0O4N2O3M9,2221391,의원,선거관리위원회법 일부개정법률안,api_text_empty
+22,PRC_D2R4G0H8P2B7P1V2D5H7Y0P3S7B2C4,2203266,위원장,민법 일부개정법률안(대안),api_text_empty
+22,PRC_E2C5Y1Y0X2X8V2W0U0V7D1D4C3C4A0,2213896,의원,건설산업기본법 일부개정법률안,api_text_empty
+22,PRC_E2H6U0E7R3Y0C1C4R4P6N1N6O0O4B1,2220309,위원장,제9회 전국동시지방선거 투표용지 부족 사태 등 국민참정권 침해 의혹 진상규명을 위한 특별검사의 임명 등에 관한 법률안 (대안),api_text_empty
+22,PRC_F2F5B0C6A2A6Z1X6Y0F5G1F9F0D4E4,2211297,의원,기상산업진흥법 일부개정법률안,api_text_empty
+22,PRC_F2O4M0M8K0M1K1K5S4R8R1P9Q9O4P4,2202542,의원,고향사랑 기부금에 관한 법률 일부개정법률안,api_text_empty
+22,PRC_G2D5H0F4N0Q8B1C6S1W5W1M6Q3Z5K8,2210289,위원장,전기안전관리법 일부개정법률안(대안),api_text_empty
+22,PRC_G2H5F1G2E1M9M1L1L2K5K5J9J9Y1X2,2215596,의원,동물보호법 일부개정법률안,api_text_empty
+22,PRC_G2H6G0G8E0F5N1L4M4K6L2J5H5I0G1,2220857,의원,군급식기본법 일부개정법률안,api_text_empty
+22,PRC_G2H4F0G8E2E7N1L4L5K0K4I7J4R2S9,2203301,의원,성폭력방지 및 피해자보호 등에 관한 법률 일부개정법률안,api_text_empty
+22,PRC_H2B5A0Z3I1H7D1M7L0K9F0O8N2M7L3,2209080,의원,국가재정법 일부개정법률안,api_text_empty
+22,PRC_H2F5O0N8N0T6T2S1O5L7K0T9S3O7A9,2212505,의원,장애인복지법 일부개정법률안,api_text_empty
+22,PRC_I2H4P0P6O2M7L1B1B2A8Y1X3Y0G6E3,2201187,의원,북한인권법 일부개정법률안,api_text_empty
+22,PRC_I2Q6Q0O2Q1O2O1M7I5J8H1I6G0F6G7,2217600,의원,보호관찰 등에 관한 법률 일부개정법률안,api_text_empty
+22,PRC_I2J5H0I9G2H2W1U1V3T2U0S8T1A1B6,2214918,의원,군무원인사법 일부개정법률안,api_text_empty
+22,PRC_I2J4H1F1G1E3F1A0B0Z4A4Z8X9X3G9,2205697,의원,하도급거래 공정화에 관한 법률 일부개정법률안,api_text_empty
+22,PRC_K2L5T1T1R0S7Q1P6P4E7F3D0D0C0D1,2217380,의원,공유재산 및 물품 관리법 일부개정법률안,api_text_empty
+22,PRC_K2R5T1R2R1P1Q1P4W2U2V5T8U2J4H2,2215286,의원,국가재정법 일부개정법률안,api_text_empty
+22,PRC_L2L4K0K9J0J2R1R7Q1O4P1N7N0V4W9,2203732,의원,국가재정법 일부개정법률안,api_text_empty
+22,PRC_L2L5K0I6J1Q7S1Q5Q4O0N5O2V1W4V5,2211674,의원,조세특례제한법 일부개정법률안,api_text_empty
+22,PRC_L2K5S0Q8R1P2O1K4J1I2I3H9P8N4O3,2212446,의원,국가공무원법 일부개정법률안,api_text_empty
+22,PRC_M2L5L0K4K3S0S1R1S2Q4Q5P3P2X6V2,2210324,의원,건축법 일부개정법률안,api_text_empty
+22,PRC_M2N5L0L2K1L1G1H0F5E4E0C4D1L2M9,2208177,의원,국가회계법 일부개정법률안,api_text_empty
+22,PRC_N2M6M0I3J0H5I1G3H4F5F2O7M3M5K5,2217278,의원,중대범죄수사청법안,api_text_empty
+22,PRC_O2N4O1V1W2U1V1T4S1S7O3P1N5M2M9,2206115,의원,공공조달에 관한 법률안,api_text_empty
+22,PRC_O2W5X0V2W1U4V1T0P0P2N1O6N3N9L2,2208428,의원,조세특례제한법 일부개정법률안,api_text_empty
+22,PRC_P2N4M1M2U1V6T1U6S5S4R3N8N0L6M7,2208335,의원,보건의료인력지원법 일부개정법률안,api_text_empty
+22,PRC_P2X5X1W1U2V7T1T1B2C3A3B7Z9Y1Y7,2214972,의원,출입국관리법 일부개정법률안,api_text_empty
+22,PRC_R2P5Q1O1P2K1L1J6K2I0J0H6P8Q4O4,2214937,의원,국립묘지의 설치 및 운영에 관한 법률 일부개정법률안,api_text_empty
+22,PRC_R2P6W0M3C1J7W1H9A3R6N4J9L7G8P8,2217892,위원장,전북특별자치도 설치 및 글로벌생명경제도시 조성을 위한 특별법 일부개정법률안(대안),api_text_empty
+22,PRC_R2P4Q1O2P1X9V1V3U3V6T3T4B5A5A3,2213202,의원,공직선거법 일부개정법률안,api_text_empty
+22,PRC_S2S5Q1Z1Z0X4Y1W8X4V1W5E6C7D6B6,2213923,의원,법원조직법 일부개정법률안,api_text_empty
+22,PRC_T2R4Q1P0X1Y0W1V7U3C7C0B2A2Y1U4,2212721,의원,경계선 지능 학생 교육지원에 관한 법률안,api_text_empty
+22,PRC_T2O4P0N8O0M5N1L7L1U7S5S7R0R8Q2,2219696,의원,국민건강증진법 일부개정법률안,api_text_empty
+22,PRC_T2U5B1A2B1Z9Z0Y9Z5U0V5T6S2S6Q3,2215513,의원,전자장치 부착 등에 관한 법률 일부개정법률안,api_text_empty
+22,PRC_U2D6E0X4M1L4V1R1K0Q9L4L9G3M5E4,2218520,위원장,재외동포기본법 일부개정법률안(대안),api_text_empty
+22,PRC_V2B6X0K3Y1L7X1E9P3U8Q0N0U6N8O4,2217880,위원장,강원특별자치도 설치 및 미래산업글로벌도시 조성을 위한 특별법 일부개정법률안(대안),api_text_empty
+22,PRC_V2W5U0T4T2R1S1N3P3N5N3L9K6L9S0,2210086,의원,자동차관리법 일부개정법률안,api_text_empty
+22,PRC_V2U5U0C2C2B4C1A7A3Z8H4H5F7G9F4,2208675,의원,전자금융거래법 일부개정법률안,api_text_empty
+22,PRC_W2C6A0B3A1W9U1T6S3T3B1Z3Y1X2X3,2217651,의원,국가공무원법 일부개정법률안,api_text_empty
+22,PRC_Z2A4V1W2U2V6T1U4S3A5A2Y8Y9X5F4,2207774,의원,소득세법 일부개정법률안,api_text_empty
+22,PRC_Z2Y5W0X3V1V1E0E8C4D6B3A3A5I8J5,2209356,의원,조세특례제한법 일부개정법률안,api_text_empty
+22,PRC_Z2H6G0G2E2F4D0E9A5A3Y5Z0Y9W7W0,2217076,의원,가족친화 사회환경의 조성 촉진에 관한 법률 일부개정법률안,api_text_empty
+22,PRC_Z2E4M1L2M0X4L1X5K2X9U0U2W9X4I8,2207090,위원장,의료기기법 일부개정법률안(대안),api_text_empty
+22,PRC_W2J4G0R7Q1P8Q1G7B4C4K3G4A7L7V6,2202451,위원장,2024년 민생회복지원금 지급을 위한 특별조치법안(대안),api_text_empty

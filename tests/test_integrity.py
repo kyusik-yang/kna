@@ -142,7 +142,9 @@ TABLE_CONTRACTS = {
         "final_status"],
     "vote_events.parquet": [
         "age", "vote_bill_id", "bill_no", "bill_nm", "proc_dt", "vote_type",
-        "master_bill_id", "member_tcnt", "vote_tcnt", "yes", "no", "abstain", "result"],
+        "master_bill_id", "member_tcnt", "vote_tcnt", "yes", "no", "abstain", "result",
+        "source", "vote_event_id", "chair_present", "chair_yes", "chair_no", "chair_abstain",
+        "chair_counts_differ", "correction_note"],
     "alternative_absorption.parquet": [
         "age", "alt_bill_id", "alt_bill_no", "absorbed_bill_id", "absorbed_bill_no",
         "absorbed_proc_rslt"],
@@ -152,7 +154,7 @@ TABLE_CONTRACTS = {
     "roll_calls_all.parquet": [
         "term", "meeting_id", "date", "member_name", "vote", "source", "bill_id",
         "bill_context", "party", "district", "member_id", "vote_event", "agg_total",
-        "agg_yes", "bill_no", "party_api"],
+        "agg_yes", "bill_no", "party_api", "vote_event_id", "member_match"],
     "roll_calls_16_19_experimental.parquet": [
         "term", "meeting_id", "date", "member_name", "vote", "source", "bill_id",
         "bill_context", "party", "district", "member_id", "vote_event", "agg_total",
@@ -178,10 +180,18 @@ def _rc(kdata, columns=None):
 
 
 def test_roll_calls_unique(kdata):
-    rc = _rc(kdata, ["term", "bill_id", "member_id"])
-    assert rc["member_id"].notna().all(), "roll_calls_all has rows without member_id"
-    dup = rc[rc.duplicated(["term", "bill_id", "member_id"], keep=False)]
+    # The API rows (20th-22nd) are unique on (term, bill_id, member_id). The
+    # minutes rows (17th-19th) are keyed on vote_event_id and leave member_id
+    # null where the minutes do not identify a same-name member
+    # (tests/test_minutes_votes.py).
+    rc = _rc(kdata, ["term", "bill_id", "member_id", "vote_event_id", "source"])
+    api = rc[rc["source"] != "minutes_pdf"]
+    assert api["member_id"].notna().all(), "roll_calls_all has API rows without member_id"
+    dup = api[api.duplicated(["term", "bill_id", "member_id"], keep=False)]
     assert dup.empty, f"{len(dup)} rows duplicate (term, bill_id, member_id)"
+    known = rc[rc["member_id"].notna()]
+    dup = known[known.duplicated(["term", "vote_event_id", "member_id"], keep=False)]
+    assert dup.empty, f"{len(dup)} rows duplicate (term, vote_event_id, member_id)"
 
 
 def test_roll_calls_sorted(kdata):
@@ -192,11 +202,16 @@ def test_roll_calls_sorted(kdata):
         "roll_calls_all is not sorted by term, date, bill_id, member_id")
 
 
-def test_roll_calls_cover_20_22_only(kdata):
-    terms = set(_rc(kdata, ["term"])["term"].unique())
-    assert terms <= set(VOTE_AGES), (
-        f"roll_calls_all holds terms {sorted(terms)}; the 16th-19th rows belong in "
+def test_roll_calls_cover_17_22_only(kdata):
+    # 17th-19th from the minutes appendices (source minutes_pdf), 20th-22nd from
+    # the API. The 16th pseudo events belong in roll_calls_16_19_experimental.
+    rc = _rc(kdata, ["term", "source"])
+    terms = set(rc["term"].unique())
+    assert terms <= set(range(17, 23)), (
+        f"roll_calls_all holds terms {sorted(terms)}. The 16th rows belong in "
         "roll_calls_16_19_experimental.parquet")
+    assert set(rc.loc[rc["term"] < 20, "source"]) <= {"minutes_pdf"}
+    assert set(rc.loc[rc["term"] >= 20, "source"]) <= {"api", "likms", "likms_absent"}
 
 
 def _tally_comparison(kdata) -> pd.DataFrame:

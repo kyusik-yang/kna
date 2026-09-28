@@ -2,13 +2,13 @@
 
 | | |
 |---|---|
-| Release | 0.7.0 |
-| Data collected | Mostly on 2026-09-25, from the Open Assembly API (열린국회정보, open.assembly.go.kr). The 20th-21st member-level votes and the 18th and 20th BILLINFODETAIL records are from March 2026 (DATA_AVAILABILITY.md). |
+| Release | 0.8.0 |
+| Data collected | Mostly on 2026-09-25, from the Open Assembly API (열린국회정보, open.assembly.go.kr). The 20th-21st member-level votes and the 18th and 20th BILLINFODETAIL records are from March 2026. The BPMBILLSUMMARY texts, the LIKMS vote pages and the 17th-19th plenary minutes were collected on 2026-09-28 (DATA_AVAILABILITY.md). |
 | Coverage | 17th-22nd National Assembly. The 22nd Assembly is in session. |
 
 This codebook describes every file in the data directory, which is
 `data/processed/` in a repository checkout. Every count and coverage figure
-below was computed from the 0.7.0 files. Corrections to earlier releases are
+below was computed from the 0.8.0 files. Corrections to earlier releases are
 listed in [CORRECTIONS.md](CORRECTIONS.md), and per-assembly coverage and
 known limitations in [DATA_AVAILABILITY.md](DATA_AVAILABILITY.md).
 
@@ -23,8 +23,8 @@ known limitations in [DATA_AVAILABILITY.md](DATA_AVAILABILITY.md).
 5. [Cosponsorship edges](#5-cosponsorship-edges)
 6. [Veto events](#6-veto-events)
 7. [Vote events](#7-vote-events)
-8. [Roll calls, 20th-22nd](#8-roll-calls-20th-22nd)
-9. [Experimental 16th-19th vote rows](#9-experimental-16th-19th-vote-rows)
+8. [Roll calls, 17th-22nd](#8-roll-calls-17th-22nd)
+9. [Experimental 16th vote rows](#9-experimental-16th-vote-rows)
 10. [Ideal points](#10-ideal-points)
 11. [Members](#11-members)
 12. [Committee assignments](#12-committee-assignments)
@@ -47,23 +47,25 @@ known limitations in [DATA_AVAILABILITY.md](DATA_AVAILABILITY.md).
 | `alternative_absorption.parquet` | committee alternative x linked bill | 25,439 | 4 |
 | `cosponsorship_edges.parquet` | bill x member | 1,379,763 | 5 |
 | `veto_events.parquet` | vetoed bill | 47 | 6 |
-| `vote_events.parquet` | plenary tally | 8,611 | 7 |
-| `roll_calls_all.parquet` | member x recorded vote, 20th-22nd | 2,557,618 | 8 |
-| `roll_calls_16_19_experimental.parquet` | parsed text row, 16th-19th | 41,281 | 9 |
-| `ideal_points_wnominate.csv`, `ideal_points_bridged.csv`, `ideal_points_dwnominate.csv` | legislator-term | 940 each | 10 |
+| `vote_events.parquet` | plenary tally (20th-22nd) or recorded vote of the minutes (17th-19th) | 16,465 | 7 |
+| `roll_calls_all.parquet` | member x recorded vote, 17th-22nd | 4,147,402 | 8 |
+| `roll_calls_16_19_experimental.parquet` | parsed text row, 16th only | 923 | 9 |
+| `ideal_points_wnominate.csv`, `ideal_points_bridged.csv`, `ideal_points_dwnominate.csv` | legislator-term | 955 each | 10 |
 | `ideal_points_bridging_params.csv`, `ideal_points_manifest.json`, `ideal_points_sessioninfo.txt`, `dwnominate_fit.rds` | build metadata | | 10 |
 | `ideal_points_archive/v0.6.0_legacy/`, `ideal_points_archive/v20260312_corrected/` | earlier vintages | 936 and 939 per series | 10 |
 | `members_{17..22}.parquet` | member-term | 1,948 | 11 |
 | `committee_assignments.parquet` | member x assembly x committee spell | 13,616 | 12 |
 | `legislator_id_mapping.parquet` | legislator | 1,156 | 13 |
-| `bill_texts_linked.parquet` | bill | 60,925 | 14 |
+| `bill_texts_linked.parquet` | bill | 109,829 | 14 |
 | `hearing_meetings_summary.parquet` | meeting | 16,829 | 15 |
-| `assets_wealth_panel.parquet` | member-year | 2,928 | 16 |
+| `assets_wealth_panel.parquet` | member-year | 3,215 | 16 |
 | `reports/` | build reports | | 17 |
 
-`hearing_meetings_summary.parquet` and `assets_wealth_panel.parquet` are
-carried over unchanged from 0.6.0. `build_all.sh` does not rebuild them.
-`build_hearings_summary.py` reproduces the hearing summary (section 15).
+`hearing_meetings_summary.parquet` is carried over unchanged from 0.6.0, and
+`build_all.sh` does not rebuild it. `build_all.sh` rebuilds
+`assets_wealth_panel.parquet` only when its source files are available
+(section 16) and otherwise carries the shipped file over. Section 17
+describes the build.
 
 ## Conventions
 
@@ -88,7 +90,9 @@ the assembly. Both keys are unique within an assembly.
 **Legislator identifiers.** MONA_CD is an eight-character code of digits and
 capital letters. It is called `mona_cd` in the member tables and `member_id`
 in the roll calls, ideal points and edges. Several legislators share a name
-in the same assembly, so joins must use MONA_CD, never the name.
+in the same assembly, so joins must use MONA_CD, never the name. In the
+17th-19th roll calls `member_id` is null where the minutes print a name that
+two members share and do not say which of them voted (section 8).
 
 **Missing values** are null, except `rgs_conf_nm` in the bill master, which
 holds a single space (`" "`), not an empty string, when a bill has no plenary
@@ -99,7 +103,8 @@ trailing whitespace.
 
 **Dates** are `datetime64` in the bill master, `subcommittee_reviews`,
 `committee_assignments`, `veto_events` and `vote_events`. They are strings in
-the meeting tables (`YYYY-MM-DD`) and in the roll calls (`YYYYMMDD HHMMSS`).
+the meeting tables (`YYYY-MM-DD`) and in the roll calls (`YYYYMMDD HHMMSS` in
+the 20th-22nd, `YYYYMMDD` in the 17th-19th).
 The 17th committee meeting dates contain a few impossible upstream values,
 such as 1905-06-28 and 6006-03-03, which are kept as the API returns them.
 The bill master keeps a few impossible or out-of-term dates too, listed in
@@ -198,12 +203,12 @@ Coverage is the share of rows with a non-null value that is not blank.
 | 37 | `status` | str | 100.0% | 100.0% | 100.0% | 100.0% | 100.0% | 100.0% | 100.0% |
 | 38 | `passed` | int (0/1) | 100.0% | 100.0% | 100.0% | 100.0% | 100.0% | 100.0% | 100.0% |
 | 39 | `enacted` | int (0/1) | 100.0% | 100.0% | 100.0% | 100.0% | 100.0% | 100.0% | 100.0% |
-| 40 | `vote_result_cd` | str | 0.0% | 0.0% | 0.0% | 13.9% | 12.2% | 8.6% | 7.5% |
+| 40 | `vote_result_cd` | str | 25.9% | 17.2% | 16.5% | 13.9% | 12.2% | 8.6% | 14.2% |
 | 41 | `vote_member_total` | float | 0.0% | 0.0% | 0.0% | 13.9% | 12.2% | 8.6% | 7.5% |
-| 42 | `vote_total` | float | 0.0% | 0.0% | 0.0% | 13.9% | 12.2% | 8.6% | 7.5% |
-| 43 | `vote_yes` | float | 0.0% | 0.0% | 0.0% | 13.9% | 12.2% | 8.6% | 7.5% |
-| 44 | `vote_no` | float | 0.0% | 0.0% | 0.0% | 13.9% | 12.2% | 8.6% | 7.5% |
-| 45 | `vote_abstain` | float | 0.0% | 0.0% | 0.0% | 13.9% | 12.2% | 8.6% | 7.5% |
+| 42 | `vote_total` | float | 25.9% | 17.2% | 16.5% | 13.9% | 12.2% | 8.6% | 14.2% |
+| 43 | `vote_yes` | float | 25.9% | 17.2% | 16.5% | 13.9% | 12.2% | 8.6% | 14.2% |
+| 44 | `vote_no` | float | 25.9% | 17.2% | 16.5% | 13.9% | 12.2% | 8.6% | 14.2% |
+| 45 | `vote_abstain` | float | 25.9% | 17.2% | 16.5% | 13.9% | 12.2% | 8.6% | 14.2% |
 | 46 | `prom_no` | str | 22.9% | 15.9% | 14.9% | 12.8% | 11.1% | 7.2% | 12.8% |
 | 47 | `prom_law_nm` | str | 22.4% | 14.4% | 14.1% | 12.2% | 10.4% | 6.8% | 12.1% |
 | 48 | `committee_nm` | str | 97.3% | 96.0% | 98.6% | 98.9% | 98.9% | 98.7% | 98.3% |
@@ -225,7 +230,7 @@ Coverage is the share of rows with a non-null value that is not blank.
 | 64 | `alt_vetoed` | int (0/1) | 100.0% | 100.0% | 100.0% | 100.0% | 100.0% | 100.0% | 100.0% |
 | 65 | `expired_at_term_end` | int (0/1) | 100.0% | 100.0% | 100.0% | 100.0% | 100.0% | 100.0% | 100.0% |
 | 66 | `plenary_decided` | int (0/1) | 100.0% | 100.0% | 100.0% | 100.0% | 100.0% | 100.0% | 100.0% |
-| 67 | `vote_bill_id` | str | 0.0% | 0.0% | 0.0% | 13.9% | 12.2% | 8.6% | 7.5% |
+| 67 | `vote_bill_id` | str | 25.9% | 17.2% | 16.5% | 13.9% | 12.2% | 8.6% | 14.2% |
 
 The veto columns look empty at one decimal. They are filled for the 47 vetoed
 bills, and `revote_rslt` and `revote_dt` for the 37 of them that had a re-vote.
@@ -240,10 +245,11 @@ Source abbreviations used below:
 - JUDGE = BILLJUDGE (심사정보)
 - DETAIL = BILLINFODETAIL (의안상세정보), one call per bill
 - TALLY = ncocpgfiaoituanbr (의안별표결현황), 20th Assembly on
+- MINUTES = the recorded votes of the plenary minutes, 17th-19th, through `vote_events.parquet` (section 7)
 - ALT = TVBPMBILL11, through `alternative_absorption.parquet`
 
 When a field has several sources, the first non-null value in the order given
-is used. Every bill of the 0.7.0 masters has a DETAIL row.
+is used. Every bill of the 0.8.0 masters has a DETAIL row.
 
 #### Identifiers and proposer
 
@@ -342,21 +348,34 @@ Median `days_to_proc` with and without expired bills:
 
 | Variable | Definition |
 |---|---|
-| `vote_result_cd` | Result of the tally. |
-| `vote_member_total` | Members seated (재적) at the vote. |
+| `vote_result_cd` | Result of the tally. 원안가결, 수정가결 or 부결 in the 20th-22nd. 가결 or 부결 as the chair announced it in the 17th-19th. Null for one 18th bill whose vote, 18_34089_006, has no readable announcement (section 7). |
+| `vote_member_total` | Members seated (재적) at the vote. Null in the 17th-19th, whose minutes print no such count. |
 | `vote_total` | Members voting. |
 | `vote_yes`, `vote_no`, `vote_abstain` | 찬성, 반대, 기권. |
-| `vote_bill_id` | BILL_ID of the tally used. |
+| `vote_bill_id` | BILL_ID of the tally used in the 20th-22nd. In the 17th-19th the `vote_event_id` of the vote used. It joins to `vote_events.vote_event_id` in every assembly. |
 
-TALLY begins with the 20th Assembly, so these columns are empty in the
-17th-19th. A bill takes its own tally when one exists. Otherwise it takes a
-floor-amendment tally filed under its bill_no whose name refers to the bill,
-preferring the tally whose result matches the bill's first floor decision,
-then the latest and the largest. `vote_bill_id` differs from `bill_id` for
-40, 38 and 35 bills in the 20th, 21st and 22nd. All tallies, including
-amendment votes and tallies with no bill, are in `vote_events.parquet`. For a
-vetoed bill the columns hold the first passage, because the API publishes no
-tally for any re-vote.
+TALLY begins with the 20th Assembly. For the 17th-19th the columns come from
+the recorded votes of the plenary minutes (section 7). A bill takes the
+latest recorded vote on the bill itself, a repeated vote or a vote to reverse
+a decision (번안) included, and otherwise the latest vote on a floor amendment
+to it. `vote_total`, `vote_yes`, `vote_no` and `vote_abstain` count the names
+the minutes print. Latest is by date and then by order in the minutes. 2,167
+bills of the 17th, 2,539 of the 18th and 3,095 of the 19th have these
+columns. Of these, 25, 29 and 29 take them from a vote on a floor amendment,
+and in the 18th one of the 29 is the repeated vote on the 방송법 amendment of
+2009-07-22. Two bills of the 17th take them from a vote to reverse a
+decision. Every one of these bills has `plenary_decided` = 1. A bill decided
+without a recorded vote, by voice or without objection, keeps the columns
+null.
+
+In the 20th-22nd a bill takes its own tally when one exists. Otherwise it
+takes a floor-amendment tally filed under its bill_no whose name refers to the
+bill, preferring the tally whose result matches the bill's first floor
+decision, then the latest and the largest. `vote_bill_id` differs from
+`bill_id` for 40, 38 and 35 bills in the 20th, 21st and 22nd. All tallies and
+recorded votes, including amendment votes and votes with no bill, are in
+`vote_events.parquet`. For a vetoed bill the columns hold the first passage,
+because the API publishes no tally for any re-vote.
 
 ### 1.4 Vetoed bills
 
@@ -603,6 +622,15 @@ alternatives that themselves expired, and the 74 links with no result come
 from 22nd alternatives that are still pending. These rows are real API links,
 which is why `alt_bill_id` in the master means "linked", not "absorbed".
 
+For 0.8.0 the missing 17th links were searched for in other official sources,
+without result. TVBPMBILL11 called with other parameters and the other bill
+services of the Open Assembly catalog give no further links, and the 대안정보
+tab of LIKMS lists the same bills as the API. The texts of the alternatives
+support an inference that reaches a precision of 99.8% and a recall of 47.7%
+on the linked alternatives and would raise the 17th coverage to 66.7%. Those
+links are not official, and the table does not include them. CORRECTIONS.md,
+entry of 2026-09-28, describes the search and the inference.
+
 ---
 
 ## 5. Cosponsorship edges
@@ -695,110 +723,202 @@ Until its re-vote, the two bills absorbed into it, 2209471 and 2207212, have
 | | |
 |---|---|
 | File | `vote_events.parquet` |
-| Source | TALLY (ncocpgfiaoituanbr), 20th-22nd |
-| Unit | one plenary tally |
+| Source | TALLY (ncocpgfiaoituanbr) for the 20th-22nd. The recorded votes of the plenary minutes appendices for the 17th-19th (`collect_minutes_votes.py`). |
+| Unit | one plenary tally, or one recorded vote of the minutes |
 
 | Column | Type | Definition |
 |---|---|---|
 | `age` | int | Assembly. |
-| `vote_bill_id` | str | BILL_ID of the tally. It joins to `roll_calls_all.bill_id`. |
-| `bill_no`, `bill_nm` | str | Bill number and tally name as the API gives them. |
-| `proc_dt` | date | Date of the vote. |
-| `vote_type` | str | `original` when the tally's BILL_ID is a master bill, `amendment` for a floor amendment (수정안) matched by bill_no and name, `reconsideration` for a re-vote after a veto, `other` for tallies matched to no bill. |
-| `master_bill_id` | str | The master bill the tally belongs to. Null for `other`. |
-| `member_tcnt`, `vote_tcnt`, `yes`, `no`, `abstain` | int | Members seated, votes cast, 찬성, 반대, 기권. |
-| `result` | str | 원안가결, 수정가결 or 부결. |
+| `vote_bill_id` | str | BILL_ID of the tally. In the 17th-19th, the bill voted on, which for an amendment vote is the amended bill. Null for 18 votes of the 17th-19th that concern no bill of the master. It joins to `roll_calls_all.bill_id`. |
+| `bill_no`, `bill_nm` | str | Bill number and tally name as the API gives them. In the 17th-19th, the bill number of `vote_bill_id` and the title printed in the appendix. |
+| `proc_dt` | date | Date of the vote. For the 18 votes of meeting 40341 of the 19th, a sitting that ran from 2016-02-23 to 2016-03-02, it is later than the meeting date. |
+| `vote_type` | str | `original` when the tally's BILL_ID is a master bill, or in the 17th-19th a vote on the bill itself. `amendment` for a floor amendment (수정안), matched by bill_no and name in the 20th-22nd. `reversal` for a vote to reverse a decision (번안) and `revote` for a vote repeated under the same title, both 17th-19th only. `reconsideration` for a re-vote after a veto. `other` for votes linked to no bill. |
+| `master_bill_id` | str | The master bill the vote belongs to. Null for `other`. |
+| `member_tcnt` | int | Members seated. Null in the 17th-19th. |
+| `vote_tcnt`, `yes`, `no`, `abstain` | int | Votes cast, 찬성, 반대, 기권. In the 17th-19th, the names printed in the appendix. |
+| `result` | str | 원안가결, 수정가결 or 부결 in the 20th-22nd. 가결 or 부결 as announced by the chair in the 17th-19th. Null for the 2 votes of the 18th that also lack the chair's counts, 18_33387_002 and 18_34089_006. |
+| `source` | str | `api` for the 20th-22nd, `minutes_pdf` for the 17th-19th. |
+| `vote_event_id` | str | ID of the vote. For `api` rows it equals `vote_bill_id`. For `minutes_pdf` rows it is `{age}_{CONFER_NUM}_{seq}`, the seq-th recorded vote in the appendix of that meeting's minutes. It joins to `roll_calls_all.vote_event_id` and to `master_bills.vote_bill_id`. |
+| `chair_present`, `chair_yes`, `chair_no`, `chair_abstain` | int | The counts the chair announced in the 17th-19th, 재석, 찬성, 반대 and 기권. Null for 2 votes of the 18th, a vote the chair declared void (18_33387_002) and an announcement that names 반대 twice (18_34089_006). Null in the 20th-22nd. |
+| `chair_counts_differ` | bool | True when a count the chair announced differs from the names printed in the appendix. Null where the chair's counts are null, and in the 20th-22nd. |
+| `correction_note` | bool | True when the appendix prints a note with the actual counts, as in '(OOO 의원 표결기 조작 지체. 실제 찬성 의원 214인, 기권 의원 3인임)'. Null in the 20th-22nd. |
 
-| Assembly | original | amendment | other | All |
-|---|---|---|---|---|
-| 20 | 3,436 | 52 | 4 | 3,492 |
-| 21 | 3,228 | 44 | 0 | 3,272 |
-| 22 | 1,812 | 35 | 0 | 1,847 |
-| All | 8,476 | 131 | 4 | 8,611 |
+| Assembly | original | amendment | reversal | revote | other | All |
+|---|---|---|---|---|---|---|
+| 17 | 2,141 | 40 | 2 | 0 | 6 | 2,189 |
+| 18 | 2,510 | 38 | 0 | 1 | 10 | 2,559 |
+| 19 | 3,066 | 38 | 0 | 0 | 2 | 3,106 |
+| 20 | 3,436 | 52 | 0 | 0 | 4 | 3,492 |
+| 21 | 3,228 | 44 | 0 | 0 | 0 | 3,272 |
+| 22 | 1,812 | 35 | 0 | 0 | 0 | 1,847 |
+| All | 16,193 | 247 | 2 | 1 | 22 | 16,465 |
 
 No tally is of type `reconsideration`, because the API publishes none for the
 re-votes. The four `other` tallies of the 20th are petitions whose numbers
 collide with bill numbers. The 20th has 3,492 tallies for 3,491 recorded
 votes because bill 2000491 has two tally rows.
 
+In the 17th-19th the names printed in the appendix are the record, and the
+chair's counts stand beside them. The two agree in 1,999 of the 2,189 votes of
+the 17th, in 2,133 of the 2,557 votes of the 18th with a readable announcement
+and in 2,532 of the 3,106 votes of the 19th. Where they differ, the appendix
+usually prints a correction note whose counts equal the names. This holds for
+189 of the 190 differing votes of the 17th, 409 of 424 in the 18th and 570 of
+574 in the 19th. The 18th repeated vote is the second vote on the 방송법 floor
+amendment of 2009-07-22 (18_33387_003). The chair declared the first vote of
+that pair void for lack of members present (표결 불성립) and announced no
+counts.
+
 ---
 
-## 8. Roll calls, 20th-22nd
+## 8. Roll calls, 17th-22nd
 
 | | |
 |---|---|
 | File | `roll_calls_all.parquet` |
-| Source | nojepdqqaweusdfbi (의원별 표결), 20th-22nd Assemblies |
-| Unit | one member on one recorded vote. The key (term, bill_id, member_id) is unique, and rows are sorted by term, date, bill_id and member_id. |
+| Source | The name lists of the plenary minutes appendices (【전자투표 찬반 의원 성명】) for the 17th-19th, read by `collect_minutes_votes.py`. nojepdqqaweusdfbi (의원별 표결) for the 20th-22nd, with the LIKMS vote pages for the 22nd members the API omits, read by `collect_votes_likms.py`. |
+| Unit | one member on one recorded vote. The key (term, vote_event_id, member_id) is unique over the rows with a member_id, and in the 20th-22nd (term, bill_id, member_id) is unique as well. Rows are sorted by term, date, bill_id, member_id and vote_event_id. |
 
 | Column | Type | Definition |
 |---|---|---|
 | `term` | int | Assembly. |
-| `date` | str | Vote time, `YYYYMMDD HHMMSS`. |
-| `bill_id` | str | BILL_ID of the vote. It joins to `vote_events.vote_bill_id`, and usually to `master_bills.bill_id`. |
+| `date` | str | Vote time, `YYYYMMDD HHMMSS`, in the 20th-22nd. `YYYYMMDD` in the 17th-19th, whose minutes print no vote time. |
+| `bill_id` | str | The bill voted on. It joins to `vote_events.vote_bill_id`, and usually to `master_bills.bill_id`. In the 17th-19th an amendment vote carries the bill it amends, so several votes can share a bill_id, and 18 votes, which are petitions, procedural motions and four repeal bills the master cannot tell apart, have none. Use `vote_event_id` to identify a vote. |
 | `bill_no` | str | Bill number. |
-| `member_id` | str | MONA_CD. |
-| `member_name` | str | Name as the API gives it. |
-| `vote` | str | 찬성, 반대, 기권 or 불참. 불참 means the member did not vote. |
-| `party` | str | Party at election from `members_{term}.party`. For a successor to a proportional seat, the list the seat came from. |
-| `party_api` | str | Party label of the API (POLY_NM). It is the member's party at the time of collection, written onto every past vote, and it changes between collections. The 20th and 21st were collected in March 2026 and the 22nd in September 2026. |
-| `district` | str | District as the API gives it. |
-| `source` | str | Always `api`. |
-| `meeting_id`, `bill_context`, `vote_event`, `agg_total`, `agg_yes` | | Always null. Kept so the schema matches earlier releases. |
+| `vote_event_id` | str | ID of the vote. It equals `bill_id` in the 20th-22nd and is `{term}_{CONFER_NUM}_{seq}` in the 17th-19th. It joins to `vote_events.vote_event_id`. |
+| `member_id` | str | MONA_CD. Null for 1,694 rows of the 18th and 19th whose printed name two members share when the minutes do not say which of them voted. |
+| `member_name` | str | Name as the API gives it, or for `likms` and `likms_absent` rows the name in `members_22`. In the 17th-19th, the name in `members_{term}`, which is the Hangul form for a name printed in Hanja, and the printed name where member_id is null. |
+| `member_match` | str | How the printed name of a 17th-19th row was matched (see below). Null in the 20th-22nd. |
+| `vote` | str | 찬성, 반대, 기권 or 불참. 불참 means the member did not vote. The minutes list only the members who voted, so the 17th-19th have no 불참 rows. |
+| `party` | str | Party at election from `members_{term}.party` in every assembly. For a successor to a proportional seat, the list the seat came from. Null where member_id is null. |
+| `party_api` | str | Party label of the API (POLY_NM). It is the member's party at the time of collection, written onto every past vote, and it changes between collections. The 20th and 21st were collected in March 2026 and the 22nd in September 2026. For `likms` and `likms_absent` rows it is `members_22.party_current`. Null in the 17th-19th. |
+| `district` | str | District as the API gives it in the 20th-22nd, `members_{term}.district` in the 17th-19th. Null where member_id is null. |
+| `source` | str | `minutes_pdf` in the 17th-19th. `api` in the 20th-22nd, and in the 22nd also `likms` for a member on a LIKMS vote list and `likms_absent` for a seated member on no list. |
+| `meeting_id`, `bill_context`, `vote_event` | | The CONFER_NUM of the minutes, the vote title printed in the appendix and the seq of the vote, in the 17th-19th. Null in the 20th-22nd. |
+| `agg_total`, `agg_yes` | | Always null. Kept so the schema matches earlier releases. |
 
-| Assembly | Rows | Votes | Members | First vote | Last vote | 찬성 | 반대 | 기권 | 불참 | Members with `party` ≠ `party_api` |
-|---|---|---|---|---|---|---|---|---|---|---|
-| 20 | 1,036,384 | 3,491 | 320 | 2016-06-09 | 2020-05-20 | 671,536 | 7,315 | 18,792 | 338,741 | 192 |
-| 21 | 976,127 | 3,272 | 322 | 2020-06-08 | 2024-05-28 | 696,559 | 9,667 | 20,663 | 249,238 | 154 |
-| 22 | 545,107 | 1,847 | 305 | 2024-07-04 | 2026-09-17 | 388,329 | 9,726 | 6,340 | 140,712 | 41 |
+| Assembly | Rows | Votes | Members | First vote | Last vote | 찬성 | 반대 | 기권 | 불참 | Rows without member_id | Members with `party` ≠ `party_api` |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| 17 | 440,473 | 2,189 | 322 | 2004-06-05 | 2008-05-22 | 422,408 | 11,471 | 6,594 | 0 | 0 | - |
+| 18 | 500,535 | 2,559 | 328 | 2008-07-16 | 2012-05-02 | 485,355 | 7,541 | 7,639 | 0 | 361 | - |
+| 19 | 644,370 | 3,106 | 331 | 2012-07-09 | 2016-05-19 | 619,568 | 9,312 | 15,490 | 0 | 1,333 | - |
+| 20 | 1,036,384 | 3,491 | 320 | 2016-06-09 | 2020-05-20 | 671,536 | 7,315 | 18,792 | 338,741 | 0 | 192 |
+| 21 | 976,127 | 3,272 | 322 | 2020-06-08 | 2024-05-28 | 696,559 | 9,667 | 20,663 | 249,238 | 0 | 154 |
+| 22 | 549,513 | 1,847 | 321 | 2024-07-04 | 2026-09-17 | 391,339 | 9,919 | 6,432 | 141,823 | 0 | 41 |
+
+Members counts the distinct member_ids. `party_api` is null in the 17th-19th.
+No ideal-point series uses the 17th-19th rows. `build_ideal_points.R` reads
+only the `api`, `likms` and `likms_absent` rows of the 20th-22nd.
+
+### 8.1 The 20th-22nd
 
 The member-level yea, nay and abstain counts equal the official tally for
 every vote of the 20th and 21st, with bill 2000491 matching one of its two
-tally rows. The 22nd has a gap. The live member-level API omits 16 members
-seated during 2026. Votes from 2026-01-15 lack one member, votes from
-2026-06-11 lack 15 and votes from 2026-09-03 lack 16, so 791 of the 1,847
-22nd votes have fewer member rows than the tally's membership count. On 476
-of them the yea, nay and abstain counts differ from the official tally. 475
-of these differences are fully explained by the missing members. The
-remaining one, bill 2215128 on 2026-01-29, also differs by one recorded vote.
-These 16 members have no 22nd roll calls and no 22nd ideal point. The check
-is in `reports/rollcall_tally_check.csv`.
+tally rows. The member-level API omits 16 members seated during 2026 in the
+22nd. They are 이소희, seated on 2026-01-15, the 14 winners of the
+by-elections of 2026-06-11, and 김형연, seated on 2026-09-03. Their rows come
+from the vote page of LIKMS (의안 상세, 표결정보), read by
+`collect_votes_likms.py` on 2026-09-28 for the 791 votes whose API rows fall
+short of the tally's membership count. The page lists the members who voted
+찬성, 반대 and 기권 by name. The names left over after removing the API's
+rows are matched to the one member of `members_22` with that name who has no
+API row on that vote, and become `likms` rows. A seated member on no list
+becomes a `likms_absent` row with vote 불참. The seat dates come from the
+steps in the tally's membership count and from the first list on which each
+member appears. The raw rows are in `data/raw/roll_calls_22_supplement.parquet`,
+3,295 `likms` and 1,111 `likms_absent`.
 
-Four pairs of legislators share a name in these assemblies, 김성태 and 최경환
-in the 20th and 김병욱 and 이수진 in the 21st. The 22nd has two members named
-박지원, and the one seated by a by-election is among the 16 omitted members.
-Use `member_id` for every join.
+With these rows every 22nd vote has as many member rows as the tally's
+membership count. One vote still differs from the official tally, bill
+2215128 of 2026-01-29, whose member rows give 196 찬성, no 반대 and 1 기권
+against 195, 0 and 2 in the tally. The name lists of its LIKMS page give the
+member-level counts, and the counts in the header of the same page give the
+tally's. The check is in `reports/rollcall_tally_check.csv`.
+
+Four pairs of legislators share a name in the 20th and 21st, 김성태 and
+최경환 in the 20th and 김병욱 and 이수진 in the 21st. The 22nd has two members
+named 박지원. 8BF5855P has an API row on every vote, and H7X3372O, seated by
+a by-election, has `likms` and `likms_absent` rows. Use `member_id` for
+every join.
+
+### 8.2 The 17th-19th
+
+The 17th-19th rows come from the minutes PDFs of all 188, 179 and 182
+plenary meetings listed by nzbyfwhwaoanttzje, of which 81, 82 and 78 print a
+roll-call appendix. The names equal the group counts the appendix prints
+(투표/찬성/반대/기권 의원(N인)) in every vote but two. 17_27974_047 prints 207
+찬성 over 206 names, and the chair also announced 206. 18_34052_012 prints the
+176 찬성 of its correction note over the 175 names of the vote record. One
+17th vote, 17_27710_059, prints 원혜영 twice on its 찬성 list, and the repeat
+is dropped. The member-level lists were compared with an independent parse of
+the same minutes prepared for version 10 of kr-hearings-data, which is not
+yet released. They are identical for 1,850 of the 1,861 17th votes both hold,
+all 2,510 18th votes and 3,104 of 3,105 19th votes. Eleven of the twelve
+differences are parse errors on the other side. In seven votes two names are
+read as one, in three a page header, a note or stray text is read as a name,
+and in one a list is cut short by 56 names. The twelfth is the misprinted
+원혜영, which the other parse keeps twice.
+
+`member_match` records how each 17th-19th row was matched:
+
+| Value | Meaning | 17 | 18 | 19 |
+|---|---|---|---|---|
+| `name` | the one member of `members_{term}` with the printed name | 440,467 | 496,235 | 634,476 |
+| `name_spelling` | 유근찬, printed for 류근찬 | 6 | 0 | 0 |
+| `hanja` | a name printed in Hanja, matched on `member_name_hanja` | 0 | 734 | 2,027 |
+| `same_name_seated_alone` | a shared name on a date when only one of the two held the seat | 0 | 2,651 | 4,720 |
+| `same_name_event_hanja` | a shared name in Hangul in a vote that prints the other member in Hanja | 0 | 540 | 1,814 |
+| `same_name_pair_same_vote` | a shared name printed twice in one vote with the same vote | 0 | 14 | 0 |
+| `unresolved_same_name` | a shared name the minutes do not resolve (member_id null) | 0 | 361 | 1,333 |
+
+Two pairs of members share a name in the 18th (김선동, 이영애) and three pairs in the
+19th (권은희, 김영주, 이재영). The minutes print one member of a pair in Hanja
+in some meetings, but not always the same one. For 김선동 it is the member
+seated later (金先東), for 이영애 the one seated first (李玲愛), and the choice
+also varies within a meeting. The seat dates come from the minutes (oath,
+vacancy and succession notices) and are listed in `minutes_votes.py`. Nothing
+else is inferred, so 284 rows of 김선동 and 77 of 이영애 in the 18th and 732 of
+권은희, 474 of 김영주 and 127 of 이재영 in the 19th keep member_id null. They
+count toward the vote totals. For a member-level analysis, treat them as
+missing.
+
+`bill_id` is set for 2,183 of the 2,189 17th votes, 2,549 of the 2,559 18th
+votes and 3,104 of the 3,106 19th votes. The others are 9 petitions (청원), 5
+procedural motions of the 18th (의사일정 상정, 토론종결, 회의 비공개) and 4
+repeal bills that share their title with a second bill in the master, two
+긴급금융조치법 폐지법률안 in the 17th and two 세입보전국채발행에관한건
+폐지법률안 in the 18th. Among the votes on a bill itself, the chair's 가결 or
+부결 agrees with the master's `rgs_conf_rslt` in all 2,141, 2,509 and 3,066
+votes with a result.
 
 ---
 
-## 9. Experimental 16th-19th vote rows
+## 9. Experimental 16th vote rows
 
 | | |
 |---|---|
 | File | `roll_calls_16_19_experimental.parquet` |
 
-These rows are **not a roll-call matrix**. They were parsed from plenary
-speech text and minutes appendices. The appendix parser merged every vote of
-a meeting into one event, the speech-text parser merged them into a few, and
-the consolidation kept one vote per member per event. A row is therefore a
-member's recorded position at some vote of that meeting, not at an
-identifiable vote. No row has a bill_id. `member_id` comes from a name
-match that cannot be reproduced from the repository and that merges
-same-name legislators. Members with two-syllable names are largely missing,
-because the source spaces out the syllables. The file is shipped unchanged
-from 0.6.0 with `quality_flag` = `meeting_level_pseudo_event` and is not an
-input to any ideal-point series. See CORRECTIONS.md (h).
+The file keeps its name, but it now holds only the 16th Assembly, 923 rows
+from 4 meetings merged into 5 events and parsed from plenary speech text.
+These rows are **not a roll-call matrix**. The parser merged the votes of a
+meeting into a few events, and the consolidation kept one vote per member per
+event, so a row is a member's recorded position at some vote of that meeting,
+not at an identifiable vote. No row has a bill_id. `member_id` comes from a
+name match that cannot be reproduced from the repository and that merges
+same-name legislators. The rows keep `quality_flag` =
+`meeting_level_pseudo_event` and are copied unchanged from the previous
+release. The 40,358 pseudo-event rows of the 17th-19th were dropped when the
+roll calls of section 8 replaced them. See CORRECTIONS.md, entries of
+2026-09-26 (h) and 2026-09-28.
 
-The columns are those of `roll_calls_all` without `bill_no` and `party_api`,
-plus `quality_flag`. `date` is `YYYY-MM-DD`, `source` is `inline_text` or
-`pdf_appendix`, and `vote` is 찬성, 반대 or 기권.
+The columns are those of `roll_calls_all` without `bill_no`, `party_api`,
+`vote_event_id` and `member_match`, plus `quality_flag`. `date` is
+`YYYY-MM-DD`, `source` is `inline_text` and `vote` is 찬성, 반대 or 기권.
 
 | Assembly | Rows | Meetings | Events | Members | First date | Last date | Sources |
 |---|---|---|---|---|---|---|---|
 | 16 | 923 | 4 | 5 | 260 | 2003-11-07 | 2004-03-02 | inline_text 923 |
-| 17 | 24,901 | 79 | 108 | 316 | 2004-06-05 | 2008-05-22 | pdf_appendix 18,320, inline_text 6,581 |
-| 18 | 14,210 | 62 | 62 | 320 | 2008-07-16 | 2011-05-04 | pdf_appendix 14,210 |
-| 19 | 1,247 | 5 | 5 | 316 | 2013-04-29 | 2015-06-08 | pdf_appendix 1,247 |
 
 The API has no member-level votes before the 20th Assembly.
 
@@ -822,7 +942,7 @@ The three files share the columns `member_id` (MONA_CD), `member_name`,
 `party`, `party_bloc`, `term` and `vintage`. `ideal_points_wnominate.csv` adds
 `wnom2d_dim1` and `wnom2d_dim2` from a two-dimensional fit, and
 `ideal_points_bridged.csv` keeps `wnom_1d`. There is one row per
-legislator-term, 317, 318 and 305 in the 20th, 21st and 22nd.
+legislator-term, 317, 318 and 320 in the 20th, 21st and 22nd.
 
 **Sign.** Positive is conservative and negative is liberal in every series.
 
@@ -831,15 +951,18 @@ legislator-term, 317, 318 and 305 in the 20th, 21st and 22nd.
 - A vote counts as contested when at least 2.5% of those voting yea or nay are
   in the minority. A legislator is scaled with at least 20 contested yea or
   nay votes.
+- The input is the rows of `roll_calls_all` with source `api`, `likms` or
+  `likms_absent`, which are the 20th-22nd. The 17th-19th rows from the
+  minutes are not used.
 - 찬성 is yea and 반대 is nay. 기권 and 불참 are treated as missing.
 - Input rows are sorted by term, date, bill_id and member_id before the vote
   matrix is built, because W-NOMINATE's output depends on row order.
 - **Polarity anchor.** Every fit is oriented so that 추경호 (G152611B) has a
   positive coordinate on every dimension. He was elected for the conservative
   party in all three assemblies and has enough contested votes in each. His
-  second-dimension coordinate is close to zero in the 21st and 22nd, so the
-  sign of `wnom2d_dim2` in those assemblies rests on a legislator near the
-  middle of that dimension.
+  second-dimension coordinate is close to zero in the 21st, so the sign of
+  `wnom2d_dim2` there rests on a legislator near the middle of that
+  dimension. In the 22nd that dimension is unstable (section 10.5).
 - **Bridging.** `bridged_1d` equals `wnom_1d` in the 20th. The 21st is mapped
   onto the 20th and the 22nd onto the aligned 21st by a least-squares line
   fitted on the legislators serving in both assemblies,
@@ -884,11 +1007,11 @@ default (v20260917) files.
 
 | `party_bloc` | 20th | 21st | 22nd | All |
 |---|---|---|---|---|
-| liberal | 136 | 183 | 179 | 498 |
-| conservative | 124 | 115 | 108 | 347 |
+| liberal | 136 | 183 | 188 | 507 |
+| conservative | 124 | 115 | 113 | 352 |
 | independent | 50 | 9 | 0 | 59 |
 | progressive | 7 | 7 | 1 | 15 |
-| rebuilding | 0 | 0 | 13 | 13 |
+| rebuilding | 0 | 0 | 14 | 14 |
 | liberal_minor | 0 | 4 | 0 | 4 |
 | centrist | 0 | 0 | 4 | 4 |
 
@@ -906,18 +1029,27 @@ session information.
 
 | Series location | Vintage | Votes used | Legislator-terms | Contested votes, 20th / 21st / 22nd |
 |---|---|---|---|---|
-| top level of the data directory | v20260917, the default | through 2026-09-17 | 940 | 269 / 331 / 223 |
+| top level of the data directory | v20260917, the default | through 2026-09-17 | 955 | 269 / 331 / 226 |
 | `ideal_points_archive/v20260312_corrected/` | v20260312 | through 2026-03-12, the vote range of 0.6.0 | 939 | 269 / 331 / 139 |
 | `ideal_points_archive/v0.6.0_legacy/` | none | through 2026-03-12 | 936 | 269 / 332 / 139 |
 
-- **v20260917** is the corrected build on every vote collected by 2026-09-25.
+- **v20260917** is the corrected build on every vote collected by 2026-09-25,
+  with the LIKMS rows of the 22nd collected on 2026-09-28. The vintage names
+  the date of the last vote, so the 0.7.x files, built without the LIKMS
+  rows, carry the same label. The input SHA-256 in the manifest tells them
+  apart, and CORRECTIONS.md, entry of 2026-09-28, compares them. The
+  per-assembly W-NOMINATE values and `bridged_1d` of the 20th and 21st are
+  identical in the two, while the pooled `dwnom_1d` moves slightly in every
+  assembly, because it is estimated on the three assemblies at once.
 - **v20260312** is the corrected build restricted to votes taken by
   2026-03-12, the vote range of 0.6.0. It differs from the legacy files
   through the fixes of CORRECTIONS.md (b) and (c), the explicit row order and
   the named sign anchor, so it separates those fixes from the six months of
   added 22nd votes. The refreshed data add 53 votes of 김준환 dated
   2026-03-12, and a run without them gives byte-identical ideal-point files.
-  Only the manifest differs, in its record of the input and the run time.
+  Only the manifest differs, in its record of the input and the run time. A
+  run on the 0.8.0 roll calls with the same cutoff also gives byte-identical
+  ideal-point files.
 - **v0.6.0_legacy** holds the files shipped in 0.6.0, byte for byte. They use
   the API party labels, have no `vintage` column and no manifest, and their
   `dwnominate_fit.rds` carries wrong party codes for most 21st and 22nd
@@ -926,7 +1058,7 @@ session information.
 | Vintage | Term | Bridging legislators | Slope | Intercept | R² |
 |---|---|---|---|---|---|
 | v20260917 | 21 onto 20 | 126 | 0.8985 | -0.0230 | 0.904 |
-| v20260917 | 22 onto 21 | 151 | 0.7065 | -0.0307 | 0.950 |
+| v20260917 | 22 onto 21 | 156 | 0.7661 | -0.0525 | 0.951 |
 | v20260312 | 21 onto 20 | 126 | 0.8985 | -0.0230 | 0.904 |
 | v20260312 | 22 onto 21 | 151 | 0.6523 | -0.0396 | 0.947 |
 | v0.6.0 legacy | 21 onto 20 | 126 | 0.8901 | -0.0178 | 0.904 |
@@ -940,12 +1072,13 @@ Assemblies in the default vintage:
 
 | Series | Distance | Within-bloc SD | Ratio | Growth of the distance, 20th to 22nd |
 |---|---|---|---|---|
-| `wnom_1d` | 0.818 / 0.931 / 1.145 | 0.158 / 0.132 / 0.111 | 5.18 / 7.04 / 10.35 | +40.1% |
-| `bridged_1d` | 0.818 / 0.836 / 0.809 | 0.158 / 0.119 / 0.078 | 5.18 / 7.04 / 10.35 | -1.0% |
-| `dwnom_1d` | 0.781 / 0.825 / 0.846 | 0.109 / 0.115 / 0.123 | 7.14 / 7.18 / 6.90 | +8.4% |
+| `wnom_1d` | 0.818 / 0.931 / 1.068 | 0.158 / 0.132 / 0.107 | 5.18 / 7.04 / 10.01 | +30.6% |
+| `bridged_1d` | 0.818 / 0.836 / 0.818 | 0.158 / 0.119 / 0.082 | 5.18 / 7.04 / 10.01 | +0.1% |
+| `dwnom_1d` | 0.762 / 0.809 / 0.834 | 0.109 / 0.114 / 0.123 | 7.00 / 7.11 / 6.80 | +9.5% |
 
-CORRECTIONS.md (c) gives the same table for the other vintages and for the
-0.6.0 labels.
+CORRECTIONS.md gives the same table for the 0.7.x files of this vintage in
+the entry of 2026-09-28, and for the other vintages and the 0.6.0 labels in
+the entry of 2026-09-26, (c).
 
 A scaling model fixes its unit from the recovered configuration, so what a
 per-assembly fit identifies is the ratio of the distance between parties to
@@ -961,10 +1094,23 @@ treat the growth in the per-assembly series as an upper bound.
 
 ### 10.5 Limits
 
-- The series cover the 20th-22nd only, because the API has member-level votes
-  from the 20th on. The 16th-19th rows of section 9 cannot be scaled.
-- The 22nd is in session and its values are provisional. The 16 members
-  omitted by the vote API have no 22nd ideal point.
+- The series cover the 20th-22nd only. The 17th-19th roll calls of section 8
+  are not scaled, and the 16th rows of section 9 cannot be.
+- The 22nd is in session and its values are provisional. 한동훈 (5DC8083A),
+  seated on 2026-06-11, has 12 contested yea or nay votes and no 22nd ideal
+  point. The other 15 members that the vote API omits are scaled from their
+  LIKMS rows.
+- The second dimension of the 22nd two-dimensional fit, `wnom2d_dim2`, is
+  unstable. Adding the LIKMS rows in 0.8.0 changed it so much that it
+  correlates at -0.354 with the 0.7.x values over the 305 legislators in both,
+  and the mean of the 개혁신당 members moved from 0.92 to -0.94. The first
+  dimension correlates at 0.9997. Do not use the 22nd `wnom2d_dim2`.
+- The LIKMS rows also move the 22nd `bridged_1d`. The line that maps the
+  22nd onto the 21st now rests on 156 bridging legislators instead of 151,
+  and its slope rose from 0.7065 to 0.7661, so the 305 legislators in both
+  releases shift by up to 0.081. Their values correlate at 0.99978 with
+  0.7.x. The pooled `dwnom_1d` shifts by up to 0.045, 0.055 and 0.031 in the
+  20th, 21st and 22nd.
 - Party switches within a term are not observed. `party` is fixed per term.
 
 `dw_ideal_points_20_22.csv`, which earlier releases labeled DW-NOMINATE, is
@@ -998,7 +1144,7 @@ the opposite sign. See CORRECTIONS.md, entries of 2026-07-18 and 2026-09-26.
 | `district` | str | Electoral district from the official per-assembly roster when it has the member, otherwise from ALLNAMEMBER or, for serving 22nd members, from the current-member endpoint. 비례대표 for proportional seats. |
 | `election_type` | str | 지역구 or 비례대표. |
 | `committee` | str | Committees of the member's dated assignment spells in this assembly, comma-joined in order of first appearance (section 12). |
-| `committee_source` | str | `assignment_history` when `committee` comes from the dated spells, `allnamember` when it comes from an era-aligned ALLNAMEMBER string. Every row of 0.7.0 is `assignment_history`. |
+| `committee_source` | str | `assignment_history` when `committee` comes from the dated spells, `allnamember` when it comes from an era-aligned ALLNAMEMBER string. Every row of 0.8.0 is `assignment_history`. |
 | `is_current` | bool | True for members serving at the snapshot, 22nd only. |
 | `snapshot_date` | str | Collection date, 2026-09-25. |
 
@@ -1057,14 +1203,20 @@ every member in npffdutiapkzbfyvr and nwvrqwxyaytdsfvhu, BIRDY_DIV_CD says 양
 where they say 음 and 음 where they say 양. `birth_calendar` therefore comes
 from the roster endpoints, which cover every member of the 17th-22nd. The
 build falls back to the inverted BIRDY_DIV_CD only for a member missing from
-both, and no member of 0.7.0 is. Across the 1,948 member-terms,
+both, and no member of 0.8.0 is. Across the 1,948 member-terms,
 `birth_calendar` is 양 for 1,380 and 음 for 568.
 
 District strings are not normalized. The 17th uses full province names, such
 as 서울특별시, for 162 members and short names for the others. Three 17th
-proportional members have strings like `비례(한) 비례(한나라당)`. The 20th
-members 신용현 and 권미혁 have district 비례대표 with election type 지역구,
-as upstream, and the 22nd members 손솔 and 최혁진 have an empty district.
+proportional members have strings like `비례(한) 비례(한나라당)`. Since 0.7.1
+three consistency rules apply after parsing. A district recorded as 비례대표 is
+a proportional seat, so 신용현 and 권미혁 in the 20th, whom the official roster
+lists as 지역구, have election type 비례대표. A proportional member with no
+district string, 손솔 and 최혁진 in the 22nd, has district 비례대표. A 22nd
+district that the serving-member endpoint renamed with the 2026
+전남광주통합특별시 prefix is mapped back to the name used at election, taken
+from the rosters of earlier assemblies, so 박지원 (8BF5855P) has 전남
+해남군완도군진도군.
 
 Names shared by two members of the same assembly are 김선동 and 이영애 in the
 18th, 김영주, 권은희 and 이재영 in the 19th, 김성태 and 최경환 in the 20th,
@@ -1119,9 +1271,9 @@ members (위원장, 간사) are not identified.
 |---|---|---|
 | `mona_cd`, `member_name` | str | MONA_CD and name. Every `mona_cd` matches `^[0-9A-Z]{8}$`. |
 | `terms` | str | Assemblies served among the 17th-22nd, comma-joined. |
-| `in_ideal_points` | bool | In `ideal_points_bridged.csv`. 654 legislators. |
-| `in_dw_nominate` | bool | Deprecated alias of `in_ideal_points`, kept for 0.7.0 only. The old name repeated the retracted DW-NOMINATE label, and it will be removed in the next release. |
-| `in_roll_calls` | bool | In `roll_calls_all.parquet`. 661. |
+| `in_ideal_points` | bool | In `ideal_points_bridged.csv`. 664 legislators. |
+| `in_dw_nominate` | bool | Deprecated alias of `in_ideal_points`, still present in 0.8.0. The old name repeated the retracted DW-NOMINATE label, and it will be removed in a later release. |
+| `in_roll_calls` | bool | With a member_id in `roll_calls_all.parquet`, 17th-22nd. 1,152. |
 | `in_bill_masters` | bool | Lead proposer of at least one bill in the masters. 1,140. |
 | `in_mp_metadata` | bool | In the external legislator metadata table that `link_external.py` reads from the directory in `KNA_WITNESSES_DIR`. 1,145. Null when that variable is not set at build time. |
 | `in_assembly_bills` | bool | In the proposer table of the korean-assembly-bills dataset. 661. |
@@ -1137,20 +1289,44 @@ Assembly are not in the map.
 | | |
 |---|---|
 | File | `bill_texts_linked.parquet` |
-| Source | the korean-assembly-bills dataset, which scraped the 제안이유 of member bills from LIKMS |
-| Unit | one bill |
+| Sources | the korean-assembly-bills dataset, which scraped the 제안이유 of 20th-22nd member law bills from LIKMS, and BPMBILLSUMMARY (법률안 제안이유 및 주요내용), collected on 2026-09-28 by `collect_structure.py summaries` for every law bill without a scraped text |
+| Unit | one bill, law bills of the 17th-22nd |
 
 | Column | Type | Definition |
 |---|---|---|
 | `BILL_ID` | str | Bill ID. The Python API lowercases the column names. |
-| `propose_reason` | str | Text of 제안이유 및 주요내용. |
-| `scrape_status` | str | `ok` for 60,546 rows, `no_csrf` 305, `empty` 73, `error` 1. Only `ok` rows have text. |
+| `propose_reason` | str | Text of 제안이유 및 주요내용. Null in the 72 scraped rows whose scrape failed and that the API does not fill. |
+| `scrape_status` | str | Result of the LIKMS scrape. `ok` for 60,546 rows, `no_csrf` 305, `empty` 73 and `error` 1. It keeps the scrape's own result also in the 307 rows whose text now comes from BPMBILLSUMMARY, 304 `no_csrf`, 2 `empty` and 1 `error`. Null for the 48,904 rows the scrape never covered. |
+| `age` | int | Assembly, from the master. Null for one row, see below. |
+| `bill_no` | str | Bill number, from the master. Null for the same row. |
+| `source` | str | `likms_scrape` for the 60,618 rows whose text, or missing text, comes from the scrape. `BPMBILLSUMMARY` for the 49,211 rows whose text comes from the API. |
 
-The texts cover member law bills of the 20th, 21st and 22nd only. The 22nd
-stops with the bills proposed by 2026-02-27, the date of that dataset's
-snapshot, so 15,675 of the 19,651 22nd member law bills have a row. One row
-carries the old BILL_ID of bill 2203215, which was re-keyed upstream, and
-does not join to the master.
+`link_external.py texts` keeps every scraped row and its text unchanged,
+fills the scraped rows without a text from the API where it can, and adds a
+row for every other law bill with an API text. A BPMBILLSUMMARY answer lists
+every record that shares the bill number, so the texts are matched on
+BILL_ID. The API texts keep the heading the document starts with, such as
+제안이유 및 주요내용 or ■ 대안의 제안경위, which the scraped texts lack. On 300
+scraped bills drawn at random, 100 from each of the 20th-22nd, the two texts
+are identical once that heading and all whitespace are removed.
+
+| Assembly | Law bills | With a text | Share | Scraped text | BPMBILLSUMMARY text | Without a text |
+|---|---|---|---|---|---|---|
+| 17 | 7,489 | 7,486 | 99.96% | 0 | 7,486 | 3 |
+| 18 | 13,913 | 13,584 | 97.64% | 0 | 13,584 | 329 |
+| 19 | 17,822 | 17,822 | 100.00% | 0 | 17,822 | 0 |
+| 20 | 24,141 | 24,109 | 99.87% | 21,592 | 2,517 | 32 |
+| 21 | 25,858 | 25,787 | 99.73% | 23,314 | 2,473 | 71 |
+| 22 | 21,022 | 20,968 | 99.74% | 15,639 | 5,329 | 54 |
+| All | 110,245 | 109,756 | 99.56% | 60,545 | 49,211 | 489 |
+
+For the 489 law bills without a text the API returns a record whose text is
+empty. 328 of them are government bills of the 18th.
+`reports/bill_texts_missing.csv` lists them, and
+`reports/bill_texts_coverage.csv` gives the table by proposer kind as well.
+Every row but one joins to a law bill of the masters. That row carries the old
+BILL_ID of bill 2203215, which was re-keyed upstream, and keeps `age` and
+`bill_no` null.
 
 ---
 
@@ -1209,19 +1385,21 @@ v10 build keeps the eight columns and their types, with these changes.
 
 | | |
 |---|---|
-| File | `assets_wealth_panel.parquet`, carried over from 0.6.0 |
-| Source | asset disclosure data published by OpenWatch under CC BY-SA 4.0 (see README.md, License) |
+| File | `assets_wealth_panel.parquet`, built by `build_assets.py` |
+| Sources | wealth_year 2015-2024: the item-level asset disclosure data of the March regular disclosures 2016-2025 published by OpenWatch under CC BY-SA 4.0. wealth_year 2025: the official 국회공보 제2026-54호 of 2026-03-26, which prints the March 2026 regular disclosure (국회공직자윤리위원회공고 제2026-3호). See README.md, License. |
 | Unit | one member in one disclosure year |
 
-The panel has 2,928 rows for 772 members, with `wealth_year` from 2015 to 2024.
-Amounts are in thousands of won.
+The panel has 3,215 rows for 776 members, with `wealth_year` from 2015 to
+2025. `wealth_year` is the year the wealth refers to, so the disclosure of
+March 2026 gives wealth_year 2025. `assembly` is the assembly in session at
+that disclosure. Amounts are in thousands of won, as printed.
 
 | Assembly | Rows | `wealth_year` |
 |---|---|---|
 | 19 | 290 | 2015 |
 | 20 | 1,164 | 2016-2019 |
 | 21 | 1,175 | 2020-2023 |
-| 22 | 299 | 2024 |
+| 22 | 586 | 2024-2025 |
 
 The columns are `mona_cd`, `wealth_year`, `member_name`, `assembly`, the totals
 `total_assets`, `total_debt`, `net_worth`, `total_building`, `total_land`,
@@ -1230,13 +1408,46 @@ apartments, indicators for real estate in Seoul and Gangnam, `political_fund`,
 logged and quantile versions of the main totals, and `re_share`, which equals
 `total_realestate` divided by `total_assets`.
 
+The 2015-2024 rows are built from the OpenWatch item files and equal the
+panel shipped up to 0.7.1 in every row and column. The 2025 rows are parsed
+from the 국회공보 PDF, whose members are matched to their MONA_CD by name
+through `members_22`. The parsed items add up to all 2,323 printed category
+subtotals and the subtotals to all 330 printed totals, and the build stops
+otherwise. The same parser, applied to the March 2025 issue, reproduces all
+299 member-years of wealth_year 2024 that the OpenWatch files give. The
+quantile columns `total_realestate_q`, `total_assets_q` and `net_worth_q`
+use the cut points of the pooled 2015-2024 rows, and later years are binned
+with the same cut points.
+
+The 2026 notice lists 287 members, 275 of whom were serving at the member
+snapshot of 2026-09-25. Seven serving members with a 2024 row are not in
+it. They are 정동영, 김윤덕, 윤호중, 김민석, 안규백, 정성호 and 김성환, and the
+reason has not been verified. The members seated in 2026 have no 2025 row
+either.
+`reports/assets_member_check.csv` lists every 22nd member with the 2024 and
+2025 totals.
+
 ---
 
 ## 17. Build reports
 
-`build_all.sh` writes validation reports to `reports/` in the output
-directory. The 0.7.0 `reports/` directory holds the five reports below and
-nothing else.
+`build_all.sh` rebuilds every table from `data/raw/` without API calls and
+writes validation reports to `reports/` in the output directory. It runs
+`collect_members.py --build-only`, `integrate.py`, `consolidate_votes.py`,
+`build_ideal_points.R`, `build_structure.py`, `link_external.py texts` and
+`link_external.py idmap`, and `build_assets.py build` when `KNA_ASSETS_DIR`
+is set. The 17th-19th roll calls enter through the tables that
+`collect_minutes_votes.py` writes to `data/raw/`, so the build itself needs
+neither the minutes PDFs nor a PDF library. README.md lists the inputs that
+come from outside `data/raw/`.
+
+`refresh_22.sh` refreshes the ongoing 22nd Assembly. It collects the 22nd
+again from the API, including the LIKMS vote pages and the BPMBILLSUMMARY
+texts, runs `build_all.sh` into a staging directory, `data/_build` by default,
+runs the test suite against it and writes a comparison with
+`data/processed/` to `logs/`. It promotes nothing to `data/processed/`.
+
+The 0.8.0 `reports/` directory holds the nine reports below and nothing else.
 
 | Report | Written by | Content |
 |---|---|---|
@@ -1244,4 +1455,8 @@ nothing else.
 | `rollcall_tally_check.csv` | `consolidate_votes.py` | Member-level counts of every 20th-22nd vote against the official tally, with an explanation of each difference. |
 | `alternative_absorption_coverage.csv` | `build_structure.py` | Alternatives queried and linked, and the share of 대안반영폐기 bills linked, per assembly. |
 | `cosponsorship_mismatch.csv` | `build_structure.py` | Bills whose edges differ from their proposer text. |
-| `cosponsorship_degree_change.csv` | `build_structure.py` | Degree of each 20th-22nd member-term in the earlier and the rebuilt edge file, overall and on the bills the earlier file had truncated. |
+| `cosponsorship_degree_change.csv` | `build_structure.py` | Degree of each 20th-22nd member-term in the earlier and the rebuilt edge file, overall and on the bills the earlier file had truncated. It is written only when the earlier edge file is available, so the file is the one of the 0.7.0 build. The edges have not changed since. |
+| `bill_texts_coverage.csv` | `link_external.py texts` | Law bills with a text by assembly and proposer kind, split by source. |
+| `bill_texts_missing.csv` | `link_external.py texts` | Every law bill without a text, with the reason. |
+| `assets_compare.csv` | `build_assets.py build --compare` | Rows and cells of the asset panel, previous against new build. |
+| `assets_member_check.csv` | `build_assets.py build` | Every 22nd member with the 2024 and 2025 totals and whether the prior-year total printed in the 2026 notice equals the 2024 net worth. |

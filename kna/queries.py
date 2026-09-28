@@ -102,7 +102,7 @@ def db_info(db: BillDB) -> dict:
         ("Subcommittee", "subcommittee_reviews.parquet", "17-22nd, 소위 referrals/reviews"),
         ("Alt. absorption", "alternative_absorption.parquet", "17-22nd, 대안 -> absorbed bills"),
         ("Committee spells", "committee_assignments.parquet", "dated committee assignments"),
-        ("Vote tallies", "vote_events.parquet", "20-22nd, plenary tallies"),
+        ("Vote events", "vote_events.parquet", "17-22nd, tallies and minutes votes"),
         ("Veto events", "veto_events.parquet", "17-22nd, 재의요구"),
     ]
     extra = [(label, _nrows(d / f), note) for label, f, note in tables if (d / f).exists()]
