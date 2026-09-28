@@ -942,12 +942,12 @@ footer a {
             <div class="schema-card schema-satellite">
                 <div class="schema-icon">&#128499;</div>
                 <div class="schema-name">vote_events</div>
-                <div class="schema-desc">본회의 표결 집계 (20-22대)</div>
+                <div class="schema-desc">본회의 표결 집계 (17-22대)</div>
                 <div class="schema-meta">1 row = 1 표결</div>
                 <div class="schema-cols">
                     vote_bill_id, master_bill_id, vote_type, yes, no, abstain
                 </div>
-                <div class="schema-stat">8,611 rows</div>
+                <div class="schema-stat">16,465 rows</div>
             </div>
         </div>
     </div>
@@ -1132,7 +1132,7 @@ footer a {
             대수별 마스터 데이터 구축 수준을 정리합니다.
             17-22대 모두 열린국회정보 API를 결합한 Full Master이며,
             공포 건수·소관위 처리·처리 소요일 등 법안 생애주기 전체를 포함합니다.
-            표결 데이터(건별 찬반)는 20-22대에서 API로 제공됩니다.
+            표결 데이터(건별 찬반)는 20-22대는 API에서, 17-19대는 본회의 회의록 부록의 명단에서 구축했습니다.
         </p>
     </div>
 
@@ -1149,8 +1149,8 @@ footer a {
   <td><strong>17대</strong></td>
   <td>8,368</td>
   <td><span class="badge badge-full">Full Master</span></td>
-  <td>-</td>
-  <td>-</td>
+  <td>O</td>
+  <td>2,167</td>
   <td>O</td>
   <td>1,913</td>
   <td>5,728</td>
@@ -1159,8 +1159,8 @@ footer a {
   <td><strong>18대</strong></td>
   <td>14,762</td>
   <td><span class="badge badge-full">Full Master</span></td>
-  <td>-</td>
-  <td>-</td>
+  <td>O</td>
+  <td>2,539</td>
   <td>O</td>
   <td>2,353</td>
   <td>11,191</td>
@@ -1169,8 +1169,8 @@ footer a {
   <td><strong>19대</strong></td>
   <td>18,735</td>
   <td><span class="badge badge-full">Full Master</span></td>
-  <td>-</td>
-  <td>-</td>
+  <td>O</td>
+  <td>3,095</td>
   <td>O</td>
   <td>2,793</td>
   <td>15,444</td>
@@ -1210,12 +1210,12 @@ footer a {
     <div class="narrative" style="margin-top:24px;">
         <strong>갱신 안내:</strong>
         22대 데이터는 현재 진행 중인 회기이므로 주기적으로 갱신됩니다. 이번 판은 2026-09-23까지 발의된 법안을 포함합니다.
-        16-19대 의원별 표결 기록 41,281행은 회의록에서 추출한 실험적 자료입니다. 한 회의의 여러 표결이 하나로 합쳐지는 한계가 있어 roll_calls_16_19_experimental.parquet에 따로 담았고, 이념점수 추정에는 쓰지 않습니다.
+        16대 의원별 표결 기록 923행은 회의록에서 추출한 실험적 자료입니다. 17-19대 표결은 회의록 PDF 부록의 명단에서 표결 단위로 재구축해 roll_calls_all에 들어 있습니다. 16대는 한 회의의 여러 표결이 하나로 합쳐지는 한계가 있어 roll_calls_16_19_experimental.parquet에 따로 담았고, 이념점수 추정에는 쓰지 않습니다.
     </div>
 
     <div class="narrative">
         <strong>데이터 한계:</strong>
-        <ul style="margin:8px 0 0 20px;"><li>22대 의원별 표결은 2026년 9월 17일까지 수집했습니다. 의원별 표결 API에는 22대 재직 의원 321명 중 16명의 기록이 없어 이들은 22대 이념점수가 없습니다. 22대 표결 1,847건 중 476건은 의원별 찬성·반대·기권 수가 공식 집계와 다릅니다. 그중 475건은 세 수가 모두 공식 집계 이하여서 빠진 기록으로 설명됩니다. 나머지 1건은 기록된 표 가운데 공식 집계와 다른 것이 있습니다.</li><li>대안반영폐기 법안을 흡수한 대안에 연결하는 비율은 17대가 57.5%로, 18-22대의 99.3% 이상보다 낮습니다. 17대의 숫자형 의안 ID 대안은 공식 API가 흡수 법안 목록을 거의 돌려주지 않기 때문입니다.</li><li>의원이 발의한 결의안 등 법률안 외 의안 2,032건은 제안자 목록이 없어 공동발의 edge가 없습니다.</li><li>제안이유 텍스트는 외부 저장소의 스냅샷에서 가져옵니다. 텍스트가 있는 가장 최근 법안은 2026-02-27에 발의되었고, 그 뒤에 발의된 법안은 텍스트가 없습니다.</li></ul>
+        <ul style="margin:8px 0 0 20px;"><li>22대 의원별 표결은 2026년 9월 17일까지 수집했습니다. 의원별 표결 API가 빠뜨린 2026년 재직 의원의 표결 4,406행은 의안정보시스템의 표결 페이지에서 보완했습니다. 22대 표결 1,847건 중 1건만 의원별 찬성·반대·기권 수가 공식 집계와 다르며, 그 표결은 공식 페이지에서도 명단과 집계가 다릅니다.</li><li>대안반영폐기 법안을 흡수한 대안에 연결하는 비율은 17대가 57.5%로, 18-22대의 99.3% 이상보다 낮습니다. 17대의 숫자형 의안 ID 대안은 공식 API가 흡수 법안 목록을 거의 돌려주지 않기 때문입니다.</li><li>의원이 발의한 결의안 등 법률안 외 의안 2,032건은 제안자 목록이 없어 공동발의 edge가 없습니다.</li><li>제안이유 텍스트는 의안정보시스템에서 수집한 텍스트와 공식 API의 제안이유 및 주요내용을 합친 것입니다. 텍스트가 있는 가장 최근 법안은 2026-09-23에 발의되었습니다. API가 빈 텍스트를 돌려주는 법률안은 텍스트가 없습니다.</li></ul>
     </div>
 </div>
 
@@ -1593,7 +1593,7 @@ etable(m1, m2, se = "hetero",
     <p>
         Korean National Assembly Database &middot;
         Data source: <a href="https://open.assembly.go.kr" target="_blank">열린국회정보 Open API</a> &middot;
-        Built 2026-09-26
+        Built 2026-09-28
     </p>
 </footer>
 

@@ -11,7 +11,9 @@ One builder for all assemblies. Per assembly it writes
   master_bills_22.sqlite            bills + meeting tables (22nd only)
 and across assemblies
   veto_events.parquet               one row per presidential reconsideration request
-  vote_events.parquet               every plenary tally (20th-22nd) with its vote type
+  vote_events.parquet               every plenary tally (20th-22nd, source 'api') and every
+                                    recorded vote of the minutes appendices (17th-19th,
+                                    source 'minutes_pdf') with its vote type
 
 Universe: BILLRCP (ERACO filter) + member bills (nzmimeepazxkubdpn) + processed
 bills (nzpltgfqabtcpsmai). A vetoed bill appears under two BILL_IDs that share
@@ -136,7 +138,10 @@ VETO_EVENT_COLS = [
 VOTE_EVENT_COLS = [
     "age", "vote_bill_id", "bill_no", "bill_nm", "proc_dt", "vote_type",
     "master_bill_id", "member_tcnt", "vote_tcnt", "yes", "no", "abstain", "result",
+    "source", "vote_event_id", "chair_present", "chair_yes", "chair_no", "chair_abstain",
+    "chair_counts_differ", "correction_note",
 ]
+MINUTES_EVENTS = "minutes_vote_events_{age}.parquet"   # collect_minutes_votes.py
 
 # ── Result vocabularies ────────────────────────────────────────────────────
 
@@ -563,6 +568,69 @@ def match_tallies(master: pd.DataFrame, veto: pd.DataFrame, folded: dict, age: i
     return votes, events
 
 
+def minutes_vote_events(master: pd.DataFrame, age: int) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """17th-19th: recorded votes from the plenary minutes appendices.
+
+    data/raw/minutes_vote_events_{age}.parquet (collect_minutes_votes.py) has
+    one row per recorded vote, linked to master bills where the title allows.
+    Its counts are the names printed in the appendix, and the chair's
+    announced counts are kept beside them. The minutes print no membership count, so
+    member_tcnt is null, and result is the chair's 가결 or 부결.
+
+    The master's vote_* columns take one vote per bill: the latest vote on
+    the bill itself (vote_on 'bill' or 'reversal', including a repeated
+    vote), else the latest vote on a floor amendment to it. Latest is by date
+    and then by order in the minutes. vote_bill_id holds that vote's
+    vote_event_id, and vote_member_total stays null.
+    """
+    ev = pd.read_parquet(RAW_DIR / MINUTES_EVENTS.format(age=age))
+    stray = ev["bill_id"].notna() & ~ev["bill_id"].isin(master["bill_id"])
+    if stray.any():
+        log.warning(f"  {int(stray.sum())} minutes votes link to bills missing from the master: "
+                    f"{ev.loc[stray, 'bill_id'].unique()[:5].tolist()}")
+    linked = ev["bill_id"].where(~stray)
+    events = pd.DataFrame({
+        "age": age,
+        "vote_bill_id": linked,
+        "bill_no": ev["bill_no"].where(~stray),
+        "bill_nm": ev["title"],
+        "proc_dt": pd.to_datetime(ev["date"]),
+        "vote_type": ev["vote_type"],
+        "master_bill_id": linked,
+        "member_tcnt": pd.array([pd.NA] * len(ev), dtype="Int64"),
+        "vote_tcnt": ev["names_total"],
+        "yes": ev["names_yes"],
+        "no": ev["names_no"],
+        "abstain": ev["names_abstain"],
+        "result": ev["chair_result"],
+        "source": "minutes_pdf",
+        "vote_event_id": ev["vote_event_id"],
+        "chair_present": ev["chair_present"].astype("Int64"),
+        "chair_yes": ev["chair_yes"].astype("Int64"),
+        "chair_no": ev["chair_no"].astype("Int64"),
+        "chair_abstain": ev["chair_abstain"].astype("Int64"),
+        "chair_counts_differ": ev["chair_counts_differ"],
+        "correction_note": ev["correction_note"],
+    })
+    c = ev[linked.notna()].copy()
+    c["_own"] = c["vote_on"].isin(["bill", "reversal"])
+    c = c.sort_values(["bill_id", "_own", "date", "confer_num", "event_seq"], kind="mergesort")
+    chosen = c.drop_duplicates("bill_id", keep="last").set_index("bill_id")
+    votes = pd.DataFrame({
+        "vote_result_cd": chosen["chair_result"],
+        "vote_member_total": float("nan"),
+        "vote_total": chosen["names_total"].astype("float64"),
+        "vote_yes": chosen["names_yes"].astype("float64"),
+        "vote_no": chosen["names_no"].astype("float64"),
+        "vote_abstain": chosen["names_abstain"].astype("float64"),
+        "vote_bill_id": chosen["vote_event_id"],
+    }, index=chosen.index)
+    log.info(f"  Minutes votes: {len(ev):,} ({ev['vote_type'].value_counts().to_dict()}), "
+             f"{len(chosen):,} bills take their vote_* columns from them "
+             f"({int((~chosen['_own']).sum()):,} from an amendment vote)")
+    return votes, events
+
+
 # ── Step 6: alternative absorption ─────────────────────────────────────────
 
 def attach_alternatives(master: pd.DataFrame, folded: dict, age: int) -> pd.Series:
@@ -708,6 +776,14 @@ def build_master(age: int) -> dict:
     # ── Step 5: votes ───────────────────────────────────────────────────
     log.info("\n[Step 5] Plenary tallies")
     votes, vote_events = match_tallies(master, veto, folded, age)
+    if vote_events.empty and (RAW_DIR / MINUTES_EVENTS.format(age=age)).exists():
+        votes, vote_events = minutes_vote_events(master, age)
+    else:
+        vote_events = vote_events.assign(source="api", vote_event_id=vote_events["vote_bill_id"])
+        for col in ["chair_present", "chair_yes", "chair_no", "chair_abstain"]:
+            vote_events[col] = pd.array([pd.NA] * len(vote_events), dtype="Int64")
+        for col in ["chair_counts_differ", "correction_note"]:
+            vote_events[col] = pd.array([pd.NA] * len(vote_events), dtype="boolean")
     for col in list(VOTE_COLS.values()) + ["vote_bill_id"]:
         master[col] = master["bill_id"].map(votes[col]) if col in votes.columns else None
     for col in ["vote_member_total", "vote_total", "vote_yes", "vote_no", "vote_abstain"]:
@@ -1011,7 +1087,7 @@ def main():
     save_combined(vetoes, ages, out_dir / "veto_events.parquet", VETO_EVENT_COLS,
                   ["age", "veto_dt", "bill_no"])
     save_combined(votes, ages, out_dir / "vote_events.parquet", VOTE_EVENT_COLS,
-                  ["age", "proc_dt", "bill_no", "vote_bill_id"])
+                  ["age", "proc_dt", "bill_no", "vote_bill_id", "vote_event_id"])
 
     if args.compare:
         report = compare(Path(args.compare), out_dir, ages)

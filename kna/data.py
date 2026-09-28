@@ -196,35 +196,48 @@ class BillDB:
         assembly: Optional[int] = None,
         columns: Optional[list[str]] = None,
     ) -> pd.DataFrame:
-        """Load member-level roll call votes (20th-22nd, from the API).
+        """Load member-level roll call votes, 17th-22nd, one row per member per vote.
 
-        One row per (term, bill_id, member_id). ``party`` is the party at
-        election (members_{term}); ``party_api`` is the API's POLY_NM snapshot.
-        The 16th-19th rows are in roll_calls_16_19_experimental(). Filter by
-        assembly for speed; ``term`` does not need to be among ``columns``.
+        ``vote_event_id`` identifies the vote in every assembly. The
+        20th-22nd have source 'api' (nojepdqqaweusdfbi), plus 'likms' and
+        'likms_absent' rows for the 22nd members the API omits, one row per
+        (term, bill_id, member_id). The 17th-19th have source 'minutes_pdf',
+        the name lists of the plenary minutes. There an amendment vote
+        shares the bill_id of the bill it amends, the minutes list no
+        absentees (no 불참 rows), and member_id is null where two members
+        share the printed name and the minutes do not say which one voted.
+        ``party`` is the party at election (members_{term}). ``party_api`` is
+        the API's POLY_NM snapshot, null in the 17th-19th. The 16th rows are
+        in roll_calls_16_19_experimental(). Filter by assembly for speed.
+        ``term`` does not need to be among ``columns``.
         """
         return self._load_table("roll_calls_all.parquet", assembly, "term", columns)
 
     def roll_calls_16_19_experimental(self) -> pd.DataFrame:
-        """Load the 16th-19th roll calls parsed from minutes (EXPERIMENTAL).
+        """Load the 16th Assembly vote rows parsed from speech text (EXPERIMENTAL).
 
-        WARNING: these rows are fragmentary and must not be used as roll-call
-        data without checking ``quality_flag``. The parser merged every vote
-        of a plenary meeting into one vote event and the consolidation kept
-        one row per member per event, so about 95% of the parsed records were
-        discarded (108/62/5 events for the 17th/18th/19th, against roughly
-        2,000 recorded votes per assembly in published studies). member_id
-        came from a name match that can merge same-name legislators. The
-        file is shipped unchanged pending a rebuild; it is not an input to
-        any ideal-point series. See CORRECTIONS.md.
+        These rows are not a roll-call matrix. Do not use them as roll-call
+        data without checking ``quality_flag``. The parser merged the votes
+        of a plenary meeting into a few events and the consolidation kept one
+        row per member per event, so a row is a member's position at some
+        vote of the meeting. member_id came from a name match that can merge
+        same-name legislators. Since 0.8.0 the file holds only the 16th, 923
+        rows. The 17th-19th are in roll_calls(), rebuilt from the plenary
+        minutes. No ideal-point series uses these rows. See CODEBOOK.md
+        section 9 and CORRECTIONS.md.
         """
         return self._load_table("roll_calls_16_19_experimental.parquet")
 
     def vote_events(self, assembly: Optional[int] = None) -> pd.DataFrame:
-        """Load every plenary tally of the 20th-22nd (one row per tally).
+        """Load every recorded plenary vote, one row per vote.
 
-        vote_type is original, amendment, reconsideration or other;
-        master_bill_id links the tally to master_bills.
+        The 20th-22nd hold the official tallies (source 'api'), the 17th-19th
+        the recorded votes of the plenary minutes (source 'minutes_pdf'), with
+        the chair's announced counts in chair_* columns and the flags
+        chair_counts_differ and correction_note. vote_type is original,
+        amendment, reversal, revote, reconsideration or other.
+        vote_event_id joins to roll_calls() and master_bill_id links the vote
+        to master_bills.
         """
         return self._load_table("vote_events.parquet", assembly)
 
@@ -236,7 +249,9 @@ class BillDB:
         """Load legislator ideal points (20th-22nd, one row per legislator-term).
 
         Three series are available and they are not interchangeable. See the
-        "Ideal Points" section of CODEBOOK.md before choosing.
+        "Ideal points" section of CODEBOOK.md before choosing. The 17th-19th
+        roll calls are not scaled. In the 22nd, wnom2d_dim2 of
+        ideal_points_wnominate.csv is unstable (CODEBOOK.md section 10.5).
 
         Args:
             series: which estimates to load.
@@ -343,7 +358,19 @@ class BillDB:
     # ── other tables ────────────────────────────────────────────────
 
     def bill_texts(self) -> pd.DataFrame:
-        """Load bill propose-reason texts (60K bills, 20-22nd Assembly)."""
+        """Load propose-reason texts (제안이유 및 주요내용), one row per bill.
+
+        Law bills of the 17th-22nd, about 110K rows. Columns, lowercased:
+        bill_id, propose_reason, scrape_status, age, bill_no and source.
+        source is 'likms_scrape' for the texts scraped from LIKMS (20th-22nd
+        member law bills) and 'BPMBILLSUMMARY' for the official API text
+        (law bills of every proposer kind). The API texts keep a leading
+        heading that the scraped texts lack. propose_reason is null only in
+        scraped rows whose scrape failed and that the API does not fill.
+        Files built before 0.8.0 hold only the scraped rows of the 20th-22nd
+        and lack age, bill_no and source. Join to bills() on bill_id to
+        filter by assembly.
+        """
         if "texts" not in self._cache:
             p = self.data_dir / "bill_texts_linked.parquet"
             if not p.exists():
@@ -388,11 +415,13 @@ class BillDB:
         self,
         assembly: Optional[int] = None,
     ) -> pd.DataFrame:
-        """Load legislator asset disclosure panel (772 members, 2015-2024).
+        """Load legislator asset disclosure panel (776 members, 2015-2025).
 
-        Returns member-year rows with 37 wealth variables (net_worth,
-        total_realestate, total_stocks, etc.) in thousands of KRW.
-        Source: OpenWatch (CC BY-SA 4.0), covers 19th-22nd assemblies.
+        Returns member-year rows with the wealth variables of CODEBOOK.md
+        section 16 (net_worth, total_realestate, total_stocks, etc.) in
+        thousands of KRW, covering the 19th-22nd assemblies. Sources:
+        OpenWatch (CC BY-SA 4.0) for wealth_year 2015-2024 and the official
+        국회공보 of March 2026 for wealth_year 2025.
         """
         key = f"assets_{assembly}"
         if key not in self._cache:

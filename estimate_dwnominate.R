@@ -55,7 +55,7 @@ cat("Loading roll call data...\n")
 rc <- read_parquet(file.path(DATA_DIR, "roll_calls_all.parquet"))
 
 api <- rc %>%
-  filter(source == "api", term %in% c(20, 21, 22)) %>%
+  filter(source %in% c("api", "likms", "likms_absent"), term %in% c(20, 21, 22)) %>%
   mutate(
     term = as.integer(term),
     vote_num = case_when(

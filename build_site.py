@@ -713,7 +713,8 @@ if rc_path.exists() and ve_path.exists():
     no_rows = names22[~names22["mona_cd"].isin(rc22["member_id"])]
     counts = rc22.pivot_table(index="bill_id", columns="vote", aggfunc="size", fill_value=0)
     ve22 = pd.read_parquet(ve_path)
-    ve22 = ve22[ve22["age"] == 22].set_index("vote_bill_id").join(counts, how="left").fillna(0)
+    ve22 = (ve22.loc[ve22["age"] == 22, ["vote_bill_id", "yes", "no", "abstain"]]
+            .set_index("vote_bill_id").join(counts, how="left").fillna(0))
     diff = ((ve22["찬성"] != ve22["yes"]) | (ve22["반대"] != ve22["no"])
             | (ve22["기권"] != ve22["abstain"]))
     below = diff & (ve22["찬성"] <= ve22["yes"]) & (ve22["반대"] <= ve22["no"]) \
@@ -724,13 +725,13 @@ if rc_path.exists() and ve_path.exists():
         ip = pd.read_csv(ip_path, dtype={"member_id": str})
         claim(not ip[(ip["term"] == 22) & ip["member_id"].isin(no_rows["mona_cd"])].shape[0],
               "기록이 없는 의원은 22대 이념점수가 없습니다")
+    rc_src = pd.read_parquet(rc_path, columns=["term", "source"], filters=[("term", "==", 22)])
+    n_supp = int(rc_src["source"].isin(["likms", "likms_absent"]).sum())
     limits.append(
         f"22대 의원별 표결은 {last_vote[:4]}년 {int(last_vote[4:6])}월 {int(last_vote[6:])}일까지 수집했습니다. "
-        f"의원별 표결 API에는 22대 재직 의원 {len(names22):,}명 중 {len(no_rows)}명의 기록이 없어 "
-        f"이들은 22대 이념점수가 없습니다. 22대 표결 {len(ve22):,}건 중 {int(diff.sum()):,}건은 "
-        f"의원별 찬성·반대·기권 수가 공식 집계와 다릅니다. 그중 {int(below.sum()):,}건은 세 수가 모두 "
-        f"공식 집계 이하여서 빠진 기록으로 설명됩니다"
-        + (f". 나머지 {other}건은 기록된 표 가운데 공식 집계와 다른 것이 있습니다." if other else "."))
+        f"의원별 표결 API가 빠뜨린 2026년 재직 의원의 표결 {n_supp:,}행은 의안정보시스템의 표결 페이지에서 "
+        f"보완했습니다. 22대 표결 {len(ve22):,}건 중 {int(diff.sum()):,}건만 의원별 찬성·반대·기권 수가 "
+        f"공식 집계와 다르며, 그 표결은 공식 페이지에서도 명단과 집계가 다릅니다.")
 aa_path = DATA / "alternative_absorption.parquet"
 if aa_path.exists():
     absorbed_ids = set(pd.read_parquet(aa_path, columns=["absorbed_bill_id"])["absorbed_bill_id"])
@@ -757,8 +758,9 @@ if txt_path.exists():
     txt_last = max(pd.to_datetime(df.loc[df["bill_id"].isin(txt_ids), "ppsl_dt"]).max()
                    for df in all_frames.values() if df["bill_id"].isin(txt_ids).any())
     limits.append(
-        f"제안이유 텍스트는 외부 저장소의 스냅샷에서 가져옵니다. 텍스트가 있는 가장 최근 법안은 "
-        f"{txt_last:%Y-%m-%d}에 발의되었고, 그 뒤에 발의된 법안은 텍스트가 없습니다.")
+        f"제안이유 텍스트는 의안정보시스템에서 수집한 텍스트와 공식 API의 제안이유 및 주요내용을 합친 것입니다. "
+        f"텍스트가 있는 가장 최근 법안은 {txt_last:%Y-%m-%d}에 발의되었습니다. API가 빈 텍스트를 돌려주는 "
+        f"법률안은 텍스트가 없습니다.")
 limits_html = "".join(f"<li>{t}</li>" for t in limits)
 if edges is not None:
     edge_data_text = (f"공식 공동발의 테이블 <code>cosponsorship_edges</code>. 17-22대 의원발의 법안 "
@@ -769,8 +771,9 @@ else:
     edge_data_text = f"17-22대 의원발의 법안 {member_bills_all:,}건의 <code>publ_mona_cd</code>를 파싱."
     edge_preview_text = "<code>publ_mona_cd</code> 필드를 파싱하면 의원 간 공동발의 edge list를 만들 수 있습니다."
 exp_rows = nrows("roll_calls_16_19_experimental.parquet")
-exp_text = (f"16-19대 의원별 표결 기록 {exp_rows:,}행은 회의록에서 추출한 실험적 자료입니다. "
-            "한 회의의 여러 표결이 하나로 합쳐지는 한계가 있어 roll_calls_16_19_experimental.parquet에 "
+exp_text = (f"16대 의원별 표결 기록 {exp_rows:,}행은 회의록에서 추출한 실험적 자료입니다. "
+            "17-19대 표결은 회의록 PDF 부록의 명단에서 표결 단위로 재구축해 roll_calls_all에 들어 있습니다. "
+            "16대는 한 회의의 여러 표결이 하나로 합쳐지는 한계가 있어 roll_calls_16_19_experimental.parquet에 "
             "따로 담았고, 이념점수 추정에는 쓰지 않습니다." if exp_rows else "")
 
 # Life of a Bill: the funnel stages, with the fields that mark them
@@ -802,7 +805,7 @@ TABLE_CARDS = [
      "mona_cd, assembly, committee, start_date, end_date"),
     ("&#9888;", "veto_events", "재의요구 (거부권) 사건", "1 row = 1 재의요구",
      "bill_id (FK), veto_bill_id, veto_dt, revote_rslt, final_status"),
-    ("&#128499;", "vote_events", "본회의 표결 집계 (20-22대)", "1 row = 1 표결",
+    ("&#128499;", "vote_events", "본회의 표결 집계 (17-22대)", "1 row = 1 표결",
      "vote_bill_id, master_bill_id, vote_type, yes, no, abstain"),
 ]
 table_cards_html = "\n".join(
@@ -1891,7 +1894,7 @@ footer a {{
             대수별 마스터 데이터 구축 수준을 정리합니다.
             17-22대 모두 열린국회정보 API를 결합한 Full Master이며,
             공포 건수·소관위 처리·처리 소요일 등 법안 생애주기 전체를 포함합니다.
-            표결 데이터(건별 찬반)는 20-22대에서 API로 제공됩니다.
+            표결 데이터(건별 찬반)는 20-22대는 API에서, 17-19대는 본회의 회의록 부록의 명단에서 구축했습니다.
         </p>
     </div>
 

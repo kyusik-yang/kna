@@ -1,9 +1,18 @@
 """
 Consolidate roll call votes into the unified member-level dataset.
 ==================================================================
-roll_calls_all.parquet holds the recorded votes of the 20th-22nd Assemblies
-collected from the nojepdqqaweusdfbi endpoint (collect_roll_calls.py), one row
-per member per vote, unique on (term, bill_id, member_id).
+roll_calls_all.parquet holds one row per member per recorded vote:
+
+  - 20th-22nd: the nojepdqqaweusdfbi endpoint (collect_roll_calls.py),
+    source 'api' (and the LIKMS supplement below), unique on
+    (term, bill_id, member_id).
+  - 17th-19th: the name lists of the plenary minutes appendices
+    (collect_minutes_votes.py, data/raw/minutes_votes_{term}.parquet),
+    source 'minutes_pdf'. See the section below.
+
+Every row carries vote_event_id, and (term, vote_event_id, member_id) is
+unique over the rows with a member_id. For API and LIKMS rows vote_event_id
+is the bill_id of the vote.
 
   - Rows are keyed on member_id (MONA_CD), never on member_name. Four pairs of
     legislators share a name (20th 김성태 and 최경환, 21st 김병욱 and 이수진),
@@ -16,18 +25,42 @@ per member per vote, unique on (term, bill_id, member_id).
     missing from members_{term} fall back to party_api (counted in the log).
   - Rows are sorted by (term, date, bill_id, member_id). Ideal-point estimates
     depend on the row order, so the order is part of the output.
+  - The API omits some members seated during the 22nd Assembly.
+    data/raw/roll_calls_{age}_supplement.parquet (collect_votes_likms.py)
+    holds their votes from the LIKMS vote pages. Its rows are merged with
+    source = 'likms' (on the page's 찬성/반대/기권 list) or 'likms_absent'
+    (seated but on no list, 불참). API rows have source = 'api' and win
+    when both have the same (term, bill_id, member_id).
 
-16th-19th Assemblies (experimental, not in roll_calls_all)
-----------------------------------------------------------
-The 16th-19th votes parsed from plenary speech text and minutes appendices
-are NOT roll calls. extract_appendix_votes.py merges every vote in a meeting
-into one pseudo-event, and each member keeps one arbitrary vote per meeting.
-They are copied unchanged from the previously shipped roll_calls_all.parquet
-(their member_id backfill cannot be reproduced from data/raw) into
-roll_calls_16_19_experimental.parquet with
-quality_flag = 'meeting_level_pseudo_event'. Do not build a vote matrix,
-cohesion score or ideal point from them. A rebuild from the appendix PDFs is
-deferred.
+17th-19th Assemblies (source 'minutes_pdf')
+-------------------------------------------
+One row per name printed under 찬성, 반대 or 기권 in the appendix
+【전자투표 찬반 의원 성명】 of the plenary minutes. The minutes list no
+absentees, so there are no 불참 rows.
+  - vote_event_id is '{term}_{CONFER_NUM}_{seq}', the seq-th recorded vote in
+    the appendix of that meeting. It is the key: bill_id is the bill the vote
+    is about, so an amendment vote and the vote on the bill share a bill_id,
+    and a procedural motion or petition has none (bill_id null).
+  - member_id is null where two members share the printed name and the
+    minutes do not say which one voted (member_match 'unresolved_same_name',
+    or 'printed_on_two_lists'). member_match records how every minutes row
+    was matched. It is null for API and LIKMS rows.
+  - party and district are those of members_{term} (party at election).
+    party_api is null.
+  - date is the date of the vote, YYYYMMDD (the minutes give no time).
+    meeting_id is the CONFER_NUM, bill_context the title printed in the
+    appendix and vote_event the seq.
+The event-level counts, the chair's announced counts and the flags are in
+data/raw/minutes_vote_events_{term}.parquet and vote_events.parquet.
+
+16th Assembly (experimental, not in roll_calls_all)
+---------------------------------------------------
+The 16th votes parsed from plenary speech text are NOT roll calls: every vote
+of a meeting was merged into one pseudo-event. They are copied unchanged
+from the file of the previous build into roll_calls_16_19_experimental.parquet
+with quality_flag = 'meeting_level_pseudo_event'. The file keeps its name, but
+its 17th-19th pseudo-event rows are dropped: those assemblies are now in
+roll_calls_all with source 'minutes_pdf'.
 
 Outputs (in --out):
     roll_calls_all.parquet
@@ -40,7 +73,8 @@ The run stops without writing roll_calls_all if a 20th or 21st Assembly vote
 disagrees with its official tally, or is missing from either side, for a
 reason not explained in the report. 22nd Assembly disagreements are reported
 but do not stop the run: the member-level feed omits some members seated
-during the term, so recent votes can have fewer member rows than MEMBER_TCNT.
+during the term, so recent votes can have fewer member rows than MEMBER_TCNT
+unless the supplement fills them in.
 
 Usage:
     python3 consolidate_votes.py
@@ -63,6 +97,9 @@ RAW_DIR = DATA_DIR / "raw"
 PROCESSED_DIR = DATA_DIR / "processed"
 
 API_TERMS = [20, 21, 22]
+MINUTES_TERMS = [17, 18, 19]
+MINUTES_SOURCE = "minutes_pdf"
+EXPERIMENTAL_TERMS = [16]
 # Assemblies whose member-level votes must reproduce the official tallies
 STRICT_TERMS = [20, 21]
 TEXT_SOURCES = ["inline_text", "pdf_appendix"]
@@ -90,7 +127,9 @@ LEGACY_SCHEMA = [
 ]
 LEGACY_COLS = [name for name, _ in LEGACY_SCHEMA]
 ALL_SCHEMA = pa.schema(LEGACY_SCHEMA + [("bill_no", pa.string()),
-                                        ("party_api", pa.string())])
+                                        ("party_api", pa.string()),
+                                        ("vote_event_id", pa.string()),
+                                        ("member_match", pa.string())])
 EXPERIMENTAL_SCHEMA = pa.schema(LEGACY_SCHEMA + [("quality_flag", pa.string())])
 
 logging.basicConfig(
@@ -110,8 +149,43 @@ def write_table_atomic(df: pd.DataFrame, schema: pa.Schema, path: Path):
     os.replace(tmp, path)
 
 
+def merge_supplement(df: pd.DataFrame) -> pd.DataFrame:
+    """One row per (term, bill_id, member_id). API rows win over supplement rows."""
+    key = ["term", "bill_id", "member_id"]
+    is_api = df["source"].eq("api")
+    api, supp = df[is_api], df[~is_api]
+
+    # Each member votes once per vote. Never deduplicate on member_name.
+    dup = api.duplicated(subset=key, keep="first")
+    if dup.any():
+        conflicts = (api[api.duplicated(subset=key, keep=False)]
+                     .groupby(key)["vote"].nunique().gt(1).sum())
+        log.warning(f"  {dup.sum():,} duplicate (term, bill_id, member_id) rows dropped, "
+                    f"{conflicts:,} of those keys carry conflicting votes")
+        api = api[~dup]
+    else:
+        log.info("  Duplicate (term, bill_id, member_id) rows: 0")
+
+    if supp.empty:
+        return api
+    dup = supp.duplicated(subset=key, keep="first")
+    if dup.any():
+        log.warning(f"  {dup.sum():,} duplicate supplement rows dropped")
+        supp = supp[~dup]
+    both = supp[key + ["vote"]].merge(api[key + ["vote"]], on=key, suffixes=("", "_api"))
+    if len(both):
+        log.warning(f"  {len(both):,} supplement rows dropped because the API has the same "
+                    f"(term, bill_id, member_id), {int((both['vote'] != both['vote_api']).sum()):,} "
+                    f"of them with a different vote")
+        taken = pd.MultiIndex.from_frame(both[key])
+        supp = supp[~pd.MultiIndex.from_frame(supp[key]).isin(taken)]
+    log.info(f"  Supplement rows merged: {len(supp):,} "
+             f"({supp['source'].value_counts().to_dict()})")
+    return pd.concat([api, supp], ignore_index=True)
+
+
 def load_api_votes() -> pd.DataFrame:
-    """Load API-collected roll calls (20-22대), one row per member per vote."""
+    """Load API-collected roll calls (20-22대) and their supplements, one row per member per vote."""
     cols = ["member_name", "party", "district", "member_id", "vote_date",
             "bill_no", "bill_id", "vote", "age"]
     frames = []
@@ -121,9 +195,16 @@ def load_api_votes() -> pd.DataFrame:
             log.warning(f"  {path.name} not found, {age}대 skipped")
             continue
         df = pd.read_parquet(path, columns=cols)
+        df["source"] = "api"
         log.info(f"  {path.name}: {len(df):,} rows, {df['bill_id'].nunique():,} votes, "
                  f"dates {df['vote_date'].min()} to {df['vote_date'].max()}")
         frames.append(df)
+        spath = RAW_DIR / f"roll_calls_{age}_supplement.parquet"
+        if spath.exists():
+            s = pd.read_parquet(spath, columns=cols + ["source"])
+            log.info(f"  {spath.name}: {len(s):,} rows, {s['bill_id'].nunique():,} votes, "
+                     f"{s['member_id'].nunique()} members, {s['source'].value_counts().to_dict()}")
+            frames.append(s)
 
     if not frames:
         log.warning("  API votes not found")
@@ -132,7 +213,6 @@ def load_api_votes() -> pd.DataFrame:
     df = pd.concat(frames, ignore_index=True)
     df = df.rename(columns={"age": "term", "vote_date": "date", "party": "party_api"})
     df["term"] = df["term"].astype("int64")
-    df["source"] = "api"
     df["vote"] = df["vote"].str.strip()
 
     for col in ["member_id", "bill_id"]:
@@ -140,19 +220,9 @@ def load_api_votes() -> pd.DataFrame:
         if n_na:
             log.warning(f"  {n_na:,} API rows without {col}")
 
-    # Each member votes once per vote. Never deduplicate on member_name.
-    key = ["term", "bill_id", "member_id"]
-    dup = df.duplicated(subset=key, keep="first")
-    if dup.any():
-        conflicts = (df[df.duplicated(subset=key, keep=False)]
-                     .groupby(key)["vote"].nunique().gt(1).sum())
-        log.warning(f"  {dup.sum():,} duplicate (term, bill_id, member_id) rows dropped, "
-                    f"{conflicts:,} of those keys carry conflicting votes")
-        df = df[~dup]
-    else:
-        log.info("  Duplicate (term, bill_id, member_id) rows: 0")
+    df = merge_supplement(df)
 
-    log.info(f"  API votes: {len(df):,} rows ({df['term'].nunique()} assemblies)")
+    log.info(f"  API and supplement votes: {len(df):,} rows ({df['term'].nunique()} assemblies)")
     return df
 
 
@@ -302,16 +372,67 @@ def tally_check(api: pd.DataFrame, members_dir: Path) -> pd.DataFrame:
 
 
 def load_legacy_text(path: Path) -> pd.DataFrame:
-    """Copy the shipped 16th-19th text/PDF rows unchanged (see module docstring)."""
+    """Copy the shipped 16th text rows unchanged (see module docstring)."""
     if not path.exists():
         log.warning(f"  {path} not found")
         return pd.DataFrame()
     df = pd.read_parquet(path)
     text = df[df["source"].isin(TEXT_SOURCES)][LEGACY_COLS].copy()
+    old = {int(k): v for k, v in text.groupby("term").size().items()}
+    text = text[text["term"].isin(EXPERIMENTAL_TERMS)]
     text["quality_flag"] = QUALITY_FLAG
-    log.info(f"  16th-19th text/PDF rows from {path}: {len(text):,} "
-             f"({ {int(k): v for k, v in text.groupby('term').size().items()} })")
+    log.info(f"  Experimental text/PDF rows in {path}: {old}. Kept the "
+             f"{EXPERIMENTAL_TERMS} rows ({len(text):,}), the 17th-19th pseudo events are "
+             f"replaced by the minutes roll calls")
     return text
+
+
+def load_minutes_votes(members_dir: Path) -> pd.DataFrame:
+    """17th-19th member-level votes of the minutes appendices (see module docstring)."""
+    frames = []
+    for term in MINUTES_TERMS:
+        vpath = RAW_DIR / f"minutes_votes_{term}.parquet"
+        epath = RAW_DIR / f"minutes_vote_events_{term}.parquet"
+        if not (vpath.exists() and epath.exists()):
+            log.warning(f"  {vpath.name} or {epath.name} not found, {term}대 skipped")
+            continue
+        v = pd.read_parquet(vpath)
+        e = pd.read_parquet(epath, columns=["vote_event_id", "confer_num", "event_seq", "date",
+                                            "title", "bill_id", "bill_no"])
+        df = v[["vote_event_id", "member_id", "member_name", "vote", "member_match"]].merge(
+            e, on="vote_event_id", how="left", validate="many_to_one")
+        if df["confer_num"].isna().any():
+            raise SystemExit(f"{vpath.name}: rows whose vote_event_id is not in {epath.name}")
+        mpath = members_dir / f"members_{term}.parquet"
+        m = pd.read_parquet(mpath, columns=["mona_cd", "party", "district"]).rename(
+            columns={"mona_cd": "member_id"})
+        df = df.merge(m, on="member_id", how="left", validate="many_to_one")
+        stray = df["member_id"].notna() & df["party"].isna()
+        if stray.any():
+            log.warning(f"  {term}대: {df.loc[stray, 'member_id'].nunique()} member_ids of the "
+                        f"minutes are not in {mpath}")
+        df["term"] = term
+        df["meeting_id"] = df["confer_num"].astype("int64").astype(str)
+        df["date"] = df["date"].str.replace("-", "", regex=False)
+        df["bill_context"] = df["title"]
+        df["vote_event"] = df["event_seq"].astype("float64")
+        df["source"] = MINUTES_SOURCE
+        df["party_api"] = None
+        df["agg_total"] = None
+        df["agg_yes"] = None
+        log.info(f"  {vpath.name}: {len(df):,} rows, {df['vote_event_id'].nunique():,} votes, "
+                 f"{df['member_id'].nunique()} members, {int(df['member_id'].isna().sum()):,} "
+                 f"rows without member_id, {int(df['bill_id'].isna().groupby(df['vote_event_id']).first().sum())} "
+                 f"votes without bill_id")
+        frames.append(df)
+    if not frames:
+        return pd.DataFrame()
+    df = pd.concat(frames, ignore_index=True)
+    known = df[df["member_id"].notna()]
+    dup = known.duplicated(["term", "vote_event_id", "member_id"])
+    if dup.any():
+        raise SystemExit(f"{int(dup.sum())} minutes rows repeat (term, vote_event_id, member_id)")
+    return df
 
 
 def consolidate(out_dir: Path, members_dir: Path, legacy_text_from: Path):
@@ -327,13 +448,16 @@ def consolidate(out_dir: Path, members_dir: Path, legacy_text_from: Path):
         log.error("No API vote data found!")
         return
     api = attach_party(api, members_dir)
-    for col in ["meeting_id", "bill_context", "agg_total", "agg_yes"]:
+    for col in ["meeting_id", "bill_context", "agg_total", "agg_yes", "member_match"]:
         api[col] = None
     api["vote_event"] = float("nan")
+    api["vote_event_id"] = api["bill_id"]
     api["term"] = api["term"].astype("Int64")
     api = api.sort_values(["term", "date", "bill_id", "member_id"],
                           kind="mergesort").reset_index(drop=True)
     api = api[ALL_SCHEMA.names]
+
+    minutes = load_minutes_votes(members_dir)
 
     # Validation against the official tallies
     log.info("\n  Tally check (ncocpgfiaoituanbr)")
@@ -350,36 +474,49 @@ def consolidate(out_dir: Path, members_dir: Path, legacy_text_from: Path):
                       f"the official tallies without an explanation. Not writing output.")
             sys.exit(1)
 
+    # The 17th-19th minutes rows come before the API rows (sorted by term).
+    # The added key vote_event_id only orders rows that tie on the four keys,
+    # which the API rows never do, so their order is unchanged.
+    if not minutes.empty:
+        minutes["term"] = minutes["term"].astype("Int64")
+        minutes = minutes.sort_values(["term", "date", "bill_id", "member_id", "vote_event_id"],
+                                      kind="mergesort")[ALL_SCHEMA.names]
+        rc = pd.concat([minutes, api], ignore_index=True)
+    else:
+        rc = api
+
     # Summary
     log.info(f"\n{'='*60}")
-    log.info("Consolidated Roll Call Dataset (API, 20-22대)")
+    log.info("Consolidated Roll Call Dataset (minutes 17-19대, API and supplement 20-22대)")
     log.info(f"{'='*60}")
-    log.info(f"  Total records: {len(api):,}")
-    log.info(f"  Unique members: {api['member_id'].nunique():,}")
+    log.info(f"  Total records: {len(rc):,}")
+    log.info(f"  Unique members: {rc['member_id'].nunique():,}")
     log.info(f"\n  By assembly:")
-    for term, sub in api.groupby("term"):
+    for term, sub in rc.groupby("term"):
         log.info(f"    {int(term)}대: {len(sub):>9,} rows | {sub['member_id'].nunique():>3} members "
-                 f"| {sub['bill_id'].nunique():>5,} recorded votes "
+                 f"| {sub['vote_event_id'].nunique():>5,} recorded votes "
                  f"| party != party_api for "
-                 f"{sub.loc[sub['party'] != sub['party_api'], 'member_id'].nunique()} members")
+                 f"{sub.loc[sub['party_api'].notna() & (sub['party'] != sub['party_api']), 'member_id'].nunique()} members "
+                 f"| rows without member_id {int(sub['member_id'].isna().sum()):,}")
     log.info(f"\n  Vote distribution:")
-    for vote_val, cnt in api["vote"].value_counts().items():
+    for vote_val, cnt in rc["vote"].value_counts().items():
         log.info(f"    {vote_val}: {cnt:,}")
+    log.info(f"  Rows by source: {rc['source'].value_counts().to_dict()}")
 
     # Save
     out_dir.mkdir(parents=True, exist_ok=True)
     outpath = out_dir / "roll_calls_all.parquet"
-    write_table_atomic(api, ALL_SCHEMA, outpath)
-    log.info(f"\n  Saved: {outpath} ({len(api):,} rows)")
+    write_table_atomic(rc, ALL_SCHEMA, outpath)
+    log.info(f"\n  Saved: {outpath} ({len(rc):,} rows)")
 
     if text.empty:
-        log.warning(f"  No 16th-19th rows found, {EXPERIMENTAL_NAME} not written")
+        log.warning(f"  No 16th rows found, {EXPERIMENTAL_NAME} not written")
     else:
         exp_path = out_dir / EXPERIMENTAL_NAME
         write_table_atomic(text, EXPERIMENTAL_SCHEMA, exp_path)
         log.info(f"  Saved: {exp_path} ({len(text):,} rows, quality_flag = {QUALITY_FLAG})")
 
-    return api
+    return rc
 
 
 def main():
@@ -389,7 +526,7 @@ def main():
     parser.add_argument("--members-dir", type=Path, default=PROCESSED_DIR,
                         help="Directory with members_{term}.parquet (default: data/processed)")
     parser.add_argument("--legacy-text-from", type=Path, default=None,
-                        help="File holding the shipped 16th-19th text/PDF rows (default: "
+                        help="File holding the shipped 16th text rows (default: "
                              f"data/processed/{EXPERIMENTAL_NAME} if present, "
                              "else data/processed/roll_calls_all.parquet)")
     args = parser.parse_args()

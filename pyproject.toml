@@ -1,6 +1,6 @@
 [project]
 name = "kna"
-version = "0.7.1"
+version = "0.8.0"
 description = "Comprehensive CLI for the Korean National Assembly: bills, lifecycle, votes, ideal points, and bill texts"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -24,6 +24,11 @@ dependencies = [
 
 [project.optional-dependencies]
 test = ["pytest>=7"]
+# collect_minutes_votes.py: download the plenary minutes and parse them
+# (PyMuPDF reads the PDFs, hanja reads Hanja bill titles)
+minutes = ["requests", "pymupdf", "hanja"]
+# build_assets.py: fetch and parse the 국회공보 asset disclosure PDFs
+assets = ["requests", "pdfplumber"]
 
 [project.urls]
 Homepage = "https://github.com/kyusik-yang/kna"

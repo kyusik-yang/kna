@@ -114,16 +114,16 @@ def print_info(file_info: list[dict], rc_count: int, ip_count: int,
     console.print(f"  {dim('Laws = 법률안. Enacted = 법률안 원안가결 + 수정가결 (final result).')}")
     console.print(f"  {dim('Promulg. = 법률안 with a promulgation date (became law).')}")
     console.print()
-    console.print(f"  Roll call votes   {rc_count:>10,}  {dim('(20-22nd, member-level API votes)')}")
+    console.print(f"  Roll call votes   {rc_count:>10,}  {dim('(17-22nd, member-level votes)')}")
     if rc_exp_count:
-        console.print(f"  16-19th votes     {rc_exp_count:>10,}  "
-                      f"{dim('(experimental, fragmentary; separate file)')}")
+        console.print(f"  16th votes        {rc_exp_count:>10,}  "
+                      f"{dim('(experimental, fragmentary, separate file)')}")
     ip_note = "20-22nd, bridged W-NOMINATE" + (f", {ip_vintage}" if ip_vintage else "")
     console.print(f"  Ideal points      {ip_count:>10,}  {dim(f'({ip_note})')}")
     console.print(f"  Members           {mem_count:>10,}  {dim('(17-22nd, party/district/committee)')}")
     console.print(f"  Asset disclosures {asset_count:>10,}  {dim('(19-22nd, member-year wealth)')}")
     console.print(f"  Committee mtgs    {cm_count:>10,}  {dim('(17-22nd)')}")
-    console.print(f"  Bill texts        {txt_count:>10,}  {dim('(20-22nd, propose-reason)')}")
+    console.print(f"  Bill texts        {txt_count:>10,}  {dim('(17-22nd law bills, propose-reason)')}")
     for label, count, note in extra or []:
         console.print(f"  {label:<17} {count:>10,}  {dim(f'({note})')}")
     console.print(f"  Data freshness    {freshness:>10}")

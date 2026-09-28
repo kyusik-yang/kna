@@ -33,7 +33,7 @@ rc <- read_parquet(file.path(PROCESSED, "roll_calls_all.parquet"))
 
 # Filter to API data only (clean, 20-22대)
 rc_api <- rc %>%
-  filter(source == "api") %>%
+  filter(source %in% c("api", "likms", "likms_absent")) %>%
   mutate(term = as.integer(term)) %>%
   filter(!is.na(member_id), !is.na(bill_id))
 
