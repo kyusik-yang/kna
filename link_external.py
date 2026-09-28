@@ -3,7 +3,7 @@ Link external datasets to the bill lifecycle master DB.
 =========================================================
 1. bill texts: 제안이유 및 주요내용 of the 17th-22nd law bills, from the
    LIKMS scrape of korean-assembly-bills and BPMBILLSUMMARY (data/raw)
-2. kr-hearings-data: committee meeting speeches
+2. kr-hearings-data: hearing_meetings_summary.parquet from version 10
 3. ID mapping table across all projects
 
 Cosponsorship edges are no longer copied from korean-assembly-bills. They
@@ -11,7 +11,7 @@ are built in this repository by build_structure.py.
 
 Usage:
     python3 link_external.py texts      # Bill texts (writes reports/bill_texts_*.csv)
-    python3 link_external.py speeches   # Link committee speeches
+    python3 link_external.py speeches   # Hearing meetings summary (kr-hearings-data v10)
     python3 link_external.py idmap      # Build ID mapping table
     python3 link_external.py all        # All of the above
 
@@ -24,7 +24,9 @@ Usage:
 
 External dataset locations (environment variables, defaults in brackets):
     KNA_ASSEMBLY_BILLS_DIR  [../korean-assembly-bills/data, a sibling checkout]
-    KNA_HEARINGS_DIR        [../kr-hearings-data/data, a sibling checkout]
+    KNA_HEARINGS_V10_DIR    [../kr-hearings-data/v10/build/release; a directory of
+                             v10 release assets also works, see
+                             build_hearings_summary.py]
     KNA_WITNESSES_DIR       [no default; the member-metadata flag is skipped
                              with --allow-missing when it is not set]
 """
@@ -38,14 +40,13 @@ from pathlib import Path
 
 import pandas as pd
 
-from build_hearings_summary import summarize_v9_speeches
+import build_hearings_summary as bhs
 
 PROCESSED = Path(__file__).parent / "data" / "processed"
 RAW_DIR = Path(__file__).parent / "data" / "raw"
 FETCHLOG_DIR = RAW_DIR / "fetchlog"
 SIBLINGS = Path(__file__).resolve().parent.parent
 AB_PATH = Path(os.environ.get("KNA_ASSEMBLY_BILLS_DIR", SIBLINGS / "korean-assembly-bills" / "data"))
-KR_PATH = Path(os.environ.get("KNA_HEARINGS_DIR", SIBLINGS / "kr-hearings-data" / "data"))
 CW_PATH = Path(os.environ.get("KNA_WITNESSES_DIR", "/nonexistent/KNA_WITNESSES_DIR-not-set"))
 ASSEMBLIES = [17, 18, 19, 20, 21, 22]
 MONA_RE = re.compile(r"^[0-9A-Z]{8}$")
@@ -222,35 +223,26 @@ def link_bill_texts(out: Path, in_dir: Path, allow_missing: bool, report_dir: Pa
 
 
 def link_speeches(out: Path, in_dir: Path, allow_missing: bool):
-    """Link kr-hearings-data committee speeches to bill lifecycle."""
+    """Hearing meetings summary from kr-hearings-data version 10.
+
+    The same table as build_hearings_summary.py --source v10.
+    """
     print("\n" + "="*60)
-    print("2. Linking committee speeches (kr-hearings-data)")
+    print("2. Hearing meetings summary (kr-hearings-data v10)")
     print("="*60)
 
-    speeches_file = KR_PATH / "all_speeches_16_22_v9.parquet"
-    if not require(speeches_file, "KNA_HEARINGS_DIR", allow_missing):
+    if not require(bhs.V10_DIR, "KNA_HEARINGS_V10_DIR", allow_missing):
         return
+    meetings, turns, info = bhs.load_v10(bhs.V10_DIR)
+    print(f"  v10 source: {info}")
+    meeting_summary = bhs.summarize_v10(meetings, turns)
+    del turns
 
-    # Load only metadata columns to save memory
-    speeches = pd.read_parquet(speeches_file,
-                               columns=["meeting_id", "term", "committee", "hearing_type",
-                                        "date", "speaker", "role", "naas_cd", "party"])
-    print(f"  Speeches loaded: {len(speeches):,} rows")
-
-    # Committee hearing stats by assembly
-    for term in [17, 18, 19, 20, 21, 22]:
-        sub = speeches[speeches["term"] == term]
-        n_meetings = sub["meeting_id"].nunique()
-        n_speeches = len(sub)
-        types = sub["hearing_type"].value_counts().to_dict()
-        print(f"  {term}대: {n_meetings:,} meetings, {n_speeches:,} speeches")
-
-    # Build meeting-level summary for linking (same aggregation as
-    # build_hearings_summary.py --source v9)
-    meeting_summary = summarize_v9_speeches(speeches)
+    for term, sub in meeting_summary.groupby("term"):
+        print(f"  {term}대: {len(sub):,} meetings, {sub['n_speeches'].sum():,} turns")
 
     outpath = out / "hearing_meetings_summary.parquet"
-    meeting_summary.to_parquet(outpath, index=False)
+    meeting_summary[bhs.V10_COLUMNS].to_parquet(outpath, index=False)
     print(f"\n  Saved: {outpath.name} ({len(meeting_summary):,} meetings)")
 
     # Link potential: committee meetings in bill lifecycle ↔ hearing meetings
