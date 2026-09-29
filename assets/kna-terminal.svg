@@ -25,76 +25,94 @@
 
   <!-- ── Header ── -->
   <text x="16" y="88" font-size="12.5" font-weight="700" fill="#A56EF0">Korean National Assembly Database</text>
+  <text x="660" y="88" font-size="10" fill="#555" text-anchor="end">kna 0.8.1 · data 2026-09-23</text>
   <line x1="16" y1="96" x2="660" y2="96" stroke="#333" stroke-width="0.5"/>
 
   <!-- ── Table header ── -->
   <text x="16"  y="114" font-size="10" fill="#888" font-weight="700">Assembly</text>
-  <text x="220" y="114" font-size="10" fill="#888" font-weight="700" text-anchor="end">Bills</text>
-  <text x="310" y="114" font-size="10" fill="#888" font-weight="700" text-anchor="end">Enacted</text>
-  <line x1="16" y1="120" x2="330" y2="120" stroke="#333" stroke-width="0.5"/>
+  <text x="190" y="114" font-size="10" fill="#888" font-weight="700" text-anchor="end">Bills</text>
+  <text x="258" y="114" font-size="10" fill="#888" font-weight="700" text-anchor="end">Laws</text>
+  <text x="330" y="114" font-size="10" fill="#888" font-weight="700" text-anchor="end">Enacted</text>
+  <line x1="16" y1="120" x2="340" y2="120" stroke="#333" stroke-width="0.5"/>
 
   <!-- ── Table rows ── -->
   <text x="16"  y="136" font-size="10" fill="#ccc">17th (2004-08)</text>
-  <text x="220" y="136" font-size="10" fill="#ccc" text-anchor="end">8,369</text>
-  <text x="310" y="136" font-size="10" fill="#777" text-anchor="end">2,547</text>
+  <text x="190" y="136" font-size="10" fill="#ccc" text-anchor="end">8,368</text>
+  <text x="258" y="136" font-size="10" fill="#aaa" text-anchor="end">7,489</text>
+  <text x="330" y="136" font-size="10" fill="#777" text-anchor="end">1,913</text>
 
   <text x="16"  y="152" font-size="10" fill="#ccc">18th (2008-12)</text>
-  <text x="220" y="152" font-size="10" fill="#ccc" text-anchor="end">14,762</text>
-  <text x="310" y="152" font-size="10" fill="#777" text-anchor="end">2,930</text>
+  <text x="190" y="152" font-size="10" fill="#ccc" text-anchor="end">14,762</text>
+  <text x="258" y="152" font-size="10" fill="#aaa" text-anchor="end">13,913</text>
+  <text x="330" y="152" font-size="10" fill="#777" text-anchor="end">2,353</text>
 
   <text x="16"  y="168" font-size="10" fill="#ccc">19th (2012-16)</text>
-  <text x="220" y="168" font-size="10" fill="#ccc" text-anchor="end">18,735</text>
-  <text x="310" y="168" font-size="10" fill="#777" text-anchor="end">3,414</text>
+  <text x="190" y="168" font-size="10" fill="#ccc" text-anchor="end">18,735</text>
+  <text x="258" y="168" font-size="10" fill="#aaa" text-anchor="end">17,822</text>
+  <text x="330" y="168" font-size="10" fill="#777" text-anchor="end">2,793</text>
 
   <text x="16"  y="184" font-size="10" fill="#ccc">20th (2016-20)</text>
-  <text x="220" y="184" font-size="10" fill="#ccc" text-anchor="end">24,996</text>
-  <text x="310" y="184" font-size="10" fill="#777" text-anchor="end">3,794</text>
+  <text x="190" y="184" font-size="10" fill="#ccc" text-anchor="end">24,996</text>
+  <text x="258" y="184" font-size="10" fill="#aaa" text-anchor="end">24,141</text>
+  <text x="330" y="184" font-size="10" fill="#777" text-anchor="end">3,195</text>
 
   <text x="16"  y="200" font-size="10" fill="#ccc">21st (2020-24)</text>
-  <text x="220" y="200" font-size="10" fill="#ccc" text-anchor="end">26,711</text>
-  <text x="310" y="200" font-size="10" fill="#777" text-anchor="end">3,554</text>
+  <text x="190" y="200" font-size="10" fill="#ccc" text-anchor="end">26,707</text>
+  <text x="258" y="200" font-size="10" fill="#aaa" text-anchor="end">25,858</text>
+  <text x="330" y="200" font-size="10" fill="#777" text-anchor="end">2,959</text>
 
   <text x="16"  y="216" font-size="10" fill="#ccc">22nd (2024-)</text>
-  <text x="220" y="216" font-size="10" fill="#ccc" text-anchor="end">17,205</text>
-  <text x="310" y="216" font-size="10" fill="#777" text-anchor="end">1,399</text>
+  <text x="190" y="216" font-size="10" fill="#ccc" text-anchor="end">21,581</text>
+  <text x="258" y="216" font-size="10" fill="#aaa" text-anchor="end">21,022</text>
+  <text x="330" y="216" font-size="10" fill="#777" text-anchor="end">1,644</text>
 
-  <line x1="16" y1="224" x2="330" y2="224" stroke="#333" stroke-width="0.5"/>
+  <line x1="16" y1="224" x2="340" y2="224" stroke="#333" stroke-width="0.5"/>
   <text x="16"  y="240" font-size="10.5" fill="#FFFFFF" font-weight="700">Total</text>
-  <text x="220" y="240" font-size="10.5" fill="#FFFFFF" font-weight="700" text-anchor="end">110,778</text>
-  <text x="310" y="240" font-size="10.5" fill="#FFFFFF" font-weight="700" text-anchor="end">17,638</text>
+  <text x="190" y="240" font-size="10.5" fill="#FFFFFF" font-weight="700" text-anchor="end">115,149</text>
+  <text x="258" y="240" font-size="10.5" fill="#FFFFFF" font-weight="700" text-anchor="end">110,245</text>
+  <text x="330" y="240" font-size="10.5" fill="#FFFFFF" font-weight="700" text-anchor="end">14,857</text>
+  <text x="16"  y="254" font-size="8.5" fill="#555">Laws = 법률안. Enacted = 법률안 원안가결 + 수정가결.</text>
 
   <!-- ── Stats summary (right side, stacked) ── -->
-  <text x="380" y="136" font-size="10">
+  <text x="372" y="136" font-size="10">
     <tspan fill="#A56EF0">●</tspan>
     <tspan fill="#888"> Roll call votes</tspan>
-    <tspan fill="#FFFFFF" font-weight="700">  2,425,113</tspan>
+    <tspan fill="#FFFFFF" font-weight="700">  4,147,402</tspan>
+    <tspan fill="#555">  17-22nd</tspan>
   </text>
-  <text x="380" y="156" font-size="10">
+  <text x="372" y="156" font-size="10">
     <tspan fill="#A56EF0">●</tspan>
     <tspan fill="#888"> Ideal points</tspan>
-    <tspan fill="#FFFFFF" font-weight="700">  936</tspan>
-    <tspan fill="#555">  DW-NOMINATE</tspan>
+    <tspan fill="#FFFFFF" font-weight="700">  955</tspan>
+    <tspan fill="#555">  20-22nd, bridged W-NOMINATE</tspan>
   </text>
-  <text x="380" y="176" font-size="10">
+  <text x="372" y="176" font-size="10">
     <tspan fill="#A56EF0">●</tspan>
     <tspan fill="#888"> Committee mtgs</tspan>
-    <tspan fill="#FFFFFF" font-weight="700">  572,127</tspan>
+    <tspan fill="#FFFFFF" font-weight="700">  818,448</tspan>
+    <tspan fill="#555">  17-22nd</tspan>
   </text>
-  <text x="380" y="196" font-size="10">
+  <text x="372" y="196" font-size="10">
     <tspan fill="#A56EF0">●</tspan>
     <tspan fill="#888"> Bill texts</tspan>
-    <tspan fill="#FFFFFF" font-weight="700">  60,925</tspan>
+    <tspan fill="#FFFFFF" font-weight="700">  109,829</tspan>
     <tspan fill="#555">  propose-reason</tspan>
   </text>
-  <text x="380" y="216" font-size="10">
+  <text x="372" y="216" font-size="10">
     <tspan fill="#A56EF0">●</tspan>
-    <tspan fill="#888"> Coverage</tspan>
-    <tspan fill="#FFFFFF" font-weight="700">  17th-22nd</tspan>
-    <tspan fill="#555">  (2004-2026)</tspan>
+    <tspan fill="#888"> Members</tspan>
+    <tspan fill="#FFFFFF" font-weight="700">  1,948</tspan>
+    <tspan fill="#555">  member-terms</tspan>
+  </text>
+  <text x="372" y="236" font-size="10">
+    <tspan fill="#A56EF0">●</tspan>
+    <tspan fill="#888"> Asset disclosures</tspan>
+    <tspan fill="#FFFFFF" font-weight="700">  3,215</tspan>
+    <tspan fill="#555">  19-22nd, member-year</tspan>
   </text>
 
   <!-- ── Separator ── -->
-  <line x1="16" y1="260" x2="660" y2="260" stroke="#333" stroke-width="0.5"/>
+  <line x1="16" y1="264" x2="660" y2="264" stroke="#333" stroke-width="0.5"/>
 
   <!-- ── Second command: kna show ── -->
   <text x="16" y="282" font-size="11">
@@ -155,7 +173,7 @@
 
   <text x="16" y="462" font-size="10">
     <tspan fill="#28C840">●</tspan>
-    <tspan fill="#ccc"> 본회의 의결</tspan>
+    <tspan fill="#ccc"> 처리 (대안반영폐기)</tspan>
   </text>
   <text x="200" y="462" font-size="10" fill="#ccc">2024-09-26</text>
   <text x="300" y="462" font-size="10" fill="#A56EF0" text-anchor="end">+71</text>
@@ -183,7 +201,7 @@
     <tspan fill="#A56EF0">stats</tspan>
     <tspan fill="#444"> · </tspan>
     <tspan fill="#A56EF0">export</tspan>
-    <tspan fill="#555">           pip install -e .</tspan>
   </text>
+  <text x="660" y="508" font-size="9.5" fill="#555" text-anchor="end">pip install kna</text>
 
 </svg>
