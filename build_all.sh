@@ -28,7 +28,6 @@ python3 build_structure.py all --out "$OUT" --members-dir "$OUT" \
   --master-dir "$OUT" --report-dir "$OUT/reports"
 # Bill texts: the LIKMS scrape of the korean-assembly-bills repo (KNA_ASSEMBLY_BILLS_DIR)
 # plus data/raw/BPMBILLSUMMARY_{age}. Reports go to $OUT/reports/bill_texts_*.csv.
-# Speech links are not rebuilt: kr-hearings-data v9 is being replaced.
 python3 link_external.py texts --out "$OUT" --in-dir "$OUT" --report-dir "$OUT/reports"
 # KNA_WITNESSES_DIR (member-metadata flag) is optional; without it the flag is skipped.
 python3 link_external.py idmap --out "$OUT" --in-dir "$OUT" --members-dir "$OUT" --allow-missing
@@ -40,9 +39,17 @@ if [[ -n "${KNA_ASSETS_DIR:-}" ]]; then
 elif [[ "$OUT" != "data/processed" ]]; then
   cp data/processed/assets_wealth_panel.parquet "$OUT/" && echo "build_all: asset panel carried over (KNA_ASSETS_DIR not set)"
 fi
-# hearing_meetings_summary.parquet is rebuilt only when kr-hearings-data v10 is
-# released (build_hearings_summary.py). Until then the shipped file is carried over.
-if [[ "$OUT" != "data/processed" && -f data/processed/hearing_meetings_summary.parquet ]]; then
-  cp data/processed/hearing_meetings_summary.parquet "$OUT/"
+# Hearing summary: rebuilt from kr-hearings-data v10 when KNA_HEARINGS_V10_DIR points
+# to a v10 build or to a directory of v10 release assets (build_hearings_summary.py).
+# Otherwise the shipped file is carried over.
+if [[ -n "${KNA_HEARINGS_V10_DIR:-}" ]]; then
+  if [[ "$OUT" != "data/processed" ]]; then
+    python3 build_hearings_summary.py --source v10 --out "$OUT" \
+      --compare data/processed/hearing_meetings_summary.parquet
+  else
+    python3 build_hearings_summary.py --source v10 --out "$OUT"
+  fi
+elif [[ "$OUT" != "data/processed" && -f data/processed/hearing_meetings_summary.parquet ]]; then
+  cp data/processed/hearing_meetings_summary.parquet "$OUT/" && echo "build_all: hearing summary carried over (KNA_HEARINGS_V10_DIR not set)"
 fi
 echo "build_all: done -> $OUT"

@@ -57,14 +57,14 @@ known limitations in [DATA_AVAILABILITY.md](DATA_AVAILABILITY.md).
 | `committee_assignments.parquet` | member x assembly x committee spell | 13,616 | 12 |
 | `legislator_id_mapping.parquet` | legislator | 1,156 | 13 |
 | `bill_texts_linked.parquet` | bill | 109,829 | 14 |
-| `hearing_meetings_summary.parquet` | meeting | 16,829 | 15 |
+| `hearing_meetings_summary.parquet` | meeting | 26,261 | 15 |
 | `assets_wealth_panel.parquet` | member-year | 3,215 | 16 |
 | `reports/` | build reports | | 17 |
 
-`hearing_meetings_summary.parquet` is carried over unchanged from 0.6.0, and
-`build_all.sh` does not rebuild it. `build_all.sh` rebuilds
+`build_all.sh` rebuilds `hearing_meetings_summary.parquet` only when the
+kr-hearings-data v10 files are available (section 15), and
 `assets_wealth_panel.parquet` only when its source files are available
-(section 16) and otherwise carries the shipped file over. Section 17
+(section 16). Otherwise it carries the shipped files over. Section 17
 describes the build.
 
 ## Conventions
@@ -851,8 +851,8 @@ roll-call appendix. The names equal the group counts the appendix prints
 176 찬성 of its correction note over the 175 names of the vote record. One
 17th vote, 17_27710_059, prints 원혜영 twice on its 찬성 list, and the repeat
 is dropped. The member-level lists were compared with an independent parse of
-the same minutes prepared for version 10 of kr-hearings-data, which is not
-yet released. They are identical for 1,850 of the 1,861 17th votes both hold,
+the same minutes prepared for version 10 of kr-hearings-data before its
+release. They are identical for 1,850 of the 1,861 17th votes both hold,
 all 2,510 18th votes and 3,104 of 3,105 19th votes. Eleven of the twelve
 differences are parse errors on the other side. In seven votes two names are
 read as one, in three a page header, a note or stray text is read as a name,
@@ -1334,26 +1334,67 @@ BILL_ID of bill 2203215, which was re-keyed upstream, and keeps `age` and
 
 | | |
 |---|---|
-| File | `hearing_meetings_summary.parquet`, carried over from 0.6.0 |
-| Source | the kr-hearings-data speech corpus, version 9 |
+| File | `hearing_meetings_summary.parquet`, built by `build_hearings_summary.py` |
+| Source | kr-hearings-data release v10.2 (run 20260928T175652_175976) |
 | Unit | one committee, plenary, audit or hearing meeting |
 
 | Column | Definition |
 |---|---|
-| `meeting_id` | Meeting ID of the source corpus. |
+| `meeting_id` | The Open API CONF_ID of the meeting, verbatim. Null for the 187 meetings that no Open API list returns, which kr-hearings-data found by scanning record-viewer IDs. |
 | `term` | Assembly, 16th-22nd. |
-| `committee` | Committee name. |
-| `hearing_type` | 상임위원회, 국정감사, 국회본회의, 예산결산특별위원회, 인사청문특별위원회 or 국정조사. |
-| `date` | Meeting date. |
-| `n_speeches` | Speeches in the meeting. |
-| `n_legislators` | Distinct legislator codes among the speakers. |
-| `parties` | Parties of the speakers, comma-joined. |
+| `committee` | `committee_raw` of kr-hearings-data. A 국정감사 meeting with an audit team carries the team after a hyphen, as in the earlier table. A subcommittee meeting carries its parent committee. |
+| `hearing_type` | 상임위원회, 국정감사, 국회본회의, 예산결산특별위원회, 인사청문특별위원회, 국정조사, 특별위원회 or 전원위원회. |
+| `date` | Meeting date, `YYYY-MM-DD`. |
+| `n_speeches` | Speaker turns in the meeting, after kr-hearings-data merges the fragments of one turn. |
+| `n_legislators` | Distinct legislator codes (`naas_cd`) among the turns spoken in the legislator role (`role_group` = legislator). A minister who holds a seat does not count in a meeting where they speak as minister. |
+| `parties` | Distinct party labels of the legislator-role turns, sorted and comma-joined. A label is the speaker's party on the speech date. |
+| `conf_num` | Record-viewer ID of the meeting. It is set and unique for every meeting and joins to `conf_num` in kr-hearings-data. |
+| `is_subcommittee` | True for a subcommittee meeting, as in kr-hearings-data. |
+| `is_confirmation_hearing` | True for a confirmation hearing (인사청문회), as in kr-hearings-data. It includes the hearings a standing committee holds, whose `hearing_type` is 상임위원회. |
 
-The table has 16,829 meetings dated from 2000-06-01 to 2025-07-21. Version 9
-of the source corpus is known to be defective and is being rebuilt, so treat
-this table as provisional. `n_legislators` counts an empty speaker code as a
-legislator in 2,119 meetings, and some legislators' speeches are not linked
-to a code upstream.
+The table has 26,261 meetings dated from 2000-06-05 to 2026-09-22, 7,268 of
+them subcommittee meetings, with 15,114,183 turns. 778 meetings are
+confirmation hearings. 363 are meetings of 인사청문특별위원회, 414 are held
+by a standing committee and one by a special committee. Select them with
+`is_confirmation_hearing`, not with `hearing_type`. kr-hearings-data v10.2 has
+26,264 meetings. The three it holds without turns are left out, which are two
+identical duplicate copies (`duplicate_of`) and one meeting without turns.
+Use `conf_num` to join the table to kr-hearings-data, because `meeting_id` is
+null for 187 meetings.
+
+| Assembly | 16 | 17 | 18 | 19 | 20 | 21 | 22 |
+|---|---|---|---|---|---|---|---|
+| Meetings | 3,408 | 4,635 | 4,308 | 4,191 | 3,761 | 3,644 | 2,314 |
+| Meetings in the table of 0.6.0-0.8.0 | 2,816 | 3,244 | 2,839 | 2,708 | 2,334 | 2,315 | 573 |
+
+**Change from 0.8.0.** Releases 0.6.0 to 0.8.0 shipped a table of 16,829
+meetings built from version 9 of kr-hearings-data, whose defects D1 to D12
+are listed in docs/CHANGELOG.md of kr-hearings-data. That table counted an
+empty speaker code as a legislator in 2,119 meetings and showed an empty
+party label as a leading comma. Its `meeting_id` is the v9 ID, which drops
+the leading zero of five-digit CONF_IDs. Of the 16,829 v9 meetings, 16,793
+are matched through the `v9_meeting_id` of kr-hearings-data. CORRECTIONS.md,
+entry of Release 0.8.1, lists how the matched meetings differ.
+
+**Rebuilding.** `python3 build_hearings_summary.py --source v10 --out DIR`
+reads the v10 files in one of three forms:
+
+- a build directory with `meetings.parquet` and `turns/tNN/part-*.parquet`,
+  given by `--v10-dir` or `KNA_HEARINGS_V10_DIR` (default
+  `../kr-hearings-data/v10/build/release`);
+- a directory of release assets, `meetings_v10.2.parquet` and
+  `turns_t16_v10.2.parquet` to `turns_t22_v10.2.parquet`, such as the cache
+  of the kr-hearings-data package, given the same way (with `--v10-version`
+  when it holds more than one version);
+- the kr-hearings-data package, `--v10-package v10.2`, which downloads what
+  it needs.
+
+`link_external.py speeches` writes the same table. `build_all.sh` rebuilds
+it when `KNA_HEARINGS_V10_DIR` is set and otherwise carries the shipped file
+over. `tests/test_hearings_summary.py` rebuilds the table when the v10 files
+are present and checks that it equals the shipped file.
+`--source v9` still reproduces the table of 0.6.0 to 0.8.0 from
+`all_speeches_16_22_v9.parquet` in `KNA_HEARINGS_DIR`.
 
 ---
 
