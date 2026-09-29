@@ -6,7 +6,8 @@
 > **Release 0.8.1, 2026-09-28.** This release rebuilds
 > `hearing_meetings_summary.parquet` from kr-hearings-data v10.2, which
 > replaces the defective version 9. The table now has 26,261 meetings through
-> 2026-09-22 and two new columns, `conf_num` and `is_subcommittee`.
+> 2026-09-22 and three new columns, `conf_num`, `is_subcommittee` and
+> `is_confirmation_hearing`.
 > `meeting_id` is null for 187 meetings, so join on `conf_num`. Release 0.8.0
 > added the member-level roll calls of the 17th-19th Assemblies from the
 > plenary minutes, the 22nd votes of

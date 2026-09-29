@@ -20,7 +20,7 @@ import build_hearings_summary as bhs
 DTYPES = {"meeting_id": "object", "term": "Int64", "committee": "object",
           "hearing_type": "object", "date": "object", "n_speeches": "int64",
           "n_legislators": "int64", "parties": "object", "conf_num": "int64",
-          "is_subcommittee": "bool"}
+          "is_subcommittee": "bool", "is_confirmation_hearing": "bool"}
 
 
 def test_shipped_summary_schema(kdata):
@@ -65,6 +65,7 @@ MEETINGS = pd.DataFrame({
     "committee_raw": ["행정안전위원회", "법제사법위원회", "윤리특별위원회", "법제사법위원회"],
     "date": ["2020-10-07", "2020-06-16", "2020-07-01", "2020-06-17"],
     "is_subcommittee": [False, False, False, True],
+    "is_confirmation_hearing": [False, True, False, False],
     "audit_team": ["제1반", None, None, None],
 })
 TURNS = pd.DataFrame({
@@ -107,6 +108,8 @@ def _check(got):
     assert three["committee"] == "행정안전위원회-제1반"
     assert (three["n_legislators"], three["parties"]) == (1, "정의당")
     assert got.set_index("conf_num").loc[4, "is_subcommittee"]
+    # A confirmation hearing held by a standing committee
+    assert got.set_index("conf_num").loc[1, "is_confirmation_hearing"]
 
 
 def test_v10_build_layout(tmp_path):

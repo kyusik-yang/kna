@@ -27,8 +27,8 @@ Usage:
               KNA_HEARINGS_DIR [../kr-hearings-data/data]. It reproduces the
               file shipped in releases 0.6.0 to 0.8.0.
 
-A v10 table has the eight v9 columns with the same types, plus conf_num and
-is_subcommittee:
+A v10 table has the eight v9 columns with the same types, plus conf_num,
+is_subcommittee and is_confirmation_hearing:
 
     meeting_id       conf_id, the Open API CONF_ID, verbatim. Most v9 IDs drop
                      its leading zero, so the two IDs differ. Null for the
@@ -46,6 +46,9 @@ is_subcommittee:
                      sorted, comma-joined
     conf_num         the record-viewer ID of the meeting, set for every meeting
     is_subcommittee  as in meetings.parquet
+    is_confirmation_hearing  as in meetings.parquet. True for every
+                     confirmation hearing, including those a standing
+                     committee holds, whose hearing_type is 상임위원회
 
 Meetings without a turn are left out, as a v9 meeting without a speech had
 no row. --compare REF prints how the new table differs from REF. A v10 table
@@ -72,11 +75,11 @@ V10_TERMS = range(16, 23)
 
 KEYS = ["meeting_id", "term", "committee", "hearing_type", "date"]
 COLUMNS = KEYS + ["n_speeches", "n_legislators", "parties"]
-V10_EXTRA = ["conf_num", "is_subcommittee"]
+V10_EXTRA = ["conf_num", "is_subcommittee", "is_confirmation_hearing"]
 V10_COLUMNS = COLUMNS + V10_EXTRA
 V9_COLUMNS = KEYS + ["speaker", "naas_cd", "party"]
 V10_MEETING_COLUMNS = ["conf_num", "conf_id", "v9_meeting_id", "term", "hearing_type",
-                       "committee_raw", "date", "is_subcommittee"]
+                       "committee_raw", "date", "is_subcommittee", "is_confirmation_hearing"]
 V10_TURN_COLUMNS = ["conf_num", "naas_cd", "party", "role_group"]
 
 
@@ -219,6 +222,9 @@ def summarize_v10(meetings: pd.DataFrame, turns: pd.DataFrame) -> pd.DataFrame:
         raise SystemExit(f"ERROR: the v10 meetings lack the columns {missing}")
     if meetings["conf_num"].isna().any() or meetings["conf_num"].duplicated().any():
         raise SystemExit("ERROR: the v10 meetings have a missing or repeated conf_num")
+    flags = ["is_subcommittee", "is_confirmation_hearing"]
+    if meetings[flags].isna().any().any():
+        raise SystemExit(f"ERROR: the v10 meetings have a null in {flags}")
     conf_id = meetings["conf_id"].dropna()
     if conf_id.duplicated().any():
         raise SystemExit("ERROR: the v10 meetings have a repeated conf_id")
@@ -246,6 +252,7 @@ def summarize_v10(meetings: pd.DataFrame, turns: pd.DataFrame) -> pd.DataFrame:
         "date": meetings["date"],
         "conf_num": meetings["conf_num"].astype("int64"),
         "is_subcommittee": meetings["is_subcommittee"].astype(bool),
+        "is_confirmation_hearing": meetings["is_confirmation_hearing"].astype(bool),
         "v9_meeting_id": meetings["v9_meeting_id"],
     })
     out = out.merge(stats, left_on="conf_num", right_index=True, how="inner")

@@ -15,7 +15,7 @@ identical to 0.8.0. The figures were computed from the 0.8.0 table and the
 
 | File | 0.8.0 | 0.8.1 |
 |---|---|---|
-| `hearing_meetings_summary.parquet` | 16,829 meetings, 2000-06-01 to 2025-07-21, eight columns | 26,261 meetings, 2000-06-05 to 2026-09-22, columns `conf_num` and `is_subcommittee` added |
+| `hearing_meetings_summary.parquet` | 16,829 meetings, 2000-06-01 to 2025-07-21, eight columns | 26,261 meetings, 2000-06-05 to 2026-09-22, columns `conf_num`, `is_subcommittee` and `is_confirmation_hearing` added |
 
 The build reads the v10.2 build directory, the v10.2 release assets or the
 kr-hearings-data package, and the three give the same table.
@@ -58,6 +58,8 @@ Among the 16,793 matched meetings the other columns differ as follows.
   kr-hearings-data `meetings` to find the new rows.
 - Counts of meetings per assembly are higher, mainly because subcommittee
   meetings are now included. Filter on `is_subcommittee` to leave them out.
+- Select confirmation hearings with `is_confirmation_hearing`. 414 of the
+  778 are held by a standing committee and have `hearing_type` 상임위원회.
 
 ---
 

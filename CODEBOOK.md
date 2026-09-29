@@ -1350,9 +1350,13 @@ BILL_ID of bill 2203215, which was re-keyed upstream, and keeps `age` and
 | `parties` | Distinct party labels of the legislator-role turns, sorted and comma-joined. A label is the speaker's party on the speech date. |
 | `conf_num` | Record-viewer ID of the meeting. It is set and unique for every meeting and joins to `conf_num` in kr-hearings-data. |
 | `is_subcommittee` | True for a subcommittee meeting, as in kr-hearings-data. |
+| `is_confirmation_hearing` | True for a confirmation hearing (인사청문회), as in kr-hearings-data. It includes the hearings a standing committee holds, whose `hearing_type` is 상임위원회. |
 
 The table has 26,261 meetings dated from 2000-06-05 to 2026-09-22, 7,268 of
-them subcommittee meetings, with 15,114,183 turns. kr-hearings-data v10.2 has
+them subcommittee meetings, with 15,114,183 turns. 778 meetings are
+confirmation hearings. 363 are meetings of 인사청문특별위원회, 414 are held
+by a standing committee and one by a special committee. Select them with
+`is_confirmation_hearing`, not with `hearing_type`. kr-hearings-data v10.2 has
 26,264 meetings. The three it holds without turns are left out, which are two
 identical duplicate copies (`duplicate_of`) and one meeting without turns.
 Use `conf_num` to join the table to kr-hearings-data, because `meeting_id` is
