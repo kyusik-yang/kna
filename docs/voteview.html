@@ -356,8 +356,6 @@
     color: var(--text-secondary);
     line-height: 1.7;
   }
-.method-warning{border-left:3px solid #d9822b;background:rgba(217,130,43,.08);padding:12px 16px;margin:18px 0;border-radius:4px}
-.method-warning h3{color:#d9822b;margin-top:0}
 
   .method-note h3 {
     color: var(--text-primary);
@@ -549,31 +547,10 @@
         2026-09-17까지의 본회의 표결을 쓴다.
       </p>
 
-      <div class="method-warning">
-        <h3>&#9888; 정정 안내 (v0.7.0)</h3>
-        <p>
-          이념점수를 다시 추정했다. 표결 통합 단계가 의원 이름으로 중복을 제거해 동명이인 의원의 표가
-          빠지던 오류와, DW-NOMINATE 입력의 정당 코드가 어긋나던 오류를 고쳤다. 정당 표기도 수집 시점의
-          현재 정당에서 선거 당시 정당으로 바꿨다. 기본 계열은 이제 2026-09-17까지의 표결을 포함한다.
-          이전 계열은 저장소의 <code>ideal_points_archive/</code> 폴더에 남겨 두었다. <code>v0.6.0_legacy</code>는 0.6.0에 공개한 계열이다. <code>v20260312_corrected</code>는 0.6.0과 같은 표결 범위에서 오류만 고친 계열이다.
-        </p>
-        <p>0.6.0 계열에서는 20대에서 22대 사이 양대 정당 계열 간 bridging 거리가 약 6% 증가했으나, 현재 계열에서는 약 0.1% 증가한다. 차이의 대부분은 정당 분류 기준의 변경에서 온다. 0.6.0 추정치를 선거 당시 정당 계열로 다시 묶기만 해도 약 1% 감소로 바뀐다.</p>
-      </div>
-
-      <div class="method-warning">
-        <h3>&#9888; 정정 안내 (2026-07-18)</h3>
-        <p>
-          이전 버전은 이 지표를 <strong>DW-NOMINATE</strong>로 표기했으나 정확하지 않았다.
-          실제로는 위에 설명한 대수별 W-NOMINATE + bridging 정렬이다. 표기를 정정하고
-          정렬 절차를 문서화했으며, 생성 스크립트(<code>build_ideal_points.R</code>)를
-          공개했다. 상세는
-          <a href="https://github.com/kyusik-yang/kna/blob/main/CORRECTIONS.md" target="_blank" rel="noopener">CORRECTIONS.md</a>를 참조.
-        </p>
-        <p>
-          <strong>대수 간 비교 시 주의.</strong> 대수별로 따로 추정한 원점수를 그대로
-          비교하면 각 대수가 재정규화되기 때문에 양극화 증가폭이 과대평가된다. 20대와 22대 사이 양대 정당 계열 간 거리는 원점수로는 약 31% 증가하지만, 이 사이트가 쓰는 bridging 정렬로는 약 0.1% 증가하고, 통합 DW-NOMINATE로는 약 9% 증가한다. 저장소는 세 계열을 모두 제공한다.
-        </p>
-      </div>
+      <p>
+        <strong>대수 간 비교 시 주의.</strong> 대수별로 따로 추정한 원점수를 그대로
+        비교하면 각 대수가 재정규화되기 때문에 양극화 증가폭이 과대평가된다. 20대와 22대 사이 양대 정당 계열 간 거리는 원점수로는 약 31% 증가하지만, 이 사이트가 쓰는 bridging 정렬로는 약 0.1% 증가하고, 통합 DW-NOMINATE로는 약 9% 증가한다. 저장소는 세 계열을 모두 제공한다.
+      </p>
 
       <h3>Data Sources</h3>
       <p>

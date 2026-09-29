@@ -17,7 +17,6 @@ Data (read from --data, default data/processed):
   - ideal_points_bridging_params.csv  bridging legislators per term
   - ideal_points_manifest.json        vote dates, record counts, scaling settings
   - roll_calls_all.parquet, members_22.parquet  record count, coverage note
-  - ideal_points_archive/v0.6.0_legacy/  earlier series, for the correction notice (optional)
 
 Output:
   - voteview.html in --out (default docs), standalone HTML with Plotly CDN
@@ -264,16 +263,6 @@ if wnom_path.exists():
     growth["wnom"] = gap_growth(pd.read_csv(wnom_path), "wnom_1d")
 if dw_path.exists():
     growth["dw"] = gap_growth(pd.read_csv(dw_path), "dwnom_1d")
-
-legacy_path = DATA_DIR / "ideal_points_archive" / "v0.6.0_legacy" / "ideal_points_bridged.csv"
-legacy = {}
-if legacy_path.exists():
-    old = pd.read_csv(legacy_path, dtype={"member_id": str})
-    legacy["own_labels"] = gap_growth(old, "bridged_1d")
-    relabeled = old.drop(columns="party_bloc").merge(
-        df[["member_id", "term", "party_bloc"]], on=["member_id", "term"], how="inner")
-    legacy["election_labels"] = gap_growth(relabeled, "bridged_1d")
-    legacy["n"] = len(old)
 
 # Members of the latest term with no member-level votes, hence no score
 last_term = TERMS[-1]
@@ -918,8 +907,6 @@ html_template = """<!DOCTYPE html>
     color: var(--text-secondary);
     line-height: 1.7;
   }
-.method-warning{border-left:3px solid #d9822b;background:rgba(217,130,43,.08);padding:12px 16px;margin:18px 0;border-radius:4px}
-.method-warning h3{color:#d9822b;margin-top:0}
 
   .method-note h3 {
     color: var(--text-primary);
@@ -1283,29 +1270,6 @@ else:
 if df["aligned"].abs().max() > 1.0 + 1e-9:
     raise SystemExit("ERROR: the text says the scale runs from -1 to +1, revise it")
 
-archives = sorted(d.name for d in (DATA_DIR / "ideal_points_archive").iterdir() if d.is_dir()) \
-    if (DATA_DIR / "ideal_points_archive").is_dir() else []
-ARCHIVE_DESC = {
-    "v0.6.0_legacy": "0.6.0에 공개한 계열",
-    "v20260312_corrected": "0.6.0과 같은 표결 범위에서 오류만 고친 계열",
-}
-archive_txt = ""
-if archives:
-    archive_txt = "이전 계열은 저장소의 <code>ideal_points_archive/</code> 폴더에 남겨 두었다. " + " ".join(
-        f"<code>{a}</code>는 {ARCHIVE_DESC[a]}이다." if a in ARCHIVE_DESC else f"<code>{a}</code>도 있다."
-        for a in archives)
-
-legacy_txt = ""
-if legacy:
-    b = growth["bridged"]
-    lo, le = legacy["own_labels"], legacy["election_labels"]
-    if not abs(lo - le) > abs(le - b):
-        raise SystemExit("ERROR: relabelling no longer explains most of the change, revise the notice")
-    legacy_txt = (
-        f"<p>0.6.0 계열에서는 {TERMS[0]}대에서 {TERMS[-1]}대 사이 양대 정당 계열 간 bridging 거리가 약 {amount(lo)} {stem(lo)}했으나, "
-        f"현재 계열에서는 약 {amount(b)} {stem(b)}한다. 차이의 대부분은 정당 분류 기준의 변경에서 온다. "
-        f"0.6.0 추정치를 선거 당시 정당 계열로 다시 묶기만 해도 약 {amount(le)} {stem(le)}로 바뀐다.</p>")
-
 if "wnom" in growth and "dw" in growth:
     w, b, d = growth["wnom"], growth["bridged"], growth["dw"]
     if not w > max(b, d):
@@ -1340,31 +1304,10 @@ method_html = f"""      <h3>추정 방법</h3>
         {ymd(LAST_VOTE)}까지의 본회의 표결을 쓴다.{missing_ko}
       </p>
 
-      <div class="method-warning">
-        <h3>&#9888; 정정 안내 (v0.7.0)</h3>
-        <p>
-          이념점수를 다시 추정했다. 표결 통합 단계가 의원 이름으로 중복을 제거해 동명이인 의원의 표가
-          빠지던 오류와, DW-NOMINATE 입력의 정당 코드가 어긋나던 오류를 고쳤다. 정당 표기도 수집 시점의
-          현재 정당에서 선거 당시 정당으로 바꿨다. 기본 계열은 이제 {ymd(LAST_VOTE)}까지의 표결을 포함한다.
-          {archive_txt}
-        </p>
-        {legacy_txt}
-      </div>
-
-      <div class="method-warning">
-        <h3>&#9888; 정정 안내 (2026-07-18)</h3>
-        <p>
-          이전 버전은 이 지표를 <strong>DW-NOMINATE</strong>로 표기했으나 정확하지 않았다.
-          실제로는 위에 설명한 대수별 W-NOMINATE + bridging 정렬이다. 표기를 정정하고
-          정렬 절차를 문서화했으며, 생성 스크립트(<code>build_ideal_points.R</code>)를
-          공개했다. 상세는
-          <a href="https://github.com/kyusik-yang/kna/blob/main/CORRECTIONS.md" target="_blank" rel="noopener">CORRECTIONS.md</a>를 참조.
-        </p>
-        <p>
-          <strong>대수 간 비교 시 주의.</strong> 대수별로 따로 추정한 원점수를 그대로
-          비교하면 각 대수가 재정규화되기 때문에 양극화 증가폭이 과대평가된다. {compare_txt}
-        </p>
-      </div>
+      <p>
+        <strong>대수 간 비교 시 주의.</strong> 대수별로 따로 추정한 원점수를 그대로
+        비교하면 각 대수가 재정규화되기 때문에 양극화 증가폭이 과대평가된다. {compare_txt}
+      </p>
 
       <h3>Data Sources</h3>
       <p>
@@ -1414,9 +1357,6 @@ print(f"  Parties: {df['party'].nunique()}")
 print(f"  Assemblies: {sorted(df['term'].unique())}")
 print(f"  Vintage: {VINTAGE}, votes {ymd(FIRST_VOTE)} to {ymd(LAST_VOTE)}, {N_VOTE_RECORDS:,} records")
 print(f"  Gap growth, first to last term: " + ", ".join(f"{k} {v:+.2f}%" for k, v in growth.items()))
-if legacy:
-    print(f"  v0.6.0 legacy bridged growth: own labels {legacy['own_labels']:+.2f}%, "
-          f"election-time blocs {legacy['election_labels']:+.2f}%")
 print(f"\nPolarization:")
 for _, row in polar_df.iterrows():
     print(f"  {int(row['term'])}대: gap = {row['gap']:.3f}"
