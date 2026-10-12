@@ -643,11 +643,49 @@ plenary rows, 106 of them rows of 대안반영폐기 bills without a meeting nam
 whose date is 1 to 99 days off. One is a related-committee row. Take the
 meeting date from the summary where it joins.
 
+**Deemed referrals.** From the 19th Assembly, 국회법 제59조의2 deems a bill
+that a committee has not taken up within a set period to be 상정 at the
+first meeting held after it, unless the chair and the 간사 agree otherwise.
+In 2012 two committees let such bills count as taken up and left them off
+the agenda. 214 rows of ten meetings of 정무위원회 and 보건복지위원회, from
+2012-08-23 to 2012-11-20, are such bills. Their `result` is `상정` alone,
+the agenda of the minutes in kr-hearings-data does not list them, and
+`conf_check` is `ok`, because the link is right. At eight of the meetings,
+or at the meeting before, the chair announced how many bills were deemed
+상정 and put off their review. The rows match those numbers except at 36567.
+The other two meetings, 36466 and 36566, met during the 국정감사 only to
+change witnesses, and their minutes announce nothing, so their 24 rows are
+inferred from the same pattern. 203 of the 214 bills have a later committee
+row with a review step, such as 대체토론 or 소위회부. Leave these rows out
+when counting the meetings that discussed a bill. 보건복지위원회 announced
+deemed bills again from 2012-11-22 to 2013-03-07, but the pages do not link
+those bills to those meetings.
+
+| `conf_num` | Committee | Date | Rows | Bills announced |
+|---|---|---|---|---|
+| 36293 | 정무위원회 | 2012-08-23 | 39 | 39 |
+| 36304 | 보건복지위원회 | 2012-08-24 | 58 | 58 |
+| 36320 | 보건복지위원회 | 2012-08-28 | 6 | 6, at 36304 |
+| 36323 | 정무위원회 | 2012-08-28 | 13 | 13, at 36293 |
+| 36370 | 보건복지위원회 | 2012-09-12 | 22 | 22 |
+| 36434 | 보건복지위원회 | 2012-09-21 | 4 | 4 |
+| 36466 | 보건복지위원회 | 2012-10-08 | 16 | none |
+| 36566 | 보건복지위원회 | 2012-10-16 | 8 | none |
+| 36567 | 보건복지위원회 | 2012-11-05 | 35 | 39 |
+| 36711 | 보건복지위원회 | 2012-11-20 | 13 | 13 |
+
 **Comparison with the Open API tables.** Counted as pairs of bill and
 meeting date over law bills, the pages hold 99.4% to 100% of the pairs of
 `committee_meetings_{age}` in the 18th-22nd and 87.0% in the 17th. They add
 434 to 1,752 pairs per assembly that the API table lacks. They hold every
-pair of `judiciary_meetings_{age}` and add up to 21 per assembly.
+pair of `judiciary_meetings_{age}` and add up to 21 per assembly. The pages
+lack 1,379 pairs of the 17th, and 1,336 of them belong to bills whose page
+lists other committee meetings. In all but three of these 1,336 API rows
+`jrcmit_conf_rslt` is null. For 1,235 (92.4%), a meeting of the bill's
+committee on that day lists the bill on its agenda in kr-hearings-data,
+matched by title and proposer after converting hanja titles. These are
+meetings that took up the bill and that the page leaves out, so use
+`committee_meetings_17` alongside this table for the 17th.
 
 **Matching pages to bills.** The page does not print the bill number, so
 `collect_likms_billinfo.py build` matches each page to its bill through the

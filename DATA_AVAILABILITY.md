@@ -216,7 +216,10 @@ not a roll-call matrix (CODEBOOK.md section 9).
     six 22nd-Assembly subcommittee meetings the page links the minutes of a
     full committee meeting, and 178 rows give a date outside the dates of the
     minutes. `conf_check` marks both. Four linked meetings are not in the
-    hearing summary. CODEBOOK.md section 2.1 lists them.
+    hearing summary. 214 rows of ten 2012 meetings are bills deemed 상정
+    under 국회법 제59조의2 that the meeting did not discuss. The pages lack
+    1,379 pairs of 17th-Assembly bill and committee meeting date that the
+    Open API table has. CODEBOOK.md section 2.1 lists them.
 15. **The committee documents carry measures, not text.**
     `bill_documents.parquet` lists every document link of the bill pages
     and gives page and character counts for the 139,600 검토보고서,
