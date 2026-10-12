@@ -2,15 +2,16 @@
 
 | | |
 |---|---|
-| Release | 0.8.0 |
-| Data collected | Mostly on 2026-09-25, from the Open Assembly API (열린국회정보, open.assembly.go.kr). The 20th-21st member-level votes and the 18th and 20th BILLINFODETAIL records are from March 2026. The BPMBILLSUMMARY texts, the LIKMS vote pages and the 17th-19th plenary minutes were collected on 2026-09-28 (DATA_AVAILABILITY.md). |
+| Release | 0.9.0 |
+| Data collected | Mostly on 2026-09-25, from the Open Assembly API (열린국회정보, open.assembly.go.kr). The 20th-21st member-level votes and the 18th and 20th BILLINFODETAIL records are from March 2026. The BPMBILLSUMMARY texts, the LIKMS vote pages and the 17th-19th plenary minutes were collected on 2026-09-28, the LIKMS bill pages from 2026-10-08 to 2026-10-10 and the committee documents they link from 2026-10-10 to 2026-10-12 (DATA_AVAILABILITY.md). |
 | Coverage | 17th-22nd National Assembly. The 22nd Assembly is in session. |
 
 This codebook describes every file in the data directory, which is
 `data/processed/` in a repository checkout. Every count and coverage figure
-below was computed from the 0.8.0 files. Corrections to earlier releases are
-listed in [CORRECTIONS.md](CORRECTIONS.md), and per-assembly coverage and
-known limitations in [DATA_AVAILABILITY.md](DATA_AVAILABILITY.md).
+below was computed from the 0.8.0 files, except those of sections 2.1 and
+2.2, which come from the 0.9.0 files. Corrections to earlier releases are listed in
+[CORRECTIONS.md](CORRECTIONS.md), and per-assembly coverage and known
+limitations in [DATA_AVAILABILITY.md](DATA_AVAILABILITY.md).
 
 ---
 
@@ -18,6 +19,8 @@ known limitations in [DATA_AVAILABILITY.md](DATA_AVAILABILITY.md).
 
 1. [Bill master](#1-bill-master-master_bills_age)
 2. [Committee and judiciary meetings](#2-committee-and-judiciary-meetings)
+   - [2.1 Meetings from the LIKMS bill pages](#21-meetings-from-the-likms-bill-pages)
+   - [2.2 Committee documents from the LIKMS bill pages](#22-committee-documents-from-the-likms-bill-pages)
 3. [Subcommittee reviews](#3-subcommittee-reviews)
 4. [Alternative absorption](#4-alternative-absorption)
 5. [Cosponsorship edges](#5-cosponsorship-edges)
@@ -43,6 +46,8 @@ known limitations in [DATA_AVAILABILITY.md](DATA_AVAILABILITY.md).
 | `master_bills_22.sqlite` | tables `bills`, `committee_meetings`, `judiciary_meetings` of the 22nd | | 1 |
 | `committee_meetings_{17..22}.parquet` | bill x committee meeting x agenda step | 818,448 | 2 |
 | `judiciary_meetings_{17..22}.parquet` | bill x 법제사법위원회 meeting | 15,858 | 2 |
+| `bill_meetings.parquet` | law bill x meeting listed on its LIKMS page, with the minutes ID | 333,586 | 2.1 |
+| `bill_documents.parquet` | law bill x document link on its LIKMS page, with page and character counts of the review reports | 158,197 | 2.2 |
 | `subcommittee_reviews.parquet` | bill x subcommittee stage | 93,981 | 3 |
 | `alternative_absorption.parquet` | committee alternative x linked bill | 25,439 | 4 |
 | `cosponsorship_edges.parquet` | bill x member | 1,379,763 | 5 |
@@ -537,6 +542,200 @@ which the API repeats, are dropped. Columns are lowercase in every assembly.
 
 The 17th and 18th committee tables hold 42 and 24 rows whose bill is not in
 the master. They belong to BILLJUDGE-only agenda items, mostly 인사청문요청안.
+
+### 2.1 Meetings from the LIKMS bill pages
+
+| | |
+|---|---|
+| File | `bill_meetings.parquet`, built by `collect_likms_billinfo.py build` |
+| Source | The bill page of LIKMS (의안정보시스템, `POST likms.assembly.go.kr/bill/bi/bill/detail/billInfo.do`), read for each of the 110,245 law bills of the 17th-22nd from 2026-10-08 to 2026-10-10 |
+| Unit | one meeting listed on a bill's page |
+
+The page lists the meetings that took up a bill in four tables. They are
+소관위 회의정보 (committee and subcommittee meetings), 관련위 회의정보,
+법사위 회의정보 and 본회의 심의정보. Each row links the minutes in the record
+viewer by their ID, `conf_num`, which joins to
+`hearing_meetings_summary.parquet` and to kr-hearings-data. The Open API
+tables of section 2 have no such ID. Both list nearly the same committee and
+법제사법위원회 meetings (comparison below), so what this table adds is the link to
+the minutes, the plenary meetings and the related-committee meetings.
+
+| Column | Definition |
+|---|---|
+| `age` | Assembly, 17-22. |
+| `bill_no`, `bill_id` | The bill, as in the master. |
+| `stage` | `committee` (소관위 회의정보, subcommittee meetings included), `related_committee` (관련위 회의정보), `judiciary` (법사위 회의정보) or `plenary` (본회의 심의정보). |
+| `seq` | Position of the row in its table on the page, from 1. |
+| `meeting_name` | Meeting name as listed, such as `제388회 국회(임시회) 제3차 전체회의`. Null in 25,964 plenary rows of 대안반영폐기 bills, which give only the minutes of the sitting that decided the alternative. |
+| `meeting_date` | 회의일, `YYYY-MM-DD`. In plenary rows it is the 의결일. |
+| `present_date` | 상정일 of a plenary row, where the page gives one. Null in the other stages. |
+| `result` | 회의결과 as listed, such as `상정/제안설명/검토보고/대체토론/소위회부`, or the plenary result, such as `원안가결` or `대안반영폐기`. |
+| `conf_num` | Record-viewer ID of the minutes (CONFER_NUM). Null where the row has no minutes link. |
+
+The plenary table of a page also holds status rows without a meeting, such
+as `임기만료폐기`, which the build leaves out (54,103 rows). The master
+already records these results.
+
+| Assembly | Law bills | With a row | With a minutes link | With a committee-stage row | Rows | Meetings with minutes |
+|---|---|---|---|---|---|---|
+| 17 | 7,489 | 5,680 | 5,600 (74.8%) | 4,923 (65.7%) | 16,301 | 813 |
+| 18 | 13,913 | 12,277 | 11,861 (85.3%) | 11,708 (84.2%) | 48,553 | 1,345 |
+| 19 | 17,822 | 16,394 | 16,386 (91.9%) | 16,231 (91.1%) | 61,848 | 1,215 |
+| 20 | 24,141 | 22,484 | 22,451 (93.0%) | 22,405 (92.8%) | 86,536 | 1,260 |
+| 21 | 25,858 | 23,897 | 23,892 (92.4%) | 23,840 (92.2%) | 72,552 | 1,544 |
+| 22 | 21,022 | 18,270 | 18,270 (86.9%) | 18,196 (86.6%) | 47,796 | 962 |
+
+By stage the table has 276,031 committee, 15,835 judiciary, 41,448 plenary
+and 272 related-committee rows. 331,344 rows link minutes, of 7,139 distinct
+meetings. Most of the 2,242 rows without a link fall in three groups.
+These are 824 of the 1,625 법제사법위원회 rows of the 17th, 418 plenary rows of
+the 18th whose name lacks the sitting number (such as `제278회
+국회(정기회)제차 본회의` of 2008-11-28), and 245 committee rows of the 22nd
+from ten subcommittee meetings on election law in 2026
+(공직선거법및지방선거구제개편심사소위, 정치관계법심사소위).
+
+**Joining the minutes.** 330,877 linked rows (99.86%) find their meeting in
+`hearing_meetings_summary.parquet`. The other 467 rows link four meetings.
+Three were held after the summary ends on 2026-09-22 (`conf_num` 57294,
+57350 and 57385). The fourth, 35218, is a copy that kr-hearings-data marks as
+identical to 35291 (`duplicate_of`), and the summary leaves such copies out.
+Take the meeting date from the summary where it joins. The page misdates two
+meetings. Bill 174695 lists meeting 30027 on 1905-06-28 and bill 1803593
+lists 32719 on 2008-01-21. The minutes date them 2006-09-14 and 2009-02-11.
+
+**Comparison with the Open API tables.** Counted as pairs of bill and
+meeting date over law bills, the pages hold 99.4% to 100% of the pairs of
+`committee_meetings_{age}` in the 18th-22nd and 87.0% in the 17th. They add
+434 to 1,752 pairs per assembly that the API table lacks. They hold every
+pair of `judiciary_meetings_{age}` and add up to 21 per assembly.
+
+**Matching pages to bills.** The page does not print the bill number, so
+`collect_likms_billinfo.py build` matches each page to its bill through the
+committee and stops when they disagree. For all 109,696 bills with a
+committee in the master, that committee is among the page's 소관위
+committees once spaces and parenthesized text are removed. The 회부일 agrees
+for 103,191 of 103,221 bills. Of the 30 that differ, 29 are in the 17th.
+Sixteen differ by one day, and three have no 회부일 on the page.
+
+**Rebuilding.** `collect_likms_billinfo.py fetch --html-dir DIR` reads the
+pages, about one request every 0.7 seconds and about a day for all law bills,
+and keeps them in DIR, outside the repository. `extract --html-dir DIR`
+writes `data/raw/likms_billinfo_{age}.parquet`, every row of the eight review
+and meeting tables of each page, and `data/raw/likms_billinfo_meta.json`.
+`build` writes this table from those files and `build_all.sh` runs it. The
+22nd Assembly is in session, and its rows are a snapshot of 2026-10-08 to
+2026-10-10. `refresh_22.sh` does not update them.
+
+### 2.2 Committee documents from the LIKMS bill pages
+
+| | |
+|---|---|
+| File | `bill_documents.parquet`, built by `collect_likms_docs.py build` |
+| Source | The document links on the LIKMS bill pages of section 2.1, and the files they point to (`likms.assembly.go.kr/filegate/servlet/FileGate`), downloaded from 2026-10-10 to 2026-10-12 |
+| Unit | one document link listed on a bill's page |
+
+Under each row of its review tables, the bill page links the documents of
+that stage. The table keeps every link on the pages of the 97,424 law bills
+that have one, 158,197 rows of 14 document types. Three types were downloaded
+and measured. They are the 전문위원 검토보고서 (the committee staff's review
+of the bill), the committee's 심사보고서 and the 체계자구검토보고서 of the
+법제사법위원회 staff. The other types, 위원회의결안 and 위원회제출안 among
+them, carry the link only. The table holds no document text. The National
+Assembly's copyright policy assigns the rights in its documents to the
+National Assembly Secretariat and asks users to consult it before reusing
+material that carries no 공공누리 license mark.
+
+| Column | Definition |
+|---|---|
+| `age` | Assembly, 17-22. |
+| `bill_no`, `bill_id` | The bill, as in the master. |
+| `stage` | `committee` (소관위 심사정보), `related_committee` (관련위 심사정보, which links only 관련위의견서) or `judiciary` (법사위 체계자구 심사정보). |
+| `seq` | Position of the review row in its table on the page, from 1. It counts the rows of the review tables, not those of the meeting tables in section 2.1. |
+| `committee` | Committee of the review row, as listed. Null in the `judiciary` stage. |
+| `doc_seq` | Position of the document in its row, from 1. |
+| `doc_type` | Document label as listed, such as `검토보고서`, `심사보고서`, `체계자구검토보고서` or `위원회의결안`. |
+| `book_id` | LIKMS document ID. LIKMS issues a new one for every bill a document is attached to. |
+| `pdf_url`, `hwp_url` | Download links as the page gives them. Null where the page offers no file in that format. Four PDF links use `type=0`, the HWP type, and still return the PDF. |
+| `file_format` | `pdf` or `hwp`, the file that was measured. The PDF where the page offers one, the HWP otherwise. Null for the types not downloaded and for `not_obtained`. |
+| `pages` | Pages of a PDF. Null for HWP files. |
+| `chars` | Characters of the extracted text, whitespace excluded. |
+| `text_status` | What the file holds (below). Null for the types not downloaded. |
+| `report_key` | Identifier of the report text (below). Set where `text_status` is `text`. |
+| `report_bills` | Number of bills whose links carry the same `report_key`. |
+
+A document can be listed in more than one row of a page. 434 rows repeat
+a pair of bill and bookId, 428 of them 관련위의견서 listed again under every
+related-committee row of the bill.
+
+| `text_status` | Meaning | 검토보고서 | 심사보고서 | 체계자구검토보고서 |
+|---|---|---|---|---|
+| `text` | The file has text. | 88,775 | 36,703 | 13,563 |
+| `placeholder` | A 검토보고서 link of one page (or an HWP file) under 600 characters that only notes that no review report was written, such as "국회법 제58조제4항에 따라 바로 법안심사소위원회에 회부하여 검토보고서가 없음". 140 of them are in the 18th. | 162 | | |
+| `empty` | Fewer than 50 characters per page and no image, mostly blank one-page PDFs of about 4 KB. A one-page file with at least 10 characters, such as a title or a one-line opinion, counts as `text`. | 41 | 208 | 69 |
+| `scanned` | As `empty`, but the PDF holds images. These are scanned reports, such as five 검토보고서 of the 20th 과학기술정보방송통신위원회. | 5 | 4 | 1 |
+| `unreadable` | The file does not open. The file server holds it cut off at 32,768 or 40,960 bytes. | 6 | 2 | |
+| `not_obtained` | No file. For 57 documents of the 17th both links return an empty HTML page, and four 19th HWP files are DRM containers. | 8 | 14 | 39 |
+| Documents | One per pair of bill and bookId. | 88,997 | 36,931 | 13,672 |
+
+| Assembly | Law bills | With a document link | With a 검토보고서 link | With a 검토보고서 text | With a 심사보고서 text | With a 체계자구검토보고서 text |
+|---|---|---|---|---|---|---|
+| 17 | 7,489 | 6,441 | 5,782 (77.2%) | 5,739 (76.6%) | 3,325 (44.4%) | 1,609 (21.5%) |
+| 18 | 13,913 | 11,695 | 10,385 (74.6%) | 10,226 (73.5%) | 6,076 (43.7%) | 2,010 (14.4%) |
+| 19 | 17,822 | 16,135 | 14,341 (80.5%) | 14,331 (80.4%) | 6,591 (37.0%) | 2,586 (14.5%) |
+| 20 | 24,141 | 22,079 | 20,029 (83.0%) | 20,022 (82.9%) | 7,471 (30.9%) | 2,974 (12.3%) |
+| 21 | 25,858 | 23,399 | 20,969 (81.1%) | 20,969 (81.1%) | 7,898 (30.5%) | 2,806 (10.9%) |
+| 22 | 21,022 | 17,675 | 15,650 (74.4%) | 15,648 (74.4%) | 5,309 (25.3%) | 1,557 (7.4%) |
+
+The median 검토보고서 has 15 pages and 7,178 characters, the median
+심사보고서 7 pages and the median 체계자구검토보고서 one page. 1,341 bills
+have more than one 검토보고서 link.
+
+**One report, many bills.** A committee often reviews several bills on the
+same law in one report, and LIKMS attaches a separate copy to each of them,
+with its own bookId and a PDF that differs byte for byte. `report_key`
+identifies the report. It is the first 16 hexadecimal digits of the SHA-1 of
+the text after Unicode NFKC normalization, with everything but Hangul, Hanja,
+Latin letters and digits removed, so that line breaks, spacing and the middle
+dots ㆍ, · and ‧ do not count. The 88,775 검토보고서 with text hold 66,030
+distinct reports. 7,983 of these cover two or more bills, 29,303 bills in
+all, and the largest, the 2015 review of 공직선거법 amendments by the
+정치개혁특별위원회, covers 213. Nearly every 심사보고서 and
+체계자구검토보고서 belongs to one bill (47 and 87 keys are shared). When the
+collection was checked, 98% of the 검토보고서 groups with one text had a
+single committee and 97% had a committee meeting in common, against 20% of
+random pairs of bills of one committee and assembly. The key joins exact
+copies only. A revised edition that adds a bill, a cover with a typo or a
+second report that reuses passages gets a key of its own.
+
+**Bill-level counts.** Count each report once per bill, and leave out the
+links without text:
+
+```python
+docs = db.bill_documents(assembly=21)
+rev = docs[(docs["doc_type"] == "검토보고서") & (docs["text_status"] == "text")]
+per_bill = (rev.drop_duplicates(["bill_no", "report_key"]).groupby("bill_no")
+            .agg(reports=("report_key", "size"), pages=("pages", "sum"),
+                 shared_with=("report_bills", "max")))
+```
+
+**Known issues.** 13 검토보고서 links open a 심사보고서, among them three
+민법 bills of the 21st (2102807, 2103434, 2104530). `text_status` is set from
+the text layer and the images of each file, not by OCR. In the collection
+check an OCR of every file under 50 characters per page agreed with it on all
+but one file, a PDF that holds an image but no visible text.
+
+**Rebuilding.** `collect_likms_docs.py fetch --docs-dir DIR` downloads the
+139,600 documents of the three types into DIR, outside the repository, about
+41 GB. It retries a missing PDF as HWP and appends what it cannot get to
+`data/raw/fetchlog/likms_docs.jsonl`. `measure --docs-dir DIR` reads the files
+with `pdftotext` and `pdfimages` (poppler) and `hwp5txt` (pyhwp) and writes
+`data/raw/likms_doc_files.parquet` and `data/raw/likms_doc_files_meta.json`,
+which records the pdftotext version. Another version can change `chars` and
+`report_key`. `build` joins the links of
+`data/raw/likms_billinfo_docs_{age}.parquet` (written by
+`collect_likms_billinfo.py extract`) with these measures, and `build_all.sh`
+runs it. The 22nd Assembly's rows are a snapshot, and `refresh_22.sh` does
+not update them.
 
 ---
 
@@ -1451,11 +1650,13 @@ either.
 `build_all.sh` rebuilds every table from `data/raw/` without API calls and
 writes validation reports to `reports/` in the output directory. It runs
 `collect_members.py --build-only`, `integrate.py`, `consolidate_votes.py`,
-`build_ideal_points.R`, `build_structure.py`, `link_external.py texts` and
-`link_external.py idmap`, and `build_assets.py build` when `KNA_ASSETS_DIR`
-is set. The 17th-19th roll calls enter through the tables that
-`collect_minutes_votes.py` writes to `data/raw/`, so the build itself needs
-neither the minutes PDFs nor a PDF library. README.md lists the inputs that
+`build_ideal_points.R`, `build_structure.py`, `link_external.py texts`,
+`link_external.py idmap`, `collect_likms_billinfo.py build` and
+`collect_likms_docs.py build`, and
+`build_assets.py build` when `KNA_ASSETS_DIR` is set. The 17th-19th roll
+calls enter through the tables that `collect_minutes_votes.py` writes to
+`data/raw/`, so the build itself needs neither the minutes PDFs nor a PDF
+library. README.md lists the inputs that
 come from outside `data/raw/`.
 
 `refresh_22.sh` refreshes the ongoing 22nd Assembly. It collects the 22nd
@@ -1464,7 +1665,7 @@ texts, runs `build_all.sh` into a staging directory, `data/_build` by default,
 runs the test suite against it and writes a comparison with
 `data/processed/` to `logs/`. It promotes nothing to `data/processed/`.
 
-The 0.8.0 `reports/` directory holds the nine reports below and nothing else.
+The 0.9.0 `reports/` directory holds the eleven reports below and nothing else.
 
 | Report | Written by | Content |
 |---|---|---|
@@ -1475,5 +1676,7 @@ The 0.8.0 `reports/` directory holds the nine reports below and nothing else.
 | `cosponsorship_degree_change.csv` | `build_structure.py` | Degree of each 20th-22nd member-term in the earlier and the rebuilt edge file, overall and on the bills the earlier file had truncated. It is written only when the earlier edge file is available, so the file is the one of the 0.7.0 build. The edges have not changed since. |
 | `bill_texts_coverage.csv` | `link_external.py texts` | Law bills with a text by assembly and proposer kind, split by source. |
 | `bill_texts_missing.csv` | `link_external.py texts` | Every law bill without a text, with the reason. |
+| `bill_meetings_coverage.csv` | `collect_likms_billinfo.py build` | Bills, rows, rows with a minutes link, distinct meetings and rows whose meeting is in the hearing summary, by assembly and stage. |
+| `bill_documents_coverage.csv` | `collect_likms_docs.py build` | Documents, bills, distinct `report_key` values and documents by `text_status`, by assembly and type, for the three downloaded types. |
 | `assets_compare.csv` | `build_assets.py build --compare` | Rows and cells of the asset panel, previous against new build. |
 | `assets_member_check.csv` | `build_assets.py build` | Every 22nd member with the 2024 and 2025 totals and whether the prior-year total printed in the 2026 notice equals the 2024 net worth. |

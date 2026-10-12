@@ -1,0 +1,17 @@
+{
+ "source": "https://likms.assembly.go.kr/filegate/servlet/FileGate",
+ "documents": 139600,
+ "files": 139539,
+ "downloaded_from": "2026-10-10T16:35+00:00",
+ "downloaded_to": "2026-10-12T02:24+00:00",
+ "measured_at": "2026-10-12T04:34:07+00:00",
+ "pdftotext": "pdftotext version 26.02.0",
+ "text_status": {
+  "text": 139041,
+  "empty": 318,
+  "placeholder": 162,
+  "not_obtained": 61,
+  "scanned": 10,
+  "unreadable": 8
+ }
+}

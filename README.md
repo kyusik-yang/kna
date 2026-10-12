@@ -3,6 +3,16 @@
 [![PyPI](https://img.shields.io/pypi/v/kna)](https://pypi.org/project/kna/)
 
 
+> **Release 0.9.0, 2026-10-12.** This release adds `bill_meetings.parquet`,
+> the committee, subcommittee, 법제사법위원회 and plenary meetings that took
+> up each law bill of the 17th-22nd, read from the bill pages of LIKMS. Each
+> of its 333,586 rows carries `conf_num`, the ID of the meeting's minutes,
+> which joins the bill to `hearing_meetings_summary.parquet` and to the
+> speeches of kr-hearings-data. It also adds `bill_documents.parquet`,
+> every document link on those pages, with page counts, character counts and
+> a shared-report key for the 139,600 검토보고서, 심사보고서 and
+> 체계자구검토보고서 (no document text). Every other file is unchanged.
+>
 > **Release 0.8.1, 2026-09-28.** This release rebuilds
 > `hearing_meetings_summary.parquet` from kr-hearings-data v10.2, which
 > replaces the defective version 9. The table now has 26,261 meetings through
@@ -25,7 +35,7 @@
 
 Comprehensive CLI and master database for the Korean National Assembly.
 It integrates 19 Open Assembly API endpoints, the plenary minutes, the vote
-pages of the bill information system LIKMS, the 국회공보 and the asset
+and bill pages of the bill information system LIKMS, the 국회공보 and the asset
 disclosure data of OpenWatch into one queryable database of bills, committee and floor stages, vetoes, roll calls,
 ideal points, members, committee assignments, cosponsorship, bill texts and
 asset disclosures, covering the 17th-22nd Assemblies (2004-2026).
@@ -81,10 +91,10 @@ files and `kna info` will fail. Fix it:
 ```bash
 cd kna
 git lfs install
-git lfs pull            # downloads the data files, about 364 MB
+git lfs pull            # downloads the data files, about 411 MB
 ```
 
-The data hold about 234 MB of tables in `data/processed/` and about 132 MB
+The data hold about 253 MB of tables in `data/processed/` and about 158 MB
 of raw files in `data/raw/`, which are needed only to rebuild the tables. To
 download only the tables, run `git lfs pull --include="data/processed/*"`.
 
@@ -122,13 +132,13 @@ locations.
 
 - Python 3.9+
 - Git LFS (for data files)
-- About 234 MB of disk space for `data/processed/`, and 132 MB more for `data/raw/`
+- About 253 MB of disk space for `data/processed/`, and 158 MB more for `data/raw/`
 
 **[Interactive Explorer](https://kyusik-yang.github.io/kna/)** | **[Ideology map](https://kyusik-yang.github.io/kna/voteview.html)** | **[Tutorial](https://kyusik-yang.github.io/assembly-tutorial/)** | **[PyPI](https://pypi.org/project/kna/)**
 
 ## Key Statistics
 
-Release 0.8.1. Most data were collected from the Open Assembly API on
+Release 0.9.0. Most data were collected from the Open Assembly API on
 2026-09-25, and DATA_AVAILABILITY.md lists the exceptions.
 
 | | |
@@ -139,6 +149,8 @@ Release 0.8.1. Most data were collected from the Open Assembly API on
 | **Recorded votes** | 16,465 rows, the official tallies of the 20th-22nd and the recorded votes of the 17th-19th minutes with the chair's announced counts |
 | **Ideal points** | 955 legislator-terms, 20th-22nd, three series, vintage v20260917 |
 | **Committee meetings** | 818,448 rows, one per bill, meeting and agenda step, 17th-22nd |
+| **Meetings from LIKMS** | 333,586 law bill-meeting rows, 17th-22nd, each with `conf_num`, the ID of the minutes |
+| **Committee documents** | 158,197 document links of 97,424 law bills. 139,600 검토보고서, 심사보고서 and 체계자구검토보고서 carry page and character counts, no text |
 | **Subcommittee reviews** | 93,981 bill-stage rows, 17th-22nd |
 | **Alternative absorption** | 25,439 links from committee alternatives to the bills they absorbed |
 | **Cosponsorship** | 1,379,763 bill-member edges on 97,263 member law bills, 17th-22nd |
@@ -230,6 +242,8 @@ spells = db.committee_assignments(assembly=22)
 meetings = db.committee_meetings(22)    # lowercase columns in every assembly
 judiciary = db.judiciary_meetings(22)
 subcommittee = db.subcommittee_reviews(assembly=22)
+bill_meetings = db.bill_meetings(assembly=22)  # from LIKMS, conf_num joins the minutes
+documents = db.bill_documents(assembly=22)     # review reports: pages, chars, report_key
 alternatives = db.alternative_absorption(assembly=22)
 
 # Cosponsorship edges with roles 대표발의, 공동발의 and 찬성
@@ -304,6 +318,8 @@ Every shipped table, in `data/processed/`. CODEBOOK.md documents each column.
 | `master_bills_22.sqlite` | | | The 22nd master and meeting tables in SQLite |
 | `committee_meetings_{17..22}.parquet` | bill x meeting x agenda step | 818,448 | Committee meeting records (BILLJUDGECONF) |
 | `judiciary_meetings_{17..22}.parquet` | bill x meeting | 15,858 | 법제사법위원회 review records (BILLLWJUDGECONF) |
+| `bill_meetings.parquet` | law bill x listed meeting | 333,586 | Committee, subcommittee, 법제사법위원회 and plenary meetings of the 17th-22nd law bills from the LIKMS bill pages, with `conf_num`, the ID of the minutes |
+| `bill_documents.parquet` | law bill x document link | 158,197 | Committee documents linked on the same pages. 검토보고서, 심사보고서 and 체계자구검토보고서 carry pages, characters, `text_status` and `report_key`, which marks one report attached to several bills. No text |
 | `subcommittee_reviews.parquet` | bill x subcommittee stage | 93,981 | Subcommittee referrals, reviews, direct referrals and 안건조정위원회 (TVBPMCONFINFO) |
 | `alternative_absorption.parquet` | alternative x linked bill | 25,439 | Committee alternatives and the bills linked to them (TVBPMBILL11) |
 | `cosponsorship_edges.parquet` | bill x member | 1,379,763 | Lead proposers, co-proposers and supporters, 17th-22nd, with party and its source |
@@ -338,13 +354,16 @@ The raw inputs in `data/raw/` are needed only to rebuild the tables.
 | `roll_calls_{20..22}`, `roll_calls_22_tally_check.csv` | Member-level votes (nojepdqqaweusdfbi) | `collect_roll_calls.py` |
 | `roll_calls_22_supplement`, `roll_calls_22_supplement_check.csv` | Votes of the 16 members the vote API omits, from the LIKMS vote pages | `collect_votes_likms.py` |
 | `minutes_agenda_{17..19}`, `minutes_meetings_{17..19}`, `minutes_vote_events_{17..19}`, `minutes_votes_{17..19}` | Plenary meeting lists (nzbyfwhwaoanttzje) and the recorded votes parsed from the minutes PDFs | `collect_minutes_votes.py` |
+| `likms_billinfo_{age}`, `likms_billinfo_docs_{age}`, `likms_billinfo_meta.json` | Review and meeting tables and document links of the LIKMS bill page of every law bill | `collect_likms_billinfo.py fetch`, then `extract` |
+| `likms_doc_files`, `likms_doc_files_meta.json` | Pages, characters, text status and report key of every downloaded 검토보고서, 심사보고서 and 체계자구검토보고서 | `collect_likms_docs.py fetch`, then `measure` |
 | `TVBPMCONFINFO_{age}`, `alt_absorption_{age}`, `BILLINFOPPSR_{age}` | Subcommittee stages, alternative links and proposer lists | `collect_structure.py` |
 | `BPMBILLSUMMARY_{age}` | Texts of the law bills without a scraped text | `collect_structure.py summaries` |
 | `members/` | Member rosters and committee careers, a snapshot of the official member records of the 17th-21st (`nprlapfmaufmqytet_17_21`) and the documented party corrections (`party_overrides.csv`) | `collect_members.py`, except the snapshot and the corrections |
 
 `{age}` runs over 17-22, and every file without an extension is a parquet
-file. The per-request fetch logs in `data/raw/fetchlog/` and the minutes PDFs
-in `data/pdfs/` are not in the repository.
+file. The per-request fetch logs in `data/raw/fetchlog/`, the minutes PDFs
+in `data/pdfs/`, the cached LIKMS bill pages and the downloaded committee
+documents are not in the repository.
 
 ## Documentation
 

@@ -54,6 +54,9 @@ assembly.
 | Master bills with a BILLINFODETAIL row | all | all | all | all | all | all |
 | Committee meeting rows | 24,156 | 105,229 | 150,192 | 202,335 | 199,384 | 137,152 |
 | Judiciary meeting rows | 1,628 | 2,810 | 3,304 | 3,325 | 3,217 | 1,574 |
+| Bill-meeting rows from LIKMS | 16,301 | 48,553 | 61,848 | 86,536 | 72,552 | 47,796 |
+| Law bills linked to the minutes of a meeting | 74.8% | 85.3% | 91.9% | 93.0% | 92.4% | 86.9% |
+| Law bills with a 검토보고서 that has text | 76.6% | 73.5% | 80.4% | 82.9% | 81.1% | 74.4% |
 | Subcommittee review rows | 2,966 | 10,880 | 15,765 | 22,206 | 23,840 | 18,324 |
 | Alternative absorption links | 1,106 | 3,831 | 4,663 | 5,563 | 5,996 | 4,280 |
 | 대안반영폐기 bills linked to their alternative | 57.5% | 99.5% | 99.6% | 99.9% | 99.3% | 99.9% |
@@ -81,6 +84,8 @@ exist for the 14th-16th, from the careers of members who served later.
 | Stage timing: committee, 법사위, floor, promulgation | Yes | Yes | Yes | Yes | Yes | Yes, in session |
 | Presidential vetoes and re-votes | Yes | Yes | Yes | Yes | Yes | Yes, one re-vote pending |
 | Committee meetings per bill | Yes | Yes | Yes | Yes | Yes | Yes |
+| Links from bills to the minutes of their meetings | Yes, except half the 법사위 rows | Yes | Yes | Yes | Yes | Yes, as of 2026-10-10 |
+| Committee review reports per bill (pages, characters, shared reports, no text) | Yes, 57 documents not obtainable | Yes | Yes | Yes | Yes | Yes, as of 2026-10-10 |
 | Subcommittee stages | Partial, 33.5% of bills | Yes | Yes | Yes | Yes | Yes |
 | Alternative absorption | Partial, 57.5% | Yes | Yes | Yes | Yes | Yes |
 | Cosponsorship networks, law bills | Yes | Yes | Yes | Yes | Yes | Yes |
@@ -204,6 +209,21 @@ not a roll-call matrix (CODEBOOK.md section 9).
     keeps the chair's counts beside the names.
     Votes decided by voice or without objection have no rows. No ideal-point
     series uses these rows (CODEBOOK.md sections 7 and 8).
+14. **The bill-meeting links are a snapshot of the LIKMS bill pages.**
+    `bill_meetings.parquet` was read from 2026-10-08 to 2026-10-10, and
+    `refresh_22.sh` does not update it. 2,242 of its 333,586 rows have no
+    minutes link, among them 824 법제사법위원회 rows of the 17th. The pages
+    misdate two meetings, and four linked meetings are not in the hearing
+    summary. CODEBOOK.md section 2.1 lists them.
+15. **The committee documents carry measures, not text.**
+    `bill_documents.parquet` lists every document link of the bill pages
+    and gives page and character counts for the 139,600 검토보고서,
+    심사보고서 and 체계자구검토보고서, downloaded from 2026-10-10 to
+    2026-10-12. The texts are not distributed. 61 files could not be
+    obtained (57 of the 17th and four DRM-protected HWP files of the 19th),
+    eight are cut off on the file server, and 490 hold no usable text,
+    162 of them one-page notices that no review report was written
+    (CODEBOOK.md section 2.2).
 
 ---
 
