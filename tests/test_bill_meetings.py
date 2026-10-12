@@ -18,7 +18,8 @@ from conftest import AGES
 
 DTYPES = {"age": "int64", "bill_no": "object", "bill_id": "object", "stage": "object",
           "seq": "int32", "meeting_name": "object", "meeting_date": "object",
-          "present_date": "object", "result": "object", "conf_num": "Int64"}
+          "present_date": "object", "result": "object", "conf_num": "Int64",
+          "conf_check": "object"}
 # kr-hearings-data keeps 35218 as an identical duplicate copy of 35291, and the
 # hearing summary leaves duplicate copies out
 DUPLICATE_COPIES = {35218}
@@ -57,6 +58,39 @@ def test_minutes_are_in_the_hearing_summary(kdata):
     early = missing[missing["meeting_date"] <= s["date"].max()]
     assert set(early["conf_num"]) <= DUPLICATE_COPIES
     assert len(missing) < 0.005 * len(linked)
+
+
+def test_conf_check_values(kdata):
+    t = kdata.parquet("bill_meetings.parquet", ["conf_num", "conf_check", "stage", "meeting_name"])
+    s = kdata.parquet("hearing_meetings_summary.parquet", ["conf_num"])
+    assert set(t["conf_check"].dropna()) <= {"ok", "date_differs", "other_meeting"}
+    # null exactly where the row cannot be checked
+    checkable = t["conf_num"].notna() & t["conf_num"].isin(set(s["conf_num"]))
+    assert (t["conf_check"].notna() == checkable).all()
+    assert (t["conf_check"] == "ok").sum() > 0.99 * checkable.sum()
+    # every wrong-meeting row is a named subcommittee meeting of a committee stage
+    other = t[t["conf_check"] == "other_meeting"]
+    assert other["meeting_name"].str.contains("소위").all() and (other["stage"] != "plenary").all()
+
+
+def test_conf_check_rule():
+    summary = pd.DataFrame({"conf_num": [1, 2, 3], "date": ["2026-09-11", "2026-09-15", "2016-02-23"],
+                            "date_end": ["2026-09-11", "2026-09-15", "2016-03-02"],
+                            "is_subcommittee": [False, True, False]})
+    m = pd.DataFrame({
+        "conf_num": pd.array([1, 1, 2, 1, 3, 3, None, 9], dtype="Int64"),
+        "meeting_name": ["제439회 국회(정기회) 제1차 전체회의", "제439회 국회(정기회) 제1차 소위회의",
+                         "제439회 국회(정기회) 제1차 법안심사제1소위원회", "제1차 안건조정위원회", None, None,
+                         "제1차 전체회의", "제1차 전체회의"],
+        "meeting_date": ["2026-09-11", "2026-09-15", "2026-09-16", "2026-09-11", "2016-03-02",
+                         "2016-03-03", "2026-09-11", "2026-09-11"],
+    }, index=[10, 11, 12, 13, 14, 15, 16, 17])
+    got = clb.conf_check(m, summary)
+    assert list(got.index) == list(m.index)
+    # 안건조정위원회 is no subcommittee, a later day of a multi-day sitting is ok,
+    # and a row without a conf_num or with one the summary lacks is null
+    assert got.tolist()[:6] == ["ok", "other_meeting", "date_differs", "ok", "ok", "date_differs"]
+    assert got.iloc[6:].isna().all()
 
 
 def test_rebuild_equals_shipped(kdata, tmp_path):

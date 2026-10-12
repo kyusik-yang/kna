@@ -4,6 +4,32 @@ Errata for data released by this repository. Newest first.
 
 ---
 
+## 2026-10-12 - Release 0.9.1
+
+Release 0.9.1 adds one column to each of two tables and changes no value of
+0.9.0.
+
+| File | 0.9.0 | 0.9.1 |
+|---|---|---|
+| `bill_meetings.parquet` | 333,586 rows, ten columns | column `conf_check` added |
+| `hearing_meetings_summary.parquet` | 26,261 meetings, eleven columns | column `date_end` added |
+
+The LIKMS bill pages link the wrong minutes in 116 rows of
+`bill_meetings.parquet`. They are the rows of six 22nd-Assembly
+subcommittee meetings, named `제1차 소위회의` or `제2차 소위회의`, and they link the
+full committee meeting with the same session and sitting number. Speeches
+joined through these rows come from another meeting. Another 178 rows give a
+date outside the dates of the minutes, where the 0.9.0 codebook named two.
+`conf_check` marks the two groups `other_meeting` and `date_differs` and
+leaves `conf_num` as the page gives it. CODEBOOK.md section 2.1 lists the six
+meetings.
+
+`date_end` comes from kr-hearings-data v10.2, like the other columns of the
+summary. `conf_check` uses it so that the 328 rows of plenary sittings that
+run over several days are not counted as misdated.
+
+---
+
 ## 2026-09-28 - Release 0.8.1
 
 Release 0.8.1 rebuilds `hearing_meetings_summary.parquet` from

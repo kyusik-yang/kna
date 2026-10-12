@@ -326,7 +326,9 @@ class BillDB:
 
         One row per bill and listed meeting (committee and subcommittee,
         related committee, 법제사법위원회, plenary), with ``conf_num``, the
-        record-viewer ID that joins to hearing_meetings_summary.
+        record-viewer ID that joins to hearing_meetings_summary, and
+        ``conf_check``. Leave out the ``other_meeting`` rows before attaching
+        speeches, because their page links the minutes of another meeting.
         """
         return self._load_table("bill_meetings.parquet", assembly, "age", columns)
 

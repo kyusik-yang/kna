@@ -800,7 +800,7 @@ TABLE_CARDS = [
     ("&#128269;", "subcommittee_reviews", "소위원회 회부·심사 (17-22대)", "1 row = 1 bill x 소위 단계",
      "bill_id (FK), sub_committee_name, present_dt, proc_dt, proc_result_cd"),
     ("&#128197;", "bill_meetings", "법안별 회의와 회의록 (17-22대 법률안)", "1 row = 1 bill x 회의",
-     "bill_id (FK), stage, meeting_name, meeting_date, conf_num"),
+     "bill_id (FK), stage, meeting_name, meeting_date, conf_num, conf_check"),
     ("&#128196;", "bill_documents", "법안별 위원회 문서 (17-22대 법률안)", "1 row = 1 bill x 문서 링크",
      "bill_id (FK), doc_type, pages, chars, text_status, report_key"),
     ("&#128279;", "alternative_absorption", "대안에 흡수된 법안 (17-22대)", "1 row = 1 대안 x 흡수 법안",

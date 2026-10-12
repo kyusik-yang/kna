@@ -212,9 +212,11 @@ not a roll-call matrix (CODEBOOK.md section 9).
 14. **The bill-meeting links are a snapshot of the LIKMS bill pages.**
     `bill_meetings.parquet` was read from 2026-10-08 to 2026-10-10, and
     `refresh_22.sh` does not update it. 2,242 of its 333,586 rows have no
-    minutes link, among them 824 법제사법위원회 rows of the 17th. The pages
-    misdate two meetings, and four linked meetings are not in the hearing
-    summary. CODEBOOK.md section 2.1 lists them.
+    minutes link, among them 824 법제사법위원회 rows of the 17th. In 116 rows of
+    six 22nd-Assembly subcommittee meetings the page links the minutes of a
+    full committee meeting, and 178 rows give a date outside the dates of the
+    minutes. `conf_check` marks both. Four linked meetings are not in the
+    hearing summary. CODEBOOK.md section 2.1 lists them.
 15. **The committee documents carry measures, not text.**
     `bill_documents.parquet` lists every document link of the bill pages
     and gives page and character counts for the 139,600 검토보고서,
