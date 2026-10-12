@@ -1,6 +1,6 @@
 [project]
 name = "kna"
-version = "0.8.1"
+version = "0.9.0"
 description = "Comprehensive CLI for the Korean National Assembly: bills, lifecycle, votes, ideal points, and bill texts"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -29,6 +29,8 @@ test = ["pytest>=7"]
 minutes = ["requests", "pymupdf", "hanja"]
 # build_assets.py: fetch and parse the 국회공보 asset disclosure PDFs
 assets = ["requests", "pdfplumber"]
+# collect_likms_billinfo.py fetch/extract: read the LIKMS bill pages
+likms = ["requests", "beautifulsoup4"]
 
 [project.urls]
 Homepage = "https://github.com/kyusik-yang/kna"

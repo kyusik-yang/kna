@@ -52,4 +52,10 @@ if [[ -n "${KNA_HEARINGS_V10_DIR:-}" ]]; then
 elif [[ "$OUT" != "data/processed" && -f data/processed/hearing_meetings_summary.parquet ]]; then
   cp data/processed/hearing_meetings_summary.parquet "$OUT/" && echo "build_all: hearing summary carried over (KNA_HEARINGS_V10_DIR not set)"
 fi
+# Meetings that took up each law bill, from the LIKMS bill pages. The build reads
+# data/raw/likms_billinfo_{age}.parquet, which collect_likms_billinfo.py extract writes.
+python3 collect_likms_billinfo.py build --out "$OUT" --master-dir "$OUT"
+# Committee documents of each law bill: the links of data/raw/likms_billinfo_docs_{age}.parquet
+# with the measures of data/raw/likms_doc_files.parquet (collect_likms_docs.py fetch and measure).
+python3 collect_likms_docs.py build --out "$OUT" --master-dir "$OUT"
 echo "build_all: done -> $OUT"

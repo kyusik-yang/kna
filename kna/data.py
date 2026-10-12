@@ -317,6 +317,33 @@ class BillDB:
         """
         return self._load_meetings("judiciary_meetings", assembly, columns)
 
+    def bill_meetings(
+        self,
+        assembly: Optional[int] = None,
+        columns: Optional[list[str]] = None,
+    ) -> pd.DataFrame:
+        """Load the meetings that took up each law bill, from the LIKMS bill pages.
+
+        One row per bill and listed meeting (committee and subcommittee,
+        related committee, 법제사법위원회, plenary), with ``conf_num``, the
+        record-viewer ID that joins to hearing_meetings_summary.
+        """
+        return self._load_table("bill_meetings.parquet", assembly, "age", columns)
+
+    def bill_documents(
+        self,
+        assembly: Optional[int] = None,
+        columns: Optional[list[str]] = None,
+    ) -> pd.DataFrame:
+        """Load the committee documents listed on each law bill's LIKMS page.
+
+        One row per document link (검토보고서, 심사보고서, 체계자구검토보고서,
+        위원회의결안 and the rest). The three report types carry the page
+        count, character count, ``text_status`` and ``report_key``, which is
+        shared by the bills one report covers. No document text is included.
+        """
+        return self._load_table("bill_documents.parquet", assembly, "age", columns)
+
     def _load_meetings(
         self, stem: str, assembly: int, columns: Optional[list[str]]
     ) -> pd.DataFrame:
