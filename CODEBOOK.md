@@ -681,10 +681,11 @@ meeting date over law bills, the pages hold 99.4% to 100% of the pairs of
 pair of `judiciary_meetings_{age}` and add up to 21 per assembly. The pages
 lack 1,379 pairs of the 17th, and 1,336 of them belong to bills whose page
 lists other committee meetings. In all but three of these 1,336 API rows
-`jrcmit_conf_rslt` is null. For 1,235 (92.4%), a meeting of the bill's
-committee on that day lists the bill on its agenda in kr-hearings-data,
-matched by title and proposer after converting hanja titles. These are
-meetings that took up the bill and that the page leaves out, so use
+`jrcmit_conf_rslt` is null. For 1,193 (89.3%), the agenda of a meeting of
+the bill's committee on that day in kr-hearings-data lists a bill with the
+same title and 대표발의자, once hanja titles are converted. For 986 of them
+no other law bill of the 17th shares that title and 대표발의자. These are
+mostly meetings that took up the bill and that the page leaves out, so use
 `committee_meetings_17` alongside this table for the 17th.
 
 **Matching pages to bills.** The page does not print the bill number, so
