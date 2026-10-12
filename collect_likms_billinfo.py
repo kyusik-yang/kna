@@ -19,7 +19,8 @@ carry no such number.
            and data/raw/likms_billinfo_meta.json. collect_likms_docs.py
            downloads and measures the documents.
   build    write bill_meetings.parquet and reports/bill_meetings_coverage.csv
-           to --out from the raw tables. build_all.sh runs this step.
+           to --out from the raw tables and hearing_meetings_summary.parquet,
+           which gives conf_check. build_all.sh runs this step.
 
 The request is POST {URL} with billId, billNo and billKindCd=법률안 and no
 login. fetch spaces requests --interval seconds apart (default 0.7), retries
@@ -45,6 +46,13 @@ Rules, each of which stops extract or build when it fails:
      unique.
   5. Every document link carries a label and one bookId for its HWP and
      PDF files.
+
+conf_check compares each row with the meeting its conf_num names in
+hearing_meetings_summary.parquet. other_meeting: the row names a
+subcommittee meeting (소위, not 안건조정위원회) and the summary meeting is
+none, or the reverse. date_differs: otherwise, the row's date is not within
+the summary's date and date_end. ok: neither. Null when the row has no
+conf_num or the summary lacks the meeting.
 
 Usage:
     python3 collect_likms_billinfo.py fetch --html-dir DIR [--ages 17-22]
@@ -111,7 +119,8 @@ BOOK_ID = re.compile(r"bookId=([0-9A-Za-z-]+)")
 DOC_FORMAT = re.compile(r"\((HWP|PDF) 파일 다운로드\)")
 LIKMS = "https://likms.assembly.go.kr"
 OUT_COLS = ["age", "bill_no", "bill_id", "stage", "seq", "meeting_name", "meeting_date",
-            "present_date", "result", "conf_num"]
+            "present_date", "result", "conf_num", "conf_check"]
+SUMMARY = "hearing_meetings_summary.parquet"
 
 
 def parse_ages(spec: str) -> list[int]:
@@ -323,6 +332,21 @@ def check_identity(raw: pd.DataFrame, bills: pd.DataFrame) -> dict:
             "referral_date_agrees": ok}
 
 
+def conf_check(m: pd.DataFrame, summary: pd.DataFrame) -> pd.Series:
+    """ok, date_differs or other_meeting for each row, null where it cannot be checked."""
+    s = m[["conf_num"]].merge(summary[["conf_num", "date", "date_end", "is_subcommittee"]],
+                              on="conf_num", how="left")
+    name = m["meeting_name"].fillna("").reset_index(drop=True)
+    named_sub = name.str.contains("소위") & ~name.str.contains("안건조정")
+    date = m["meeting_date"].reset_index(drop=True)
+    in_days = (date == s["date"]) | ((date > s["date"]) & (date <= s["date_end"]))
+    check = pd.Series("ok", index=s.index, dtype="object")
+    check[~in_days] = "date_differs"
+    check[named_sub != s["is_subcommittee"]] = "other_meeting"
+    check[s["date"].isna()] = None
+    return pd.Series(check.to_numpy(), index=m.index, dtype="object")
+
+
 def build(args) -> None:
     out = Path(args.out)
     bills = law_bills(Path(args.master_dir), ALL_AGES)
@@ -330,6 +354,11 @@ def build(args) -> None:
     absent = [p.name for p in paths if not p.exists()]
     if absent:
         sys.exit(f"build: missing {absent}. Run extract first.")
+    summary_path = next((p for p in [out / SUMMARY, Path(args.master_dir) / SUMMARY, PROCESSED_DIR / SUMMARY]
+                         if p.exists()), None)
+    if summary_path is None:
+        sys.exit(f"build: no {SUMMARY} in --out, --master-dir or data/processed")
+    summary = pd.read_parquet(summary_path, columns=["conf_num", "date", "date_end", "is_subcommittee"])
     raw = pd.concat([pd.read_parquet(p) for p in paths], ignore_index=True)
 
     known = bills.set_index("bill_no")["age"]
@@ -349,6 +378,7 @@ def build(args) -> None:
         sys.exit(f"build: {len(bad_dates)} meeting rows without a YYYY-MM-DD date")
     if m.duplicated(["bill_no", "stage", "seq"]).any():
         sys.exit("build: duplicate (bill_no, stage, seq)")
+    m["conf_check"] = conf_check(m, summary)
     stage_order = {s: i for i, s in enumerate(STAGES.values())}
     m = (m.assign(_s=m["stage"].map(stage_order)).sort_values(["age", "bill_no", "_s", "seq"])
          [OUT_COLS].reset_index(drop=True))
@@ -358,9 +388,7 @@ def build(args) -> None:
     write_parquet_atomic(m, out / "bill_meetings.parquet")
 
     # coverage report, with the share of linked minutes found in the hearing summary
-    summary = next((p for p in [out / "hearing_meetings_summary.parquet",
-                                PROCESSED_DIR / "hearing_meetings_summary.parquet"] if p.exists()), None)
-    conf = set(pd.read_parquet(summary, columns=["conf_num"])["conf_num"]) if summary else set()
+    conf = set(summary["conf_num"])
     linked = m[m["conf_num"].notna()]
     rep = (m.groupby(["age", "stage"]).agg(bills=("bill_no", "nunique"), rows=("bill_no", "size"))
            .join(linked.groupby(["age", "stage"]).agg(rows_with_conf_num=("conf_num", "size"),
@@ -376,9 +404,11 @@ def build(args) -> None:
           f"{linked['conf_num'].nunique():,} meetings with minutes; committee checked on "
           f"{ident['committee_checked']:,} bills, referral date agrees on {ident['referral_date_agrees']:,} "
           f"of {ident['referral_date_checked']:,}")
-    if summary:
-        print(f"  minutes not in {summary.name}: {not_found['conf_num'].nunique()} meetings, "
-              f"{len(not_found)} rows, dated {not_found['meeting_date'].min()} to {not_found['meeting_date'].max()}")
+    print(f"  minutes not in {summary_path.name}: {not_found['conf_num'].nunique()} meetings, "
+          f"{len(not_found)} rows, dated {not_found['meeting_date'].min()} to {not_found['meeting_date'].max()}")
+    flagged = m[m["conf_check"].isin(["date_differs", "other_meeting"])]
+    print("  conf_check: " + ", ".join(f"{k} {v:,} rows" for k, v in m["conf_check"].value_counts().items())
+          + f" ({flagged.groupby('conf_check')['conf_num'].nunique().to_dict()} meetings)")
 
 
 def main() -> None:

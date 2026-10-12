@@ -2,14 +2,14 @@
 
 | | |
 |---|---|
-| Release | 0.9.0 |
+| Release | 0.9.1 |
 | Data collected | Mostly on 2026-09-25, from the Open Assembly API (열린국회정보, open.assembly.go.kr). The 20th-21st member-level votes and the 18th and 20th BILLINFODETAIL records are from March 2026. The BPMBILLSUMMARY texts, the LIKMS vote pages and the 17th-19th plenary minutes were collected on 2026-09-28, the LIKMS bill pages from 2026-10-08 to 2026-10-10 and the committee documents they link from 2026-10-10 to 2026-10-12 (DATA_AVAILABILITY.md). |
 | Coverage | 17th-22nd National Assembly. The 22nd Assembly is in session. |
 
 This codebook describes every file in the data directory, which is
 `data/processed/` in a repository checkout. Every count and coverage figure
 below was computed from the 0.8.0 files, except those of sections 2.1 and
-2.2, which come from the 0.9.0 files. Corrections to earlier releases are listed in
+2.2, which come from the 0.9.1 files. Corrections to earlier releases are listed in
 [CORRECTIONS.md](CORRECTIONS.md), and per-assembly coverage and known
 limitations in [DATA_AVAILABILITY.md](DATA_AVAILABILITY.md).
 
@@ -571,6 +571,7 @@ the minutes, the plenary meetings and the related-committee meetings.
 | `present_date` | 상정일 of a plenary row, where the page gives one. Null in the other stages. |
 | `result` | 회의결과 as listed, such as `상정/제안설명/검토보고/대체토론/소위회부`, or the plenary result, such as `원안가결` or `대안반영폐기`. |
 | `conf_num` | Record-viewer ID of the minutes (CONFER_NUM). Null where the row has no minutes link. |
+| `conf_check` | How the row agrees with the meeting `conf_num` names in `hearing_meetings_summary.parquet`. `ok`, `date_differs` (the date lies outside the dates of the minutes) or `other_meeting` (a subcommittee meeting linked to the minutes of a full committee meeting). Null where the row has no minutes link or the summary lacks the meeting. Added in 0.9.1. |
 
 The plenary table of a page also holds status rows without a meeting, such
 as `임기만료폐기`, which the build leaves out (54,103 rows). The master
@@ -599,9 +600,48 @@ from ten subcommittee meetings on election law in 2026
 Three were held after the summary ends on 2026-09-22 (`conf_num` 57294,
 57350 and 57385). The fourth, 35218, is a copy that kr-hearings-data marks as
 identical to 35291 (`duplicate_of`), and the summary leaves such copies out.
-Take the meeting date from the summary where it joins. The page misdates two
-meetings. Bill 174695 lists meeting 30027 on 1905-06-28 and bill 1803593
-lists 32719 on 2008-01-21. The minutes date them 2006-09-14 and 2009-02-11.
+
+**Checking the links.** `conf_check` compares each row with the meeting its
+`conf_num` names in the summary. A row names a subcommittee meeting when its
+`meeting_name` contains 소위, and 안건조정위원회 meetings count as committee
+meetings, as in kr-hearings-data. A row whose kind of meeting differs from
+the summary's `is_subcommittee` is `other_meeting`. Otherwise a row whose
+date lies outside the summary's `date` to `date_end` is `date_differs`.
+`date_end` matters for 16 plenary sittings that run over several days. Their
+328 rows give a later day of the sitting and are `ok`.
+
+| `conf_check` | Rows | Meetings |
+|---|---|---|
+| `ok` | 330,583 | 7,113 |
+| `date_differs` | 178 | 52 |
+| `other_meeting` | 116 | 6 |
+| null | 2,709 | 4 |
+
+Meetings are distinct `conf_num`. A meeting with rows of two kinds counts
+in both lines.
+
+The 116 `other_meeting` rows are 22nd-Assembly rows whose page names a
+subcommittee meeting, `제1차 소위회의` or `제2차 소위회의`, and links the minutes
+of the full committee meeting with the same session and sitting number. The
+speeches of that `conf_num` belong to another meeting, so leave these rows
+out before attaching speeches.
+
+| `conf_num` | Committee | Date of the minutes | Dates on the page | Rows |
+|---|---|---|---|---|
+| 57254 | 보건복지위원회 | 2026-09-11 | 2026-09-15 | 63 |
+| 57287 | 농림축산식품해양수산위원회 | 2026-09-17 | 2026-09-29 | 35 |
+| 57251 | 재정경제기획위원회 | 2026-09-08 | 2026-09-30, 2026-10-01 | 14 |
+| 55980 | 문화체육관광위원회 | 2025-12-19 | 2025-12-16, 2025-12-18 | 2 |
+| 55970 | 행정안전위원회 | 2025-12-16 | 2025-12-16 | 1 |
+| 56420 | 문화체육관광위원회 | 2026-03-24 | 2026-03-26 | 1 |
+
+The 178 `date_differs` rows link the right kind of meeting with another
+date. 64 are committee rows, 53 of them in the 17th, such as bill 174695,
+which lists meeting 30027 on 1905-06-28, and bill 1803593, which lists 32719
+on 2008-01-21. The minutes date them 2006-09-14 and 2009-02-11. 113 are
+plenary rows, 106 of them rows of 대안반영폐기 bills without a meeting name,
+whose date is 1 to 99 days off. One is a related-committee row. Take the
+meeting date from the summary where it joins.
 
 **Comparison with the Open API tables.** Counted as pairs of bill and
 meeting date over law bills, the pages hold 99.4% to 100% of the pairs of
@@ -1550,6 +1590,7 @@ BILL_ID of bill 2203215, which was re-keyed upstream, and keeps `age` and
 | `conf_num` | Record-viewer ID of the meeting. It is set and unique for every meeting and joins to `conf_num` in kr-hearings-data. |
 | `is_subcommittee` | True for a subcommittee meeting, as in kr-hearings-data. |
 | `is_confirmation_hearing` | True for a confirmation hearing (인사청문회), as in kr-hearings-data. It includes the hearings a standing committee holds, whose `hearing_type` is 상임위원회. |
+| `date_end` | Last date of the meeting, `YYYY-MM-DD`, as in kr-hearings-data. Later than `date` in 158 meetings whose minutes roll over midnight or print a later date, 108 of them 국정감사 meetings and 21 plenary sittings. One day before `date` in two meetings, 30775 and 57212, as kr-hearings-data records them. Added in 0.9.1. |
 
 The table has 26,261 meetings dated from 2000-06-05 to 2026-09-22, 7,268 of
 them subcommittee meetings, with 15,114,183 turns. 778 meetings are
@@ -1665,7 +1706,7 @@ texts, runs `build_all.sh` into a staging directory, `data/_build` by default,
 runs the test suite against it and writes a comparison with
 `data/processed/` to `logs/`. It promotes nothing to `data/processed/`.
 
-The 0.9.0 `reports/` directory holds the eleven reports below and nothing else.
+The 0.9.1 `reports/` directory holds the eleven reports below and nothing else.
 
 | Report | Written by | Content |
 |---|---|---|

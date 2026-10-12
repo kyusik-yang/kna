@@ -3,6 +3,15 @@
 [![PyPI](https://img.shields.io/pypi/v/kna)](https://pypi.org/project/kna/)
 
 
+> **Release 0.9.1, 2026-10-12.** This release adds `conf_check` to
+> `bill_meetings.parquet`. In 116 rows of six 22nd-Assembly subcommittee
+> meetings the LIKMS page links the minutes of a full committee meeting, and
+> 178 rows give a date outside the dates of the minutes. `conf_check` marks
+> them `other_meeting` and `date_differs`, so leave out the `other_meeting`
+> rows before attaching speeches. `hearing_meetings_summary.parquet` gains
+> `date_end`, the last date of a meeting. No value of 0.9.0 changes
+> (CORRECTIONS.md).
+>
 > **Release 0.9.0, 2026-10-12.** This release adds `bill_meetings.parquet`,
 > the committee, subcommittee, 법제사법위원회 and plenary meetings that took
 > up each law bill of the 17th-22nd, read from the bill pages of LIKMS. Each
@@ -138,7 +147,7 @@ locations.
 
 ## Key Statistics
 
-Release 0.9.0. Most data were collected from the Open Assembly API on
+Release 0.9.1. Most data were collected from the Open Assembly API on
 2026-09-25, and DATA_AVAILABILITY.md lists the exceptions.
 
 | | |
@@ -149,7 +158,7 @@ Release 0.9.0. Most data were collected from the Open Assembly API on
 | **Recorded votes** | 16,465 rows, the official tallies of the 20th-22nd and the recorded votes of the 17th-19th minutes with the chair's announced counts |
 | **Ideal points** | 955 legislator-terms, 20th-22nd, three series, vintage v20260917 |
 | **Committee meetings** | 818,448 rows, one per bill, meeting and agenda step, 17th-22nd |
-| **Meetings from LIKMS** | 333,586 law bill-meeting rows, 17th-22nd, each with `conf_num`, the ID of the minutes |
+| **Meetings from LIKMS** | 333,586 law bill-meeting rows, 17th-22nd, each with `conf_num`, the ID of the minutes, and `conf_check`, its agreement with the minutes |
 | **Committee documents** | 158,197 document links of 97,424 law bills. 139,600 검토보고서, 심사보고서 and 체계자구검토보고서 carry page and character counts, no text |
 | **Subcommittee reviews** | 93,981 bill-stage rows, 17th-22nd |
 | **Alternative absorption** | 25,439 links from committee alternatives to the bills they absorbed |
@@ -318,7 +327,7 @@ Every shipped table, in `data/processed/`. CODEBOOK.md documents each column.
 | `master_bills_22.sqlite` | | | The 22nd master and meeting tables in SQLite |
 | `committee_meetings_{17..22}.parquet` | bill x meeting x agenda step | 818,448 | Committee meeting records (BILLJUDGECONF) |
 | `judiciary_meetings_{17..22}.parquet` | bill x meeting | 15,858 | 법제사법위원회 review records (BILLLWJUDGECONF) |
-| `bill_meetings.parquet` | law bill x listed meeting | 333,586 | Committee, subcommittee, 법제사법위원회 and plenary meetings of the 17th-22nd law bills from the LIKMS bill pages, with `conf_num`, the ID of the minutes |
+| `bill_meetings.parquet` | law bill x listed meeting | 333,586 | Committee, subcommittee, 법제사법위원회 and plenary meetings of the 17th-22nd law bills from the LIKMS bill pages, with `conf_num`, the ID of the minutes, and `conf_check` |
 | `bill_documents.parquet` | law bill x document link | 158,197 | Committee documents linked on the same pages. 검토보고서, 심사보고서 and 체계자구검토보고서 carry pages, characters, `text_status` and `report_key`, which marks one report attached to several bills. No text |
 | `subcommittee_reviews.parquet` | bill x subcommittee stage | 93,981 | Subcommittee referrals, reviews, direct referrals and 안건조정위원회 (TVBPMCONFINFO) |
 | `alternative_absorption.parquet` | alternative x linked bill | 25,439 | Committee alternatives and the bills linked to them (TVBPMBILL11) |
