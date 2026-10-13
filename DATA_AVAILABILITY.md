@@ -211,8 +211,10 @@ not a roll-call matrix (CODEBOOK.md section 9).
     series uses these rows (CODEBOOK.md sections 7 and 8).
 14. **The bill-meeting links are a snapshot of the LIKMS bill pages.**
     `bill_meetings.parquet` was read from 2026-10-08 to 2026-10-10, and
-    `refresh_22.sh` does not update it. 2,242 of its 333,586 rows have no
-    minutes link, among them 824 법제사법위원회 rows of the 17th. In 116 rows of
+    `refresh_22.sh` does not update it. 1,714 of its 333,058 rows have no
+    minutes link, among them 824 법제사법위원회 rows of the 17th, and
+    `conf_num_matched` gives 1,443 of them a meeting from the agendas of
+    kr-hearings-data v10.2. In 116 rows of
     six 22nd-Assembly subcommittee meetings the page links the minutes of a
     full committee meeting, and 178 rows give a date outside the dates of the
     minutes. `conf_check` marks both. Four linked meetings are not in the
@@ -220,6 +222,10 @@ not a roll-call matrix (CODEBOOK.md section 9).
     under 국회법 제59조의2 that the meeting did not discuss. The pages lack
     1,379 pairs of 17th-Assembly bill and committee meeting date that the
     Open API table has. CODEBOOK.md section 2.1 lists them.
+    `bill_agenda_17.parquet` adds the 17th-Assembly meetings whose agenda
+    lists a bill, read from kr-hearings-data v10.2. An agenda shows that a
+    meeting was to take up the bill, not that it did, and subcommittee
+    pairs are the weaker of the two (CODEBOOK.md section 2.3).
 15. **The committee documents carry measures, not text.**
     `bill_documents.parquet` lists every document link of the bill pages
     and gives page and character counts for the 139,600 검토보고서,

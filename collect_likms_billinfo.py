@@ -20,7 +20,11 @@ carry no such number.
            downloads and measures the documents.
   build    write bill_meetings.parquet and reports/bill_meetings_coverage.csv
            to --out from the raw tables and hearing_meetings_summary.parquet,
-           which gives conf_check. build_all.sh runs this step.
+           which gives conf_check. With --v10-dir or KNA_HEARINGS_V10_DIR it
+           sets conf_num_matched and conf_match from the agendas of
+           kr-hearings-data v10 (hearings_agenda.py). Without either it
+           carries them over from data/processed/bill_meetings.parquet.
+           build_all.sh runs this step.
 
 The request is POST {URL} with billId, billNo and billKindCd=법률안 and no
 login. fetch spaces requests --interval seconds apart (default 0.7), retries
@@ -47,6 +51,10 @@ Rules, each of which stops extract or build when it fails:
   5. Every document link carries a label and one bookId for its HWP and
      PDF files.
 
+build keeps the rows of the four meeting tables that have a meeting name or a
+minutes link, except the plenary rows whose result is 철회 and that link no
+minutes. Those record a withdrawal, and most print "제N회 국회(...)제차 본회의".
+
 conf_check compares each row with the meeting its conf_num names in
 hearing_meetings_summary.parquet. other_meeting: the row names a
 subcommittee meeting (소위, not 안건조정위원회) and the summary meeting is
@@ -57,10 +65,11 @@ conf_num or the summary lacks the meeting.
 Usage:
     python3 collect_likms_billinfo.py fetch --html-dir DIR [--ages 17-22]
     python3 collect_likms_billinfo.py extract --html-dir DIR
-    python3 collect_likms_billinfo.py build [--out data/processed]
+    python3 collect_likms_billinfo.py build [--out data/processed] [--v10-dir DIR]
 
 fetch and extract need requests and beautifulsoup4 (pip install
-"kna[likms]"). build needs neither.
+"kna[likms]"). build needs neither, and with --v10-dir the hanja package
+(pip install "kna[hearings]").
 """
 
 from __future__ import annotations
@@ -68,6 +77,7 @@ from __future__ import annotations
 import argparse
 import gzip
 import json
+import os
 import re
 import sys
 import time
@@ -75,6 +85,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import pandas as pd
+import pyarrow.parquet as pq
 
 from kna_api import write_parquet_atomic
 
@@ -119,8 +130,9 @@ BOOK_ID = re.compile(r"bookId=([0-9A-Za-z-]+)")
 DOC_FORMAT = re.compile(r"\((HWP|PDF) 파일 다운로드\)")
 LIKMS = "https://likms.assembly.go.kr"
 OUT_COLS = ["age", "bill_no", "bill_id", "stage", "seq", "meeting_name", "meeting_date",
-            "present_date", "result", "conf_num", "conf_check"]
+            "present_date", "result", "conf_num", "conf_check", "conf_num_matched", "conf_match"]
 SUMMARY = "hearing_meetings_summary.parquet"
+MATCH_COLS = ["conf_num_matched", "conf_match"]
 
 
 def parse_ages(spec: str) -> list[int]:
@@ -347,6 +359,29 @@ def conf_check(m: pd.DataFrame, summary: pd.DataFrame) -> pd.Series:
     return pd.Series(check.to_numpy(), index=m.index, dtype="object")
 
 
+def agenda_match(m: pd.DataFrame, raw: pd.DataFrame, args) -> pd.DataFrame:
+    """conf_num_matched and conf_match from the kr-hearings-data v10 agenda (hearings_agenda.py)
+    when --v10-dir or KNA_HEARINGS_V10_DIR is given, else carried over from the shipped table."""
+    v10 = getattr(args, "v10_dir", None) or os.environ.get("KNA_HEARINGS_V10_DIR")
+    if v10:
+        import hearings_agenda
+        return hearings_agenda.match_bill_meetings(m, raw, Path(args.master_dir), Path(v10),
+                                                   getattr(args, "v10_version", None))
+    ref = PROCESSED_DIR / "bill_meetings.parquet"
+    names = pq.read_schema(ref).names if ref.exists() else []
+    if not set(MATCH_COLS) <= set(names):
+        sys.exit(f"build: {ref} has no {MATCH_COLS}. Set KNA_HEARINGS_V10_DIR or --v10-dir")
+    keys = ["bill_no", "stage", "seq"]
+    old = pd.read_parquet(ref, columns=keys + ["conf_num"] + MATCH_COLS)
+    old = old[old["conf_num"].isna()].drop(columns="conf_num")
+    got = m[keys].merge(old, on=keys, how="left")
+    got.index = m.index
+    got.loc[m["conf_num"].notna(), MATCH_COLS] = None
+    print(f"  agenda match carried over from {ref} (KNA_HEARINGS_V10_DIR not set): "
+          f"{got['conf_num_matched'].notna().sum():,} rows")
+    return got[MATCH_COLS].astype({"conf_num_matched": "Int64", "conf_match": "object"})
+
+
 def build(args) -> None:
     out = Path(args.out)
     bills = law_bills(Path(args.master_dir), ALL_AGES)
@@ -369,6 +404,10 @@ def build(args) -> None:
 
     m = raw[raw["section"].isin(STAGES) & (raw["meeting_name"].notna() | raw["conf_num"].notna())].copy()
     m["stage"] = m["section"].map(STAGES)
+    # a plenary row whose result is 철회 and that links no minutes records the withdrawal of
+    # the bill, not a sitting. Most print "제N회 국회(...)제차 본회의" as the meeting name.
+    withdrawn = (m["stage"] == "plenary") & (m["result"] == "철회") & m["conf_num"].isna()
+    m = m[~withdrawn]
     # meeting rows give 회의일 (mtngDt); plenary rows give 의결일 (procDt) and 상정일
     m["meeting_date"] = m["meeting_dt"].fillna(m["proc_dt"])
     m["present_date"] = m["present_dt"].where(m["stage"] == "plenary")
@@ -379,11 +418,15 @@ def build(args) -> None:
     if m.duplicated(["bill_no", "stage", "seq"]).any():
         sys.exit("build: duplicate (bill_no, stage, seq)")
     m["conf_check"] = conf_check(m, summary)
+    got = agenda_match(m, raw, args)
+    m["conf_num_matched"], m["conf_match"] = got["conf_num_matched"], got["conf_match"]
     stage_order = {s: i for i, s in enumerate(STAGES.values())}
     m = (m.assign(_s=m["stage"].map(stage_order)).sort_values(["age", "bill_no", "_s", "seq"])
          [OUT_COLS].reset_index(drop=True))
     m["age"] = m["age"].astype("int64")
     m["seq"] = m["seq"].astype("int32")
+    if m.loc[m["conf_num"].notna(), "conf_num_matched"].notna().any():
+        sys.exit("build: conf_num_matched set on a row that has a conf_num")
     out.mkdir(parents=True, exist_ok=True)
     write_parquet_atomic(m, out / "bill_meetings.parquet")
 
@@ -409,6 +452,10 @@ def build(args) -> None:
     flagged = m[m["conf_check"].isin(["date_differs", "other_meeting"])]
     print("  conf_check: " + ", ".join(f"{k} {v:,} rows" for k, v in m["conf_check"].value_counts().items())
           + f" ({flagged.groupby('conf_check')['conf_num'].nunique().to_dict()} meetings)")
+    print(f"  left out {int(withdrawn.sum()):,} plenary withdrawal rows; conf_match: "
+          + ", ".join(f"{k} {v:,}" for k, v in m["conf_match"].value_counts().items())
+          + f" of {m['conf_num'].isna().sum():,} rows without conf_num; matched meetings not in "
+          f"{summary_path.name}: {(~m['conf_num_matched'].dropna().isin(conf)).sum()}")
 
 
 def main() -> None:
@@ -422,6 +469,10 @@ def main() -> None:
     e.add_argument("--html-dir", required=True)
     b = sub.add_parser("build")
     b.add_argument("--out", default=str(PROCESSED_DIR))
+    b.add_argument("--v10-dir", default=None,
+                   help="kr-hearings-data v10 build or asset directory for conf_num_matched "
+                        "(default KNA_HEARINGS_V10_DIR). Without either the shipped values are carried over")
+    b.add_argument("--v10-version", default=None)
     for s in (f, e, b):
         s.add_argument("--master-dir", default=str(PROCESSED_DIR),
                        help="directory with master_bills_{age}.parquet (default data/processed)")

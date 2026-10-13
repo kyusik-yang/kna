@@ -54,8 +54,17 @@ elif [[ "$OUT" != "data/processed" && -f data/processed/hearing_meetings_summary
 fi
 # Meetings that took up each law bill, from the LIKMS bill pages. The build reads
 # data/raw/likms_billinfo_{age}.parquet, which collect_likms_billinfo.py extract writes,
-# and the hearing summary above, against which it sets conf_check.
+# and the hearing summary above, against which it sets conf_check. With
+# KNA_HEARINGS_V10_DIR it also sets conf_num_matched from the v10 agendas (needs the
+# hanja package). Otherwise it carries those values over from data/processed.
 python3 collect_likms_billinfo.py build --out "$OUT" --master-dir "$OUT"
+# 17th-Assembly bills on the committee agendas of kr-hearings-data v10: rebuilt when
+# KNA_HEARINGS_V10_DIR is set (hearings_agenda.py, needs hanja), otherwise carried over.
+if [[ -n "${KNA_HEARINGS_V10_DIR:-}" ]]; then
+  python3 hearings_agenda.py build --out "$OUT" --master-dir "$OUT"
+elif [[ "$OUT" != "data/processed" ]]; then
+  cp data/processed/bill_agenda_17.parquet "$OUT/" && echo "build_all: bill_agenda_17 carried over (KNA_HEARINGS_V10_DIR not set)"
+fi
 # Committee documents of each law bill: the links of data/raw/likms_billinfo_docs_{age}.parquet
 # with the measures of data/raw/likms_doc_files.parquet (collect_likms_docs.py fetch and measure).
 python3 collect_likms_docs.py build --out "$OUT" --master-dir "$OUT"

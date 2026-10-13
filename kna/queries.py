@@ -102,6 +102,7 @@ def db_info(db: BillDB) -> dict:
         ("Subcommittee", "subcommittee_reviews.parquet", "17-22nd, 소위 referrals/reviews"),
         ("Bill meetings", "bill_meetings.parquet", "17-22nd law bills, LIKMS, with conf_num"),
         ("Bill documents", "bill_documents.parquet", "17-22nd law bills, LIKMS review reports, no text"),
+        ("Bill agenda 17", "bill_agenda_17.parquet", "17th law bills on v10 committee agendas"),
         ("Alt. absorption", "alternative_absorption.parquet", "17-22nd, 대안 -> absorbed bills"),
         ("Committee spells", "committee_assignments.parquet", "dated committee assignments"),
         ("Vote events", "vote_events.parquet", "17-22nd, tallies and minutes votes"),

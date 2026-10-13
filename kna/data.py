@@ -329,8 +329,25 @@ class BillDB:
         record-viewer ID that joins to hearing_meetings_summary, and
         ``conf_check``. Leave out the ``other_meeting`` rows before attaching
         speeches, because their page links the minutes of another meeting.
+        Rows without ``conf_num`` carry ``conf_num_matched``, the meeting
+        found in the kr-hearings-data agendas, and ``conf_match``, its evidence.
         """
         return self._load_table("bill_meetings.parquet", assembly, "age", columns)
+
+    def bill_agenda(self, columns: Optional[list[str]] = None) -> pd.DataFrame:
+        """Load the 17th-Assembly law bills on the committee agendas of kr-hearings-data.
+
+        One row per bill and full committee or subcommittee meeting of its
+        committee whose agenda lists it, with ``in_bill_meetings`` (the LIKMS
+        page lists the meeting as well) and ``title_in_minutes``. Most pairs
+        are meetings the LIKMS pages of the 17th leave out.
+        """
+        p = self._path("bill_agenda_17.parquet")
+        if columns is not None:
+            names = pq.read_schema(p).names
+            self._warn_unknown(p.name, [c for c in columns if c not in names])
+            columns = [c for c in columns if c in names]
+        return pd.read_parquet(p, columns=columns)
 
     def bill_documents(
         self,

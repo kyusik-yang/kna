@@ -19,7 +19,7 @@ from conftest import AGES
 DTYPES = {"age": "int64", "bill_no": "object", "bill_id": "object", "stage": "object",
           "seq": "int32", "meeting_name": "object", "meeting_date": "object",
           "present_date": "object", "result": "object", "conf_num": "Int64",
-          "conf_check": "object"}
+          "conf_check": "object", "conf_num_matched": "Int64", "conf_match": "object"}
 # kr-hearings-data keeps 35218 as an identical duplicate copy of 35291, and the
 # hearing summary leaves duplicate copies out
 DUPLICATE_COPIES = {35218}
@@ -71,6 +71,36 @@ def test_conf_check_values(kdata):
     # every wrong-meeting row is a named subcommittee meeting of a committee stage
     other = t[t["conf_check"] == "other_meeting"]
     assert other["meeting_name"].str.contains("소위").all() and (other["stage"] != "plenary").all()
+
+
+def test_no_withdrawal_rows(kdata):
+    t = kdata.parquet("bill_meetings.parquet", ["stage", "result", "conf_num", "meeting_name"])
+    plenary = t[t["stage"] == "plenary"]
+    assert not ((plenary["result"] == "철회") & plenary["conf_num"].isna()).any()
+    # the withdrawal rows printed the meeting name without a sitting number
+    assert not plenary["meeting_name"].fillna("").str.contains("제차").any()
+
+
+def test_conf_match(kdata):
+    t = kdata.parquet("bill_meetings.parquet", ["stage", "meeting_name", "meeting_date", "conf_num",
+                                                "conf_num_matched", "conf_match"])
+    s = kdata.parquet("hearing_meetings_summary.parquet", ["conf_num", "date", "date_end", "is_subcommittee"])
+    assert set(t["conf_match"].dropna()) <= {"agenda_and_name", "agenda", "name"}
+    assert (t["conf_match"].notna() == t["conf_num_matched"].notna()).all()
+    matched = t[t["conf_num_matched"].notna()]
+    assert matched["conf_num"].isna().all()
+    assert (matched["stage"] != "related_committee").all()
+    # every matched meeting is in the hearing summary and was held on the row's date
+    m = matched.merge(s, left_on="conf_num_matched", right_on="conf_num", how="left", suffixes=("", "_s"))
+    assert m["date"].notna().all()
+    assert ((m["meeting_date"] >= m["date"]) & (m["meeting_date"] <= m["date_end"])).all()
+    # a named subcommittee row gets a subcommittee meeting unless it is a hearing
+    name = m["meeting_name"].fillna("")
+    plain = ~name.str.contains("공청회|청문회") & (m["stage"] == "committee")
+    named_sub = name.str.contains("소위") & ~name.str.contains("안건조정")
+    assert (named_sub[plain] == m.loc[plain, "is_subcommittee"]).all()
+    # most rows without minutes get a meeting
+    assert len(matched) > 0.8 * t["conf_num"].isna().sum()
 
 
 def test_conf_check_rule():

@@ -4,6 +4,49 @@ Errata for data released by this repository. Newest first.
 
 ---
 
+## 2026-10-12 - Release 0.10.0
+
+Release 0.10.0 leaves the withdrawal rows out of `bill_meetings.parquet`,
+adds two columns to it and adds `bill_agenda_17.parquet`. No other value of
+0.9.1 changes.
+
+| File | 0.9.1 | 0.10.0 |
+|---|---|---|
+| `bill_meetings.parquet` | 333,586 rows, eleven columns | 333,058 rows, columns `conf_num_matched` and `conf_match` added |
+| `bill_agenda_17.parquet` | | new, 18,185 rows |
+
+528 plenary rows of `bill_meetings.parquet` recorded the withdrawal (철회)
+of a bill, not a meeting. None links minutes, and 516 print the meeting
+name without a sitting number, such as `제278회 국회(정기회)제차 본회의`. 89 are
+in the 17th, 412 in the 18th and 27 in the 19th to 22nd. The 0.9.0 codebook
+described the 418 plenary rows of the 18th without a minutes link, 412 of
+them withdrawals, as rows whose name lacks the sitting number. The build now
+leaves the withdrawal rows out, and the 491 bills that had no other row are
+no longer in the table. The master records each withdrawal in `proc_rslt`.
+
+For 1,443 of the 1,714 rows without `conf_num`, `conf_num_matched` gives the
+meeting in kr-hearings-data v10.2, and `conf_match` says whether the agenda,
+the meeting name or both support it. `conf_num` keeps the page's value.
+Among these rows are 819 of the 824 법제사법위원회 rows of the 17th, whose
+pages print the session and sitting numbers the other way round, and 243 of
+the 245 rows of the 22nd-Assembly election-law subcommittees.
+
+`bill_agenda_17.parquet` lists the 17th-Assembly law bills that the agendas
+of the committee and subcommittee minutes in kr-hearings-data v10.2 list.
+10,223 of its 18,185 pairs are meetings the LIKMS pages leave out. With
+them 79.6% of the 17th-Assembly law bills have a committee meeting, against
+65.7%. A new subcommittee pair is weaker evidence of discussion than a new
+full committee pair (CODEBOOK.md section 2.3).
+
+CODEBOOK.md section 2.1 gained two passages after 0.9.1, on the 214 rows
+of bills deemed 상정 under 국회법 제59조의2 in 2012 and on the 1,379 pairs of
+the 17th that the Open API table has and the pages lack. The second first
+said that 1,235 of 1,336 of these pairs (92.4%) were on that day's agenda.
+That count accepted the 대표발의자's name at the end of a cosponsor list.
+The corrected count is 1,193 (89.3%).
+
+---
+
 ## 2026-10-12 - Release 0.9.1
 
 Release 0.9.1 adds one column to each of two tables and changes no value of
