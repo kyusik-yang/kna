@@ -2,14 +2,14 @@
 
 | | |
 |---|---|
-| Release | 0.9.1 |
+| Release | 0.10.0 |
 | Data collected | Mostly on 2026-09-25, from the Open Assembly API (열린국회정보, open.assembly.go.kr). The 20th-21st member-level votes and the 18th and 20th BILLINFODETAIL records are from March 2026. The BPMBILLSUMMARY texts, the LIKMS vote pages and the 17th-19th plenary minutes were collected on 2026-09-28, the LIKMS bill pages from 2026-10-08 to 2026-10-10 and the committee documents they link from 2026-10-10 to 2026-10-12 (DATA_AVAILABILITY.md). |
 | Coverage | 17th-22nd National Assembly. The 22nd Assembly is in session. |
 
 This codebook describes every file in the data directory, which is
 `data/processed/` in a repository checkout. Every count and coverage figure
-below was computed from the 0.8.0 files, except those of sections 2.1 and
-2.2, which come from the 0.9.1 files. Corrections to earlier releases are listed in
+below was computed from the 0.8.0 files, except those of sections 2.1 to
+2.3, which come from the 0.10.0 files. Corrections to earlier releases are listed in
 [CORRECTIONS.md](CORRECTIONS.md), and per-assembly coverage and known
 limitations in [DATA_AVAILABILITY.md](DATA_AVAILABILITY.md).
 
@@ -21,6 +21,7 @@ limitations in [DATA_AVAILABILITY.md](DATA_AVAILABILITY.md).
 2. [Committee and judiciary meetings](#2-committee-and-judiciary-meetings)
    - [2.1 Meetings from the LIKMS bill pages](#21-meetings-from-the-likms-bill-pages)
    - [2.2 Committee documents from the LIKMS bill pages](#22-committee-documents-from-the-likms-bill-pages)
+   - [2.3 17th-Assembly bills on the committee agendas](#23-17th-assembly-bills-on-the-committee-agendas)
 3. [Subcommittee reviews](#3-subcommittee-reviews)
 4. [Alternative absorption](#4-alternative-absorption)
 5. [Cosponsorship edges](#5-cosponsorship-edges)
@@ -46,8 +47,9 @@ limitations in [DATA_AVAILABILITY.md](DATA_AVAILABILITY.md).
 | `master_bills_22.sqlite` | tables `bills`, `committee_meetings`, `judiciary_meetings` of the 22nd | | 1 |
 | `committee_meetings_{17..22}.parquet` | bill x committee meeting x agenda step | 818,448 | 2 |
 | `judiciary_meetings_{17..22}.parquet` | bill x 법제사법위원회 meeting | 15,858 | 2 |
-| `bill_meetings.parquet` | law bill x meeting listed on its LIKMS page, with the minutes ID | 333,586 | 2.1 |
+| `bill_meetings.parquet` | law bill x meeting listed on its LIKMS page, with the minutes ID | 333,058 | 2.1 |
 | `bill_documents.parquet` | law bill x document link on its LIKMS page, with page and character counts of the review reports | 158,197 | 2.2 |
+| `bill_agenda_17.parquet` | 17th-Assembly law bill x meeting of its committee whose agenda lists it | 18,185 | 2.3 |
 | `subcommittee_reviews.parquet` | bill x subcommittee stage | 93,981 | 3 |
 | `alternative_absorption.parquet` | committee alternative x linked bill | 25,439 | 4 |
 | `cosponsorship_edges.parquet` | bill x member | 1,379,763 | 5 |
@@ -66,10 +68,12 @@ limitations in [DATA_AVAILABILITY.md](DATA_AVAILABILITY.md).
 | `assets_wealth_panel.parquet` | member-year | 3,215 | 16 |
 | `reports/` | build reports | | 17 |
 
-`build_all.sh` rebuilds `hearing_meetings_summary.parquet` only when the
-kr-hearings-data v10 files are available (section 15), and
-`assets_wealth_panel.parquet` only when its source files are available
-(section 16). Otherwise it carries the shipped files over. Section 17
+`build_all.sh` rebuilds `hearing_meetings_summary.parquet`,
+`bill_agenda_17.parquet` and the columns `conf_num_matched` and `conf_match`
+of `bill_meetings.parquet` only when the kr-hearings-data v10 files are
+available (sections 2.1, 2.3 and 15), and `assets_wealth_panel.parquet` only
+when its source files are available (section 16). Otherwise it carries the
+shipped files and columns over. Section 17
 describes the build.
 
 ## Conventions
@@ -572,28 +576,34 @@ the minutes, the plenary meetings and the related-committee meetings.
 | `result` | 회의결과 as listed, such as `상정/제안설명/검토보고/대체토론/소위회부`, or the plenary result, such as `원안가결` or `대안반영폐기`. |
 | `conf_num` | Record-viewer ID of the minutes (CONFER_NUM). Null where the row has no minutes link. |
 | `conf_check` | How the row agrees with the meeting `conf_num` names in `hearing_meetings_summary.parquet`. `ok`, `date_differs` (the date lies outside the dates of the minutes) or `other_meeting` (a subcommittee meeting linked to the minutes of a full committee meeting). Null where the row has no minutes link or the summary lacks the meeting. Added in 0.9.1. |
+| `conf_num_matched` | For a row without `conf_num`, the meeting of kr-hearings-data v10.2 that the row describes, found by date, kind of meeting and committee and checked against the meeting's agenda and the row's `meeting_name` (below). Null where the row has a `conf_num` or no meeting was found. Added in 0.10.0. |
+| `conf_match` | What supports `conf_num_matched`. `agenda_and_name`, `agenda` or `name`. Null where `conf_num_matched` is null. Added in 0.10.0. |
 
 The plenary table of a page also holds status rows without a meeting, such
 as `임기만료폐기`, which the build leaves out (54,103 rows). The master
-already records these results.
+already records these results. From 0.10.0 the build also leaves out the 528
+plenary rows whose result is `철회` and that link no minutes. They record a
+withdrawal, not a sitting. 516 of them print the meeting name without a
+sitting number, such as `제278회 국회(정기회)제차 본회의`, and the other 12 name a
+plenary sitting held that day whose agenda lists no withdrawal. 491 bills
+had no other row and are no longer in the table.
 
 | Assembly | Law bills | With a row | With a minutes link | With a committee-stage row | Rows | Meetings with minutes |
 |---|---|---|---|---|---|---|
-| 17 | 7,489 | 5,680 | 5,600 (74.8%) | 4,923 (65.7%) | 16,301 | 813 |
-| 18 | 13,913 | 12,277 | 11,861 (85.3%) | 11,708 (84.2%) | 48,553 | 1,345 |
-| 19 | 17,822 | 16,394 | 16,386 (91.9%) | 16,231 (91.1%) | 61,848 | 1,215 |
-| 20 | 24,141 | 22,484 | 22,451 (93.0%) | 22,405 (92.8%) | 86,536 | 1,260 |
-| 21 | 25,858 | 23,897 | 23,892 (92.4%) | 23,840 (92.2%) | 72,552 | 1,544 |
-| 22 | 21,022 | 18,270 | 18,270 (86.9%) | 18,196 (86.6%) | 47,796 | 962 |
+| 17 | 7,489 | 5,605 | 5,600 (74.8%) | 4,923 (65.7%) | 16,212 | 813 |
+| 18 | 13,913 | 11,868 | 11,861 (85.3%) | 11,708 (84.2%) | 48,141 | 1,345 |
+| 19 | 17,822 | 16,393 | 16,386 (91.9%) | 16,231 (91.1%) | 61,843 | 1,215 |
+| 20 | 24,141 | 22,481 | 22,451 (93.0%) | 22,405 (92.8%) | 86,524 | 1,260 |
+| 21 | 25,858 | 23,894 | 23,892 (92.4%) | 23,840 (92.2%) | 72,547 | 1,544 |
+| 22 | 21,022 | 18,270 | 18,270 (86.9%) | 18,196 (86.6%) | 47,791 | 962 |
 
-By stage the table has 276,031 committee, 15,835 judiciary, 41,448 plenary
+By stage the table has 276,031 committee, 15,835 judiciary, 40,920 plenary
 and 272 related-committee rows. 331,344 rows link minutes, of 7,139 distinct
-meetings. Most of the 2,242 rows without a link fall in three groups.
-These are 824 of the 1,625 법제사법위원회 rows of the 17th, 418 plenary rows of
-the 18th whose name lacks the sitting number (such as `제278회
-국회(정기회)제차 본회의` of 2008-11-28), and 245 committee rows of the 22nd
-from ten subcommittee meetings on election law in 2026
-(공직선거법및지방선거구제개편심사소위, 정치관계법심사소위).
+meetings. Of the 1,714 rows without a link, 824 are 법제사법위원회 rows of the
+17th (of 1,625), and 245 are committee rows of the 22nd from ten
+subcommittee meetings on election law in 2026
+(공직선거법및지방선거구제개편심사소위, 정치관계법심사소위). `conf_num_matched`
+gives 1,443 of the 1,714 a meeting (below).
 
 **Joining the minutes.** 330,877 linked rows (99.86%) find their meeting in
 `hearing_meetings_summary.parquet`. The other 467 rows link four meetings.
@@ -615,7 +625,7 @@ date lies outside the summary's `date` to `date_end` is `date_differs`.
 | `ok` | 330,583 | 7,113 |
 | `date_differs` | 178 | 52 |
 | `other_meeting` | 116 | 6 |
-| null | 2,709 | 4 |
+| null | 2,181 | 4 |
 
 Meetings are distinct `conf_num`. A meeting with rows of two kinds counts
 in both lines.
@@ -642,6 +652,55 @@ on 2008-01-21. The minutes date them 2006-09-14 and 2009-02-11. 113 are
 plenary rows, 106 of them rows of 대안반영폐기 bills without a meeting name,
 whose date is 1 to 99 days off. One is a related-committee row. Take the
 meeting date from the summary where it joins.
+
+**Meetings for rows without minutes.** For a row without `conf_num`,
+`conf_num_matched` gives the meeting of kr-hearings-data v10.2 that the row
+describes, where one can be told apart. The candidates are the meetings
+held on the row's date. A plenary row looks among plenary sittings and a
+judiciary row among full meetings of the 법제사법위원회. A committee row looks
+among the meetings of the bill's committees, at subcommittee meetings when
+its name contains 소위 (안건조정위원회 aside) and at full committee meetings
+otherwise, or at both for a 공청회 or 청문회. Related-committee rows are not
+matched. The meeting is the one candidate whose agenda lists
+the bill, by the rule of section 2.3, or else the only candidate. The name
+agrees when its session and sitting numbers are the meeting's. The 17th-Assembly
+법사위 rows print the two the other way round, as in `제17회 국회(임시회)
+제250차 전체회의` for the 17th sitting of the 250th session, and are compared
+that way too.
+
+| `conf_match` | Meaning |
+|---|---|
+| `agenda_and_name` | The meeting's agenda lists the bill and the name agrees. |
+| `agenda` | The agenda lists the bill and the name does not agree. Two rows of 2011-04-29 name `제299회 국회(임시회)제9차 본회의`, for example, while the only sitting that day was the 제8차, which 172 other rows of that date link. |
+| `name` | The name agrees, and the meeting is the only candidate or its agenda lists a bill of the same title and 대표발의자. |
+
+| Assembly | Stage | Rows without `conf_num` | `agenda_and_name` | `agenda` | `name` | null |
+|---|---|---|---|---|---|---|
+| 17 | judiciary | 824 | 415 | | 404 | 5 |
+| 17 | committee | 114 | 5 | 56 | 8 | 45 |
+| 18 | committee | 84 | 37 | | | 47 |
+| 18 | plenary | 6 | | 2 | | 4 |
+| 19 | committee | 33 | 12 | | 6 | 15 |
+| 20 | committee | 306 | 84 | 12 | 101 | 109 |
+| 21 | committee | 95 | 58 | | | 37 |
+| 22 | committee | 245 | 242 | 1 | | 2 |
+| 17, 18, 20 | related_committee | 7 | | | | 7 |
+| All | | 1,714 | 853 | 71 | 519 | 271 |
+
+The 1,443 matched rows name 83 meetings, all of them in
+`hearing_meetings_summary.parquet`. `conf_num` stays as the page gives it.
+To join speeches to every row that has a meeting, take `conf_num` and fall
+back on `conf_num_matched`.
+
+```python
+bm = db.bill_meetings()
+bm["meeting"] = bm["conf_num"].fillna(bm["conf_num_matched"])
+```
+
+A null `conf_match` does not mean that kr-hearings-data lacks the meeting.
+The agendas of some v10.2 minutes are empty or cut short, and a day with
+several meetings of one kind stays unresolved unless one agenda lists the
+bill.
 
 **Deemed referrals.** From the 19th Assembly, 국회법 제59조의2 deems a bill
 that a committee has not taken up within a set period to be 상정 at the
@@ -686,7 +745,8 @@ the bill's committee on that day in kr-hearings-data lists a bill with the
 same title and 대표발의자, once hanja titles are converted. For 986 of them
 no other law bill of the 17th shares that title and 대표발의자. These are
 mostly meetings that took up the bill and that the page leaves out, so use
-`committee_meetings_17` alongside this table for the 17th.
+`committee_meetings_17` and `bill_agenda_17.parquet` (section 2.3) alongside
+this table for the 17th.
 
 **Matching pages to bills.** The page does not print the bill number, so
 `collect_likms_billinfo.py build` matches each page to its bill through the
@@ -701,9 +761,13 @@ pages, about one request every 0.7 seconds and about a day for all law bills,
 and keeps them in DIR, outside the repository. `extract --html-dir DIR`
 writes `data/raw/likms_billinfo_{age}.parquet`, every row of the eight review
 and meeting tables of each page, and `data/raw/likms_billinfo_meta.json`.
-`build` writes this table from those files and `build_all.sh` runs it. The
-22nd Assembly is in session, and its rows are a snapshot of 2026-10-08 to
-2026-10-10. `refresh_22.sh` does not update them.
+`build` writes this table from those files and `build_all.sh` runs it. It
+sets `conf_num_matched` and `conf_match` with `hearings_agenda.py` when
+`--v10-dir` or `KNA_HEARINGS_V10_DIR` names a kr-hearings-data v10 build or
+release-asset directory, which needs the hanja package
+(`pip install "kna[hearings]"`), and carries the shipped values over
+otherwise. The 22nd Assembly is in session, and its rows are a snapshot of
+2026-10-08 to 2026-10-10. `refresh_22.sh` does not update them.
 
 ### 2.2 Committee documents from the LIKMS bill pages
 
@@ -815,6 +879,99 @@ which records the pdftotext version. Another version can change `chars` and
 `collect_likms_billinfo.py extract`) with these measures, and `build_all.sh`
 runs it. The 22nd Assembly's rows are a snapshot, and `refresh_22.sh` does
 not update them.
+
+### 2.3 17th-Assembly bills on the committee agendas
+
+| | |
+|---|---|
+| File | `bill_agenda_17.parquet`, built by `hearings_agenda.py build` |
+| Source | The agendas (안건) and speeches of the 17th-Assembly committee and subcommittee minutes in kr-hearings-data v10.2, with the master and the 소관위 of each LIKMS bill page |
+| Unit | one 17th-Assembly law bill and one meeting of its committee whose agenda lists it |
+
+The LIKMS pages of the 17th Assembly leave out many committee meetings.
+4,923 of its 7,489 law bills (65.7%) have a committee-stage row in
+`bill_meetings.parquet`, against 84% to 93% in the later assemblies. The
+minutes print the agenda at the head of each meeting. This table lists every
+pair of a 17th-Assembly law bill and a full committee or subcommittee meeting
+of its own committee whose agenda lists it. A meeting belongs to the bill's
+committee when kr-hearings-data gives it the committee of the master or of a
+소관위 on the bill's page. Plenary sittings, 국정감사 meetings and the
+meetings of other committees are left out. The table is kept apart from
+`bill_meetings.parquet`, which holds what the pages list.
+
+| Column | Definition |
+|---|---|
+| `bill_no`, `bill_id` | The bill, as in the master. |
+| `conf_num` | The meeting, as in `hearing_meetings_summary.parquet` and kr-hearings-data. |
+| `meeting_date` | Date of the meeting, `YYYY-MM-DD`. |
+| `committee` | Committee of the meeting, `committee_raw` of kr-hearings-data. Subcommittee meetings carry their parent committee. |
+| `is_subcommittee` | True for a subcommittee meeting. |
+| `match` | How the agenda lists the bill. `number`, `title` or `id` (below). |
+| `in_bill_meetings` | True when `bill_meetings.parquet` has a committee-stage row of the bill with this meeting as `conf_num` or `conf_num_matched`, or with this date. |
+| `title_in_minutes` | True when the bill's title appears in the speeches of the meeting, with Hanja read as Hangul. A bill of the same title counts as well. |
+
+**Finding a bill on an agenda.** Many 17th-Assembly agendas print titles in
+Hanja, such as `住宅法 일부개정법률안`, so titles are compared with Hanja read
+as Hangul (the hanja package) and without spaces or punctuation. An agenda
+item lists a bill in one of three ways.
+
+- `number`. The item prints the bill's number, as `(의안번호 N)` in its text
+  or in the `bill_no` of the v10 agenda. The minutes of the 17th to 21st
+  Assembly print it without the assembly prefix, 1718 for 171718.
+- `title`. The item prints no number and holds the bill's title together
+  with `(<대표발의자> 의원 대표발의)` or `(정부 제출)`. A bill whose title and
+  대표발의자 another bill of the 17th shares is not matched this way, because
+  a legislator often filed several bills under one title. Matching the name
+  alone, `<대표발의자> 의원`, would also hit the last name of a cosponsor
+  list.
+- `id`. The item prints no number, its v10 `bill_id` is the bill's, and it
+  holds the bill's title. This applies only to bills without a 대표발의자,
+  such as committee alternatives.
+
+The `bill_id` of the v10 agenda is not used otherwise, because it often
+names another bill of the same title. In the 17th-Assembly items that carry
+a `bill_id` and no number, the 대표발의자 printed in the item differs from
+that of the bill the `bill_id` names in 37%, against 11% in the 19th and
+about 1% in the 20th and 21st.
+
+**Counts.** The 18,185 pairs cover 4,785 bills and 1,449 meetings. 7,860
+pairs are at full committee meetings and 10,325 at subcommittee meetings.
+16,944 are matched by title, 1,186 by number and 55 by id. 7,962 pairs are
+in `bill_meetings.parquet`, and the table holds 73.8% of the 10,631
+committee-stage rows of the 17th that link minutes. The other 10,223 pairs
+are new, 3,755 at full committee meetings and 6,468 at subcommittee meetings.
+With them 5,960 law bills of the 17th (79.6%) have a committee meeting, or
+5,899 (78.8%) with the full committee pairs alone, and 4,194 have a
+subcommittee meeting, against 2,498 in `bill_meetings.parquet`. The Open API
+table `committee_meetings_17` has rows for 9 of the 1,037 bills that gain a
+first meeting. It has a row of the same bill and date for 1,068 of the new
+pairs.
+
+**Agenda and discussion.** An agenda lists the bills a meeting was to take
+up. `title_in_minutes` checks whether the bill's title is spoken at the
+meeting. Every meeting of the table has speeches in kr-hearings-data.
+
+| Pairs | Full committee | Subcommittee |
+|---|---|---|
+| In `bill_meetings.parquet` | 93.7% of 4,105 | 64.9% of 3,857 |
+| New | 92.6% of 3,755 | 56.3% of 6,468 |
+
+New full committee pairs name the bill about as often as the pairs the pages
+list. New subcommittee pairs name it less often than listed subcommittee
+pairs. Treat a subcommittee pair as a bill on the agenda rather than a bill
+the subcommittee discussed.
+
+```python
+ag = db.bill_agenda()
+new_full = ag[~ag["in_bill_meetings"] & ~ag["is_subcommittee"]]
+```
+
+**Rebuilding.** `hearings_agenda.py build --v10-dir DIR` writes the table
+from a kr-hearings-data v10 build or release-asset directory (its meetings,
+agenda and 17th-Assembly turns), the master,
+`data/raw/likms_billinfo_17.parquet` and the `bill_meetings.parquet` of
+`--out`. It needs the hanja package. `build_all.sh` runs it when
+`KNA_HEARINGS_V10_DIR` is set and carries the shipped table over otherwise.
 
 ---
 
@@ -1745,7 +1902,7 @@ texts, runs `build_all.sh` into a staging directory, `data/_build` by default,
 runs the test suite against it and writes a comparison with
 `data/processed/` to `logs/`. It promotes nothing to `data/processed/`.
 
-The 0.9.1 `reports/` directory holds the eleven reports below and nothing else.
+The 0.10.0 `reports/` directory holds the eleven reports below and nothing else.
 
 | Report | Written by | Content |
 |---|---|---|

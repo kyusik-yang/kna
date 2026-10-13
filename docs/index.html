@@ -915,9 +915,9 @@ footer a {
                 <div class="schema-desc">법안별 회의와 회의록 (17-22대 법률안)</div>
                 <div class="schema-meta">1 row = 1 bill x 회의</div>
                 <div class="schema-cols">
-                    bill_id (FK), stage, meeting_name, meeting_date, conf_num, conf_check
+                    bill_id (FK), stage, meeting_name, meeting_date, conf_num, conf_check, conf_num_matched
                 </div>
-                <div class="schema-stat">333,586 rows</div>
+                <div class="schema-stat">333,058 rows</div>
             </div>
             <div class="schema-card schema-satellite">
                 <div class="schema-icon">&#128196;</div>
@@ -928,6 +928,16 @@ footer a {
                     bill_id (FK), doc_type, pages, chars, text_status, report_key
                 </div>
                 <div class="schema-stat">158,197 rows</div>
+            </div>
+            <div class="schema-card schema-satellite">
+                <div class="schema-icon">&#128203;</div>
+                <div class="schema-name">bill_agenda_17</div>
+                <div class="schema-desc">17대 위원회 의제에 오른 법안 (kr-hearings-data)</div>
+                <div class="schema-meta">1 row = 1 bill x 회의</div>
+                <div class="schema-cols">
+                    bill_id (FK), conf_num, is_subcommittee, match, in_bill_meetings
+                </div>
+                <div class="schema-stat">18,185 rows</div>
             </div>
             <div class="schema-card schema-satellite">
                 <div class="schema-icon">&#128279;</div>

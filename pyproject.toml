@@ -1,6 +1,6 @@
 [project]
 name = "kna"
-version = "0.9.1"
+version = "0.10.0"
 description = "Comprehensive CLI for the Korean National Assembly: bills, lifecycle, votes, ideal points, and bill texts"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -31,6 +31,8 @@ minutes = ["requests", "pymupdf", "hanja"]
 assets = ["requests", "pdfplumber"]
 # collect_likms_billinfo.py fetch/extract: read the LIKMS bill pages
 likms = ["requests", "beautifulsoup4"]
+# hearings_agenda.py: read the Hanja titles of the kr-hearings-data agendas
+hearings = ["hanja"]
 
 [project.urls]
 Homepage = "https://github.com/kyusik-yang/kna"

@@ -3,6 +3,15 @@
 [![PyPI](https://img.shields.io/pypi/v/kna)](https://pypi.org/project/kna/)
 
 
+> **Release 0.10.0, 2026-10-12.** This release leaves out of
+> `bill_meetings.parquet` the 528 plenary rows that record a withdrawal (철회)
+> rather than a meeting. For 1,443 of its 1,714 rows without a minutes link,
+> two new columns give the meeting found in the agendas of kr-hearings-data
+> v10.2 (`conf_num_matched`) and what supports it (`conf_match`).
+> `bill_agenda_17.parquet` lists the 17th-Assembly law bills on the committee
+> agendas of those minutes. 10,223 of its 18,185 pairs are meetings that the
+> LIKMS pages of the 17th leave out (CORRECTIONS.md).
+>
 > **Release 0.9.1, 2026-10-12.** This release adds `conf_check` to
 > `bill_meetings.parquet`. In 116 rows of six 22nd-Assembly subcommittee
 > meetings the LIKMS page links the minutes of a full committee meeting, and
@@ -147,7 +156,7 @@ locations.
 
 ## Key Statistics
 
-Release 0.9.1. Most data were collected from the Open Assembly API on
+Release 0.10.0. Most data were collected from the Open Assembly API on
 2026-09-25, and DATA_AVAILABILITY.md lists the exceptions.
 
 | | |
@@ -158,7 +167,8 @@ Release 0.9.1. Most data were collected from the Open Assembly API on
 | **Recorded votes** | 16,465 rows, the official tallies of the 20th-22nd and the recorded votes of the 17th-19th minutes with the chair's announced counts |
 | **Ideal points** | 955 legislator-terms, 20th-22nd, three series, vintage v20260917 |
 | **Committee meetings** | 818,448 rows, one per bill, meeting and agenda step, 17th-22nd |
-| **Meetings from LIKMS** | 333,586 law bill-meeting rows, 17th-22nd, each with `conf_num`, the ID of the minutes, and `conf_check`, its agreement with the minutes |
+| **Meetings from LIKMS** | 333,058 law bill-meeting rows, 17th-22nd, each with `conf_num`, the ID of the minutes, and `conf_check`, its agreement with the minutes. 1,443 rows without a minutes link carry the meeting found in the agendas of kr-hearings-data |
+| **17th-Assembly agendas** | 18,185 pairs of 17th-Assembly law bill and committee or subcommittee meeting whose agenda lists it, 10,223 of them missing from the LIKMS pages |
 | **Committee documents** | 158,197 document links of 97,424 law bills. 139,600 검토보고서, 심사보고서 and 체계자구검토보고서 carry page and character counts, no text |
 | **Subcommittee reviews** | 93,981 bill-stage rows, 17th-22nd |
 | **Alternative absorption** | 25,439 links from committee alternatives to the bills they absorbed |
@@ -253,6 +263,7 @@ judiciary = db.judiciary_meetings(22)
 subcommittee = db.subcommittee_reviews(assembly=22)
 bill_meetings = db.bill_meetings(assembly=22)  # from LIKMS, conf_num joins the minutes
 documents = db.bill_documents(assembly=22)     # review reports: pages, chars, report_key
+agenda17 = db.bill_agenda()                    # 17th law bills on the committee agendas
 alternatives = db.alternative_absorption(assembly=22)
 
 # Cosponsorship edges with roles 대표발의, 공동발의 and 찬성
@@ -327,8 +338,9 @@ Every shipped table, in `data/processed/`. CODEBOOK.md documents each column.
 | `master_bills_22.sqlite` | | | The 22nd master and meeting tables in SQLite |
 | `committee_meetings_{17..22}.parquet` | bill x meeting x agenda step | 818,448 | Committee meeting records (BILLJUDGECONF) |
 | `judiciary_meetings_{17..22}.parquet` | bill x meeting | 15,858 | 법제사법위원회 review records (BILLLWJUDGECONF) |
-| `bill_meetings.parquet` | law bill x listed meeting | 333,586 | Committee, subcommittee, 법제사법위원회 and plenary meetings of the 17th-22nd law bills from the LIKMS bill pages, with `conf_num`, the ID of the minutes, and `conf_check` |
+| `bill_meetings.parquet` | law bill x listed meeting | 333,058 | Committee, subcommittee, 법제사법위원회 and plenary meetings of the 17th-22nd law bills from the LIKMS bill pages, with `conf_num`, the ID of the minutes, `conf_check`, and `conf_num_matched` for rows without a minutes link |
 | `bill_documents.parquet` | law bill x document link | 158,197 | Committee documents linked on the same pages. 검토보고서, 심사보고서 and 체계자구검토보고서 carry pages, characters, `text_status` and `report_key`, which marks one report attached to several bills. No text |
+| `bill_agenda_17.parquet` | 17th law bill x meeting | 18,185 | Full committee and subcommittee meetings of the 17th whose agenda in kr-hearings-data lists the bill, with whether the LIKMS page lists the meeting too |
 | `subcommittee_reviews.parquet` | bill x subcommittee stage | 93,981 | Subcommittee referrals, reviews, direct referrals and 안건조정위원회 (TVBPMCONFINFO) |
 | `alternative_absorption.parquet` | alternative x linked bill | 25,439 | Committee alternatives and the bills linked to them (TVBPMBILL11) |
 | `cosponsorship_edges.parquet` | bill x member | 1,379,763 | Lead proposers, co-proposers and supporters, 17th-22nd, with party and its source |
@@ -395,7 +407,7 @@ kna is an offline master database for statistical analysis in Python and R. For 
 
 | Dataset | Description |
 |---------|-------------|
-| [kr-hearings-data](https://github.com/kyusik-yang/kr-hearings-data) | Speech-level records of committee and plenary meetings. kna's hearing summary is built from its release v10.2 |
+| [kr-hearings-data](https://github.com/kyusik-yang/kr-hearings-data) | Speech-level records of committee and plenary meetings. kna's hearing summary, `bill_agenda_17` and `conf_num_matched` are built from its release v10.2 |
 | [korean-assembly-bills](https://github.com/kyusik-yang/korean-assembly-bills) | Source of the scraped propose-reason texts in `bill_texts_linked.parquet`, the rows with `source` = `likms_scrape` |
 | [open-assembly-mcp](https://github.com/kyusik-yang/open-assembly-mcp) | MCP server for real-time API queries via Claude |
 | [assembly-explorer](https://github.com/kyusik-yang/assembly-explorer) | Interactive Streamlit web app |
@@ -508,7 +520,10 @@ reports to `reports/` and makes no API calls. A few inputs come from outside
   variable is set and otherwise carries the shipped file over.
   `python3 build_hearings_summary.py --source v10 --v10-package v10.2 --out DIR`
   builds it through the package instead. CODEBOOK.md section 15 has the
-  details.
+  details. The same variable gives `bill_agenda_17.parquet` and the
+  `conf_num_matched` column of `bill_meetings.parquet`, which read the v10
+  agendas and need the hanja package (`pip install -e '.[hearings]'`).
+  Without it `build_all.sh` carries both over.
 - `build_structure.py` keeps the edges of the earlier edge file for the bills
   it had not truncated, `source` = `legacy_edges`, and reads them from
   `data/processed/cosponsorship_edges.parquet`. A rebuild from the shipped
